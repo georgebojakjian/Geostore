@@ -1,68 +1,70 @@
-# Geostore — Step-by-Step Guide to Selling Online with Crypto
+# Geostore Codes — Complete Guide (for beginners)
 
-No coding knowledge needed. Follow the steps in order.
+You sell **website code** (navbars, heroes, product grids, pricing tables, FAQs, footers…).
+Customers see a live preview and a FREE sample. After they pay, you send the FULL code.
 
-## Step 1 — Put in your own details (5 minutes)
+## What is in this folder
 
-1. Open `index.html` in any text editor (Notepad, VS Code).
-2. Press **Ctrl+F** and search for `STORE SETTINGS`.
-3. Replace:
-   - `YOUR-EMAIL@example.com` → your real email (also search for it once more in the footer and replace it there).
-   - `PASTE_YOUR_..._ADDRESS` → your own crypto wallet addresses (Step 2).
-   - Delete a wallet line's address (`''`) to hide that coin.
-4. Optional: change the brand name "Geostore", the prices, and the colours (`--accent`, `--accent-2` at the top).
-5. Double-click `index.html` to preview it in your browser.
+| Folder / file | What it is | Upload to the internet? |
+|---|---|---|
+| `site/shop.html` | Your public shop | YES |
+| `site/index.html` | A landing-page template (also sellable) | YES |
+| `site/data.js` | Your product list + free samples | YES |
+| `admin/admin.html` | Your private dashboard | **NEVER** |
+| `admin/private.js` | The paid FULL code | **NEVER** |
 
-## Step 2 — Get a crypto wallet (to receive money)
+## Step 1 — Open your dashboard
+Double-click `admin/admin.html`. It opens in your browser (works offline, free).
+Tabs: **Dashboard · Products · Orders · Settings · Publish**.
+Your data is saved inside that browser on that computer — use **Publish → Backup** regularly.
 
-- Easiest: create an account on **Binance**, **Coinbase** or **Bybit** → Wallet → Deposit → choose **USDT** and the **TRC20** network → copy the address.
-- Safer long-term: a self-custody wallet such as **Trust Wallet** or **MetaMask**.
-- **Always send a tiny test amount first.** The wrong network = lost money.
-- Never share your seed phrase / recovery words with anyone, ever.
+## Step 2 — Fill Settings
+1. Store name, your email, tagline.
+2. Wallets — one per line: `USDT (TRC20 network) | your-address`.
+3. All-Access pass: turn it on and choose YOUR price (one payment → every code).
+4. Press **Save settings**.
 
-## Step 3 — Publish the website for free
+### Getting a wallet address (you live in Syria)
+Many card/PayPal services do not work in Syria, so crypto is the practical choice.
+- Create a free wallet in an app available to you (for example Trust Wallet or Exodus — check what is available where you are), or use an exchange account where you are allowed.
+- Choose **USDT on TRC20** (low fees) and copy the address.
+- Send a tiny test amount first. Wrong network = lost money.
+- Never share your recovery phrase with anyone.
+- Check the laws in your country and keep records of sales.
 
-Pick one (all free, all take ~2 minutes):
-- **Netlify Drop** — go to https://app.netlify.com/drop and drag your `index.html` into the page. You get a live link instantly.
-- **GitHub Pages** — repo → Settings → Pages → deploy from branch.
-- **Cloudflare Pages / Vercel** — connect the repo.
+## Step 3 — Manage products (Products tab)
+- **New product**: title, category, price, a one-line description.
+- **Free sample code** = what everybody can see and copy (a basic version).
+- **Full code** = the premium version (kept private).
+- **Preview** buttons show exactly what you wrote.
+- Untick "Show on the website" to hide a product.
+- Six ready-made products are already included.
 
-Later, buy a domain (Namecheap, Porkbun ≈ $10/year) and connect it in the host's settings.
+## Step 4 — Publish for free
+1. Admin → **Publish** → **Download data.js**.
+2. Put it inside the `site` folder (replace the old one).
+3. Go to https://app.netlify.com/drop and drag the whole **`site`** folder onto the page.
+4. You get a live link. Open `/shop.html` on it. Later you can connect a domain you buy.
+Repeat steps 1–3 after every change.
 
-## Step 4 — How customers pay you
+## Step 5 — When someone buys
+1. The customer clicks **Buy**, copies your wallet address, sends the crypto, and presses **I've paid** → an email with the order opens for them to send you.
+2. You check your wallet. Money arrived?
+3. Admin → **Orders** → add the order (email, item) → press **⬇ Deliver**. A file downloads with live previews and a copy button for every full code.
+4. Press **✉ Email** and attach that file. The order becomes "Delivered".
 
-Two options, both built in:
+Nobody can get the full code before you send it, because the full code is never on the website.
+Delivery is manual (a person checks the wallet). Fully automatic delivery needs a server; ask me when you are ready and I will build it.
 
-**Option A — Manual (works right now, no signup).**
-Customer clicks *Choose plan* → sees your wallet address → sends crypto → clicks *I've paid* → an email with their order opens, addressed to you. You check your wallet, then email them the product files.
+## Step 6 — Which codes may you sell?
+Sell **your own** code (everything included here is yours to sell). You may also sell code under licences that allow reselling (MIT, CC0) — keep their licence text.
+Do **not** copy paid templates from other people: it is illegal, gets you banned from every marketplace, and ends your business.
 
-**Option B — Automatic (recommended once you get sales).**
-Create a free merchant account at **NOWPayments**, **Coinbase Commerce** or **Cryptomus**, make a payment link for each plan, and paste the three links into `paymentLinks` in the STORE block. Customers then pay on a hosted page and you get automatic confirmations.
-
-## Step 5 — Deliver the product
-
-- Keep your files (zip) in **Google Drive / Dropbox** and send a private download link after payment is confirmed.
-- Or use **Gumroad / Lemon Squeezy** (they also accept card payments) for automatic delivery.
-
-## Step 6 — What to sell (important, read this)
-
-"Getting products for free" is only OK when the licence allows **reselling**. Selling other people's paid or copyrighted work is illegal, gets your accounts banned, and results in refund/chargeback trouble.
-
-Safe sources of free material you may legally include or resell:
-- **CC0 / public-domain** assets (check the licence says "CC0"): Pixabay, Pexels, Unsplash (read their licence: you can't resell the raw photos on their own), unDraw, Heroicons, Lucide, Google Fonts.
-- **MIT / Apache** licensed code — keep the licence text file.
-- **Your own work** — the best option. Geostore itself is yours to sell. Make more templates (portfolio, SaaS, agency) by copying `index.html` and changing the text and colours.
-
-Also add a simple licence file to every download (what the buyer may and may not do).
-
-## Step 7 — Get your first customers
-
-- List it on **Gumroad**, **Etsy (digital downloads)**, **ThemeForest** and **Creative Market**, and link to your own site.
-- Post screenshots / short screen recordings on X, Instagram Reels, TikTok, Reddit (r/webdev, r/SideProject), Product Hunt.
-- Use keywords people search for: "dark landing page template", "SaaS website template".
-- Offer a 14-day refund and reply to messages fast.
+## Step 7 — Get customers
+- Short screen-recordings of each preview (TikTok, Instagram Reels, YouTube Shorts, X).
+- Post in communities: r/webdev, r/SideProject, Product Hunt, dev groups on Facebook/Telegram.
+- Add one new code every week — "All-Access" gets more valuable each time.
+- Answer messages fast; offer a 14-day refund.
 
 ## Legal basics
-
-- Keep records of every sale; crypto income is usually taxable in your country.
-- Add Privacy Policy and Terms pages before taking real orders (free generators exist: Termly, iubenda).
+Add Privacy and Terms pages, keep sales records, and follow your local laws.
