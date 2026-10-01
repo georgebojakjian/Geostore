@@ -10,6 +10,7 @@
   <style>
     :root{--bg:#0b0f1a;--bg-soft:#111827;--surface:#151c2c;--surface-2:#1b2438;--border:rgba(148,163,184,.14);--text:#f8fafc;--muted:#94a3b8;--accent:#6366f1;--accent-2:#22d3a5;--glow:rgba(99,102,241,.45);--radius:18px;--ease:cubic-bezier(.22,.61,.36,1);--font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    [hidden]{display:none!important}
     html{scroll-behavior:smooth;scroll-padding-top:90px}
     body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
     a{color:inherit;text-decoration:none;transition:color .3s var(--ease)}
@@ -154,12 +155,21 @@
       <p class="sub sum" id="coSum"></p>
       <form id="coForm" novalidate>
         <div class="field"><label for="coEmail">Your email (your code is delivered here)</label><input type="email" id="coEmail" placeholder="you@example.com" autocomplete="email" required></div>
-        <div class="field"><label for="coCoin">Pay with</label><select id="coCoin"></select></div>
-        <div class="field"><label>Send the exact amount to this address</label><div class="addr"><code id="coAddr"></code><button type="button" class="btn btn-ghost" id="coCopy">Copy</button></div></div>
-        <p class="note">Pick the coin's network exactly as shown — the wrong network means lost funds. After sending, press confirm and your code is emailed as soon as the payment is verified (usually within 24 hours).</p>
-        <button type="submit" class="btn btn-primary btn-block">I've paid — confirm order</button>
+        <div class="field" id="fCoin"><label for="coCoin">Pay with</label><select id="coCoin"></select></div>
+        <div class="field" id="fAddr"><label>Send the exact amount to this address</label><div class="addr"><code id="coAddr"></code><button type="button" class="btn btn-ghost" id="coCopy">Copy</button></div></div>
+        <p class="note" id="manualNote">Pick the coin's network exactly as shown — the wrong network means lost funds. After sending, press confirm and your code is emailed as soon as the payment is verified (usually within 24 hours).</p>
+        <button type="submit" class="btn btn-primary btn-block" id="coGo">I've paid — confirm order</button>
         <p class="msg" id="coMsg" role="status" aria-live="polite"></p>
       </form>
+      <div id="coPay" hidden>
+        <p class="sub" id="payTitle"></p>
+        <div class="field"><label>1. Send exactly this amount of USDT</label><div class="addr"><code id="payAmt" style="font-size:1.15rem;color:#fff"></code><button type="button" class="btn btn-ghost" id="payAmtCopy">Copy</button></div></div>
+        <div class="field"><label>2. To this address — network: <b>TRON (TRC20)</b></label><div class="addr"><code id="payAddr"></code><button type="button" class="btn btn-ghost" id="payAddrCopy">Copy</button></div></div>
+        <p class="note" style="color:#fbbf24">The amount must match <b>exactly</b>, including the small decimals — that is how we recognise your payment. If you pay from an exchange, add its withdrawal fee on top so the exact amount arrives. Wrong network = lost funds.</p>
+        <p class="msg" id="payStatus" role="status" aria-live="polite" style="font-size:.95rem"></p>
+        <a class="btn btn-primary btn-block" id="payOpen" target="_blank" rel="noopener" hidden>Open my codes</a>
+        <p class="note" id="payKeep" hidden>Bookmark the page that opens — it is your permanent link to your codes.</p>
+      </div>
     </div>
   </div>
 
@@ -275,29 +285,100 @@
     });
 
     /* ---- checkout (crypto) ---- */
-    var item = null, coin = $('coCoin'), wallets = S.wallets || {};
+    var API = String(S.apiUrl || '').replace(/\/+$/, '');   // set => AUTOMATIC payments
+    var item = null, coin = $('coCoin'), wallets = S.wallets || {}, poll = null, tick = null;
     Object.keys(wallets).forEach(function(n){ if (!wallets[n]) return; var o = document.createElement('option'); o.value = o.textContent = n; coin.appendChild(o); });
     function showAddr(){ $('coAddr').textContent = wallets[coin.value] || 'No wallet configured yet'; }
     coin.addEventListener('change', showAddr);
+    function copyBtn(btn, getText, label){
+      btn.addEventListener('click', function(){
+        var t = getText();
+        function done(){ btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = label; }, 1600); }
+        if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, done); else done();
+      });
+    }
+    copyBtn($('coCopy'), function(){ return $('coAddr').textContent; }, 'Copy');
+    copyBtn($('payAmtCopy'), function(){ return $('payAmt').textContent; }, 'Copy');
+    copyBtn($('payAddrCopy'), function(){ return $('payAddr').textContent; }, 'Copy');
+
+    function stopTimers(){ clearInterval(poll); clearInterval(tick); poll = tick = null; }
+    function resetCheckout(){ stopTimers(); $('coForm').hidden = false; $('coPay').hidden = true; $('coTitle').textContent = 'Checkout'; }
+    $('co').addEventListener('click', function(e){ if (e.target===$('co') || e.target.closest('[data-close]')) stopTimers(); });
+
     function openCheckout(it, from){
       if (!it) return;
-      item = it;
+      item = it; resetCheckout();
       $('coSum').innerHTML = esc(it.title) + ' — <b>' + money(it.price) + '</b>';
       $('coMsg').textContent = ''; $('coMsg').classList.remove('err');
-      showAddr();
+      var auto = !!API;
+      $('fCoin').hidden = auto; $('fAddr').hidden = auto; $('manualNote').hidden = auto;
+      $('coGo').textContent = auto ? 'Continue to payment' : "I've paid — confirm order";
+      if (!auto) showAddr();
       openModal($('co'), from);
       $('coEmail').focus();
     }
-    $('coCopy').addEventListener('click', function(){
-      var b = this, t = $('coAddr').textContent;
-      function done(){ b.textContent = 'Copied!'; setTimeout(function(){ b.textContent = 'Copy'; }, 1600); }
-      if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, done); else done();
-    });
+
+    /* automatic mode: show the payment screen and watch the order */
+    function leftText(ms){ if (ms <= 0) return 'expired'; var m = Math.floor(ms/60000), s = Math.floor(ms%60000/1000); return m + ':' + (s<10?'0':'') + s + ' left'; }
+    function showPay(o){
+      $('coForm').hidden = true; $('coPay').hidden = false;
+      $('coTitle').textContent = 'Pay with USDT';
+      $('coSum').innerHTML = esc(o.title) + ' — <b>' + esc(o.amount) + ' USDT</b>';
+      $('payAmt').textContent = o.amount; $('payAddr').textContent = o.wallet;
+      try { localStorage.setItem('geostore_order', o.id); } catch(e) {}
+      render2(o);
+      stopTimers();
+      if (o.status === 'pending'){
+        poll = setInterval(function(){ refresh(o.id); }, 8000);
+        tick = setInterval(function(){ if (cur2) render2(cur2); }, 1000);
+      }
+    }
+    var cur2 = null;
+    function render2(o){
+      cur2 = o;
+      var st = $('payStatus'), open = $('payOpen');
+      st.classList.remove('err');
+      if (o.status === 'paid'){
+        st.textContent = '✅ Payment received — thank you!'; open.hidden = false; $('payKeep').hidden = false; open.href = o.deliveryUrl; stopTimers();
+      } else if (o.status === 'expired'){
+        st.classList.add('err'); st.textContent = 'This order expired. If you already paid, email us your order ID: ' + o.id; open.hidden = true; stopTimers();
+      } else {
+        var left = o.expiresAt - Date.now();
+        st.textContent = '⏳ Waiting for your payment… ' + leftText(left) + '. This page updates by itself.'; open.hidden = true;
+        if (left <= 0) { st.classList.add('err'); st.textContent = 'Time is up. If you already sent the payment it may still be detected — keep this page open for a few minutes.'; }
+      }
+    }
+    function refresh(id){
+      fetch(API + '/api/order/' + id).then(function(r){ return r.json(); }).then(function(o){ if (o && o.status) render2(o); }).catch(function(){});
+    }
+    // come back to an unfinished or paid order
+    (function resume(){
+      if (!API) return;
+      var id = null;
+      try { id = new URLSearchParams(location.search).get('order') || localStorage.getItem('geostore_order'); } catch(e) {}
+      if (!id || !/^[a-f0-9]{32}$/.test(id)) return;
+      fetch(API + '/api/order/' + id).then(function(r){ return r.ok ? r.json() : null; }).then(function(o){
+        if (!o || (o.status !== 'pending' && o.status !== 'paid')) { try { localStorage.removeItem('geostore_order'); } catch(e) {} return; }
+        item = {title:o.title}; openModal($('co'), null); showPay(o);
+      }).catch(function(){});
+    })();
+
     $('coForm').addEventListener('submit', function(e){
       e.preventDefault();
       var email = $('coEmail').value.trim(), msg = $('coMsg');
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ msg.classList.add('err'); msg.textContent = 'Please enter a valid email address.'; return; }
       msg.classList.remove('err');
+      if (API){
+        msg.textContent = 'Creating your order…';
+        fetch(API + '/api/order', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ item: item.id, email: email }) })
+          .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+          .then(function(x){
+            if (!x.ok){ msg.classList.add('err'); msg.textContent = x.j.error || 'Something went wrong. Please try again.'; return; }
+            msg.textContent = ''; showPay(x.j);
+          })
+          .catch(function(){ msg.classList.add('err'); msg.textContent = 'Could not reach the payment server. Please try again.'; });
+        return;
+      }
       var body = 'New order\r\nItem: ' + item.title + ' (' + item.id + ')\r\nPrice: ' + money(item.price) + '\r\nCoin: ' + coin.value + '\r\nCustomer email: ' + email;
       window.location.href = 'mailto:' + (S.email||'') + '?subject=' + encodeURIComponent('Order: ' + item.title) + '&body=' + encodeURIComponent(body);
       msg.textContent = 'Your email app opened with the order details — press Send to finish.';

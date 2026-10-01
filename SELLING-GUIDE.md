@@ -1,5 +1,7 @@
 # Geostore Codes — Complete Guide (for beginners)
 
+> **Want fully automatic payments and delivery?** Follow `DEPLOY-AUTOMATIC.md` first. This guide describes the simple manual mode and the business side.
+
 You sell **website code** (navbars, heroes, product grids, pricing tables, FAQs, footers…).
 Customers see a live preview and a FREE sample. After they pay, you send the FULL code.
 

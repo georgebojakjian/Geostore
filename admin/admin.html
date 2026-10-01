@@ -101,7 +101,11 @@
 
     <!-- ORDERS -->
     <section class="view" id="v-orders">
-      <h1>Orders</h1><p class="lead">When a customer emails you "I've paid", record it here, check your wallet, then deliver.</p>
+      <h1>Orders</h1><p class="lead">Automatic orders come from your payment server. Manual orders (if you do not use a server) are recorded below.</p>
+      <div class="panel"><div class="bar"><h2 style="margin:0">Automatic orders (server)</h2><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></div>
+        <p class="help" id="srvMsg">Press Refresh to load orders from your server.</p>
+        <div class="tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Item</th><th>USDT</th><th>Status</th><th></th></tr></thead><tbody id="srvBody"></tbody></table></div></div>
+      <h2 style="font-size:1.1rem;margin:26px 0 12px">Manual orders</h2>
       <form class="panel form" id="of">
         <div><label for="oEmail">Customer email</label><input id="oEmail" type="email" required></div>
         <div><label for="oItem">Item</label><select id="oItem"></select></div>
@@ -119,7 +123,9 @@
         <div><label for="sName">Store name</label><input id="sName"></div>
         <div><label for="sEmail">Your email (orders arrive here)</label><input id="sEmail" type="email"></div>
         <div class="full"><label for="sTag">Tagline</label><input id="sTag"></div>
-        <div class="full"><label for="sWal">Crypto wallets — one per line, format: <code>Coin name | address</code></label><textarea id="sWal" style="min-height:110px;white-space:pre-wrap" placeholder="USDT (TRC20 network) | TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></textarea></div>
+        <div class="full"><label for="sApi">Payment server URL (public — from Cloudflare, e.g. https://geostore-api.yourname.workers.dev). Leave empty for manual mode.</label><input id="sApi" placeholder="https://geostore-api.yourname.workers.dev"></div>
+        <div class="full"><label for="sTok">Server admin token (private — saved only in this browser, never published)</label><input id="sTok" type="password" autocomplete="off" placeholder="the ADMIN_TOKEN you chose in Cloudflare"></div>
+        <div class="full"><label for="sWal">Manual-mode wallets (only used when no server URL is set) — one per line, format: <code>Coin name | address</code></label><textarea id="sWal" style="min-height:110px;white-space:pre-wrap" placeholder="USDT (TRC20 network) | TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></textarea></div>
         <div class="full"><label class="chk"><input type="checkbox" id="aaOn"> Sell an All-Access pass (one payment → every code)</label></div>
         <div><label for="aaTitle">Pass name</label><input id="aaTitle"></div>
         <div><label for="aaPrice">Pass price (USD) — you choose</label><input id="aaPrice" type="number" min="0" step="1"></div>
@@ -132,6 +138,10 @@
     <section class="view" id="v-publish">
       <h1>Publish</h1><p class="lead">Put your store online for free. After every change in Products or Settings, repeat steps 1–3.</p>
       <div class="warn">⚠️ Never upload this <b>admin</b> folder or <code>private.js</code> to the internet — it contains your paid code.</div>
+      <div class="panel"><h2>Automatic payments</h2>
+        <p class="help" style="margin-bottom:12px">After you change products, prices or the All-Access pass, press <b>Sync</b>. This sends your prices and your private full code to YOUR payment server so it can deliver automatically after payment.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" id="srvSync">⬆ Sync to server</button><button class="btn btn-g" id="srvTest">Test connection</button></div>
+        <p class="help" id="srvStatus" style="margin-top:12px"></p></div>
       <div class="panel">
         <div class="step"><div class="num">1</div><div><h3>Download your public data file</h3><p>This holds your product list and free samples (not the paid code).</p><p style="margin-top:10px"><button class="btn btn-p" id="dlData">⬇ Download data.js</button></p></div></div>
         <div class="step"><div class="num">2</div><div><h3>Replace the old file</h3><p>Put the downloaded <code>data.js</code> in your <code>site</code> folder, replacing the old one.</p></div></div>
@@ -174,7 +184,7 @@
   function show(v){
     Array.prototype.forEach.call(document.querySelectorAll('.view'), function(s){ s.classList.toggle('on', s.id==='v-'+v); });
     Array.prototype.forEach.call(document.querySelectorAll('.navb'), function(b){ b.classList.toggle('on', b.dataset.v===v); });
-    if (v==='dash') renderDash(); if (v==='products') { backToList(); } if (v==='orders') renderOrders(); if (v==='settings') renderSettings();
+    if (v==='dash') renderDash(); if (v==='products') { backToList(); } if (v==='orders') { renderOrders(); if (base()) loadServerOrders(); } if (v==='settings') renderSettings();
     window.scrollTo(0,0);
   }
   Array.prototype.forEach.call(document.querySelectorAll('.navb'), function(b){ b.addEventListener('click', function(){ show(b.dataset.v); }); });
@@ -308,18 +318,65 @@
   /* ---------- settings ---------- */
   function renderSettings(){
     var s = state.settings, aa = s.allAccess;
-    $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
+    $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
     $('sWal').value = Object.keys(s.wallets||{}).map(function(k){ return k + ' | ' + s.wallets[k]; }).join('\n');
     $('aaOn').checked = !!aa.enabled; $('aaTitle').value = aa.title||''; $('aaPrice').value = aa.price==null?'':aa.price; $('aaDesc').value = aa.description||'';
   }
   $('sf').addEventListener('submit', function(e){
     e.preventDefault();
     var s = state.settings;
-    s.storeName = $('sName').value.trim(); s.email = $('sEmail').value.trim(); s.tagline = $('sTag').value.trim();
+    s.apiUrl = $('sApi').value.trim().replace(/\/+$/,''); try { localStorage.setItem('geostore_admin_token', $('sTok').value.trim()); } catch(e) {} s.storeName = $('sName').value.trim(); s.email = $('sEmail').value.trim(); s.tagline = $('sTag').value.trim();
     var w = {}; $('sWal').value.split('\n').forEach(function(line){ var i = line.indexOf('|'); if (i>0){ var k = line.slice(0,i).trim(), v = line.slice(i+1).trim(); if (k && v) w[k]=v; } });
     s.wallets = w;
     s.allAccess = {enabled:$('aaOn').checked, title:$('aaTitle').value.trim()||'All-Access Pass', price:+$('aaPrice').value||0, description:$('aaDesc').value.trim()};
     save(); toast('Settings saved — now go to Publish');
+  });
+
+  /* ---------- payment server (Cloudflare Worker) ---------- */
+  function token(){ try { return localStorage.getItem('geostore_admin_token') || ''; } catch(e) { return ''; } }
+  function base(){ return String(state.settings.apiUrl || '').replace(/\/+$/,''); }
+  function api(path, opt){
+    if (!base()) return Promise.reject(new Error('Enter your Payment server URL in Settings first.'));
+    opt = opt || {};
+    opt.headers = Object.assign({'content-type':'application/json', authorization:'Bearer ' + token()}, opt.headers || {});
+    return fetch(base() + path, opt).then(function(r){ return r.json().then(function(j){ if (!r.ok) throw new Error(j.error || ('Server error ' + r.status)); return j; }); });
+  }
+  function srvStatus(t, bad){ var e = $('srvStatus'); e.textContent = t; e.style.color = bad ? 'var(--danger)' : 'var(--accent2)'; }
+  $('srvTest').addEventListener('click', function(){
+    srvStatus('Testing…');
+    if (!base()) return srvStatus('Enter your Payment server URL in Settings first.', true);
+    fetch(base() + '/api/health').then(function(r){ return r.json(); }).then(function(h){
+      var miss = []; if (!h.kv) miss.push('storage (KV binding ORDERS)'); if (!h.wallet) miss.push('WALLET'); if (!h.admin) miss.push('ADMIN_TOKEN');
+      if (miss.length) return srvStatus('Server reachable, but missing: ' + miss.join(', '), true);
+      return api('/api/admin/orders').then(function(){ srvStatus('✅ Everything is connected and your admin token works.'); });
+    }).catch(function(e){ srvStatus('❌ ' + e.message, true); });
+  });
+  $('srvSync').addEventListener('click', function(){
+    srvStatus('Syncing…');
+    var aa = state.settings.allAccess || {};
+    api('/api/admin/sync', {method:'POST', body: JSON.stringify({
+      storeName: state.settings.storeName,
+      products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, full:p.full, published:p.published!==false}; }),
+      allAccess: {enabled: !!aa.enabled, title: aa.title, price: aa.price}
+    })}).then(function(r){ srvStatus('✅ Synced ' + r.products + ' product(s) to your server.'); }).catch(function(e){ srvStatus('❌ ' + e.message, true); });
+  });
+  function loadServerOrders(){
+    $('srvMsg').textContent = 'Loading…';
+    api('/api/admin/orders').then(function(r){
+      $('srvMsg').textContent = r.orders.length ? r.orders.length + ' order(s)' : 'No automatic orders yet.';
+      $('srvBody').innerHTML = r.orders.map(function(o){
+        var link = base() + '/api/delivery/' + o.id + '?k=' + o.key;
+        return '<tr><td>' + esc(new Date(o.createdAt).toISOString().slice(0,16).replace('T',' ')) + '</td><td>' + esc(o.email) + '</td><td>' + esc(o.title) + '</td><td>' + esc(o.amount) + '</td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span></td><td><div class="acts">' +
+          (o.status==='paid' ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(link) + '">Open codes</a>' : '') +
+          (o.status!=='paid' ? '<button class="btn btn-g btn-s" data-mp="' + esc(o.id) + '">Mark paid</button>' : '') + '</div></td></tr>';
+      }).join('');
+    }).catch(function(e){ $('srvMsg').textContent = '❌ ' + e.message; $('srvBody').innerHTML = ''; });
+  }
+  $('srvRefresh').addEventListener('click', loadServerOrders);
+  $('srvBody').addEventListener('click', function(e){
+    var b = e.target.closest('[data-mp]'); if (!b) return;
+    if (!confirm('Mark this order as paid? Only do this after you saw the money in your wallet.')) return;
+    api('/api/admin/markpaid', {method:'POST', body: JSON.stringify({id:b.dataset.mp})}).then(function(){ toast('Marked as paid'); loadServerOrders(); }).catch(function(e){ toast(e.message); });
   });
 
   /* ---------- publish / backup ---------- */
