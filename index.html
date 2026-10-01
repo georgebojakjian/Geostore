@@ -293,6 +293,28 @@
     .plan.popular.reveal { transform: translateY(28px) scale(1.04); }
     .plan.popular.reveal.in { transform: scale(1.04); }
 
+
+    /* ============ Checkout modal ============ */
+    .modal { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px; background: rgba(5,8,16,.75); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; visibility: hidden; transition: opacity .3s var(--ease), visibility .3s; }
+    .modal.open { opacity: 1; visibility: visible; }
+    .modal-box { position: relative; width: min(480px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; padding: 34px 28px 28px; border-radius: 22px; border: 1px solid var(--border); background: var(--surface); transform: translateY(20px) scale(.97); transition: transform .35s var(--ease); }
+    .modal.open .modal-box { transform: none; }
+    .modal-close { position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%; font-size: 1.4rem; line-height: 1; color: var(--muted); transition: background .3s var(--ease), color .3s var(--ease); }
+    .modal-close:hover { background: rgba(255,255,255,.08); color: var(--text); }
+    .modal h3 { font-size: 1.4rem; margin-bottom: 4px; }
+    .modal .sum { color: var(--muted); margin-bottom: 20px; }
+    .modal .sum b { color: var(--accent-2); font-size: 1.15rem; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: 7px; font-weight: 500; }
+    .field input, .field select { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); outline: 0; transition: border-color .3s var(--ease), box-shadow .3s var(--ease); }
+    .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(99,102,241,.18); }
+    .field select option { background: var(--bg); }
+    .addr { display: flex; gap: 8px; align-items: stretch; }
+    .addr code { flex: 1; min-width: 0; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px dashed var(--accent); background: var(--bg); font-size: .8rem; word-break: break-all; color: #c7d2fe; }
+    .addr .btn { padding: 0 18px; }
+    .note { font-size: .8rem; color: var(--muted); margin: 14px 0 20px; }
+    .note.warn { color: #fbbf24; }
+
     /* ============ Responsive ============ */
     @media (max-width: 1000px) {
       .features-grid, .pricing-grid { grid-template-columns: repeat(2, 1fr); }
@@ -469,7 +491,7 @@
               <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Community support</li>
               <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Free updates for 6 months</li>
             </ul>
-            <a href="#contact" class="btn btn-ghost btn-block">Choose Starter</a>
+            <button type="button" class="btn btn-ghost btn-block" data-checkout="Starter">Choose Starter</button>
           </article>
 
           <article class="plan popular reveal" style="--d:.1s">
@@ -485,7 +507,7 @@
               <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Lifetime updates</li>
               <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Commercial license</li>
             </ul>
-            <a href="#contact" class="btn btn-primary btn-block">Choose Professional</a>
+            <button type="button" class="btn btn-primary btn-block" data-checkout="Professional">Choose Professional</button>
           </article>
 
           <article class="plan reveal" style="--d:.2s">
@@ -499,7 +521,7 @@
               <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>24/7 dedicated support</li>
               <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Custom onboarding call</li>
             </ul>
-            <a href="#contact" class="btn btn-ghost btn-block">Choose Enterprise</a>
+            <button type="button" class="btn btn-ghost btn-block" data-checkout="Enterprise">Choose Enterprise</button>
           </article>
         </div>
       </div>
@@ -577,7 +599,7 @@
           <h4>Company</h4>
           <ul>
             <li><a href="#top">About</a></li>
-            <li><a href="mailto:hello@geostore.com">Contact</a></li>
+            <li><a href="mailto:YOUR-EMAIL@example.com">Contact</a></li>
             <li><a href="#top">Privacy Policy</a></li>
           </ul>
         </div>
@@ -603,9 +625,108 @@
     </div>
   </footer>
 
+
+  <!-- ============ CHECKOUT MODAL ============ -->
+  <div class="modal" id="checkout" role="dialog" aria-modal="true" aria-labelledby="coTitle" aria-hidden="true">
+    <div class="modal-box">
+      <button type="button" class="modal-close" id="coClose" aria-label="Close checkout">&times;</button>
+      <h3 id="coTitle">Checkout</h3>
+      <p class="sum" id="coSum"></p>
+      <form id="coForm" novalidate>
+        <div class="field"><label for="coEmail">Your email (we deliver your files here)</label><input type="email" id="coEmail" placeholder="you@example.com" autocomplete="email" required></div>
+        <div class="field"><label for="coCoin">Pay with</label><select id="coCoin"></select></div>
+        <div class="field" id="coAddrWrap"><label>Send the exact amount to this wallet address</label>
+          <div class="addr"><code id="coAddr"></code><button type="button" class="btn btn-ghost" id="coCopy">Copy</button></div>
+        </div>
+        <p class="note" id="coNote"></p>
+        <button type="submit" class="btn btn-primary btn-block" id="coSubmit">I've paid — confirm order</button>
+        <p class="form-msg" id="coMsg" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+
   <script>
     (function () {
       'use strict';
+
+
+      // ============================================================
+      // STORE SETTINGS — EDIT THIS BLOCK, THEN YOU ARE READY TO SELL
+      // ============================================================
+      var STORE = {
+        sellerEmail: 'YOUR-EMAIL@example.com',   // where order notifications arrive
+        // Option A (easiest): paste your own wallet addresses (leave '' to hide a coin)
+        wallets: {
+          'USDT (TRC20 network)': 'PASTE_YOUR_USDT_TRC20_ADDRESS',
+          'Bitcoin (BTC)':        'PASTE_YOUR_BTC_ADDRESS',
+          'Ethereum (ETH)':       'PASTE_YOUR_ETH_ADDRESS'
+        },
+        // Option B (automatic): paste a hosted crypto checkout link per plan
+        // (Coinbase Commerce / NOWPayments / Cryptomus). If set, it is used instead of Option A.
+        paymentLinks: { Starter: '', Professional: '', Enterprise: '' }
+      };
+
+      // Checkout modal
+      var modal = document.getElementById('checkout');
+      var coForm = document.getElementById('coForm');
+      var coMsg = document.getElementById('coMsg');
+      var coCoin = document.getElementById('coCoin');
+      var current = null, lastFocus = null;
+
+      Object.keys(STORE.wallets).forEach(function (name) {
+        if (!STORE.wallets[name]) return;
+        var o = document.createElement('option'); o.value = name; o.textContent = name; coCoin.appendChild(o);
+      });
+      function showAddr() {
+        var a = STORE.wallets[coCoin.value] || '';
+        document.getElementById('coAddr').textContent = a;
+      }
+      coCoin.addEventListener('change', showAddr);
+
+      function openCheckout(plan, btn) {
+        var card = btn.closest('.plan');
+        var annual = document.getElementById('billingSwitch').getAttribute('aria-checked') === 'true';
+        var price = card.querySelector('.amount').dataset[annual ? 'annual' : 'monthly'];
+        var link = STORE.paymentLinks[plan];
+        var period = annual ? 'billed yearly' : 'billed monthly';
+        if (link) { window.open(link, '_blank', 'noopener'); return; }
+        current = { plan: plan, price: price, period: period };
+        document.getElementById('coSum').innerHTML = plan + ' plan — <b>$' + price + '/month</b> (' + period + ')';
+        document.getElementById('coNote').textContent = 'Send the amount in USD value of the coin you pick. Network matters: sending on the wrong network loses the funds. After sending, click confirm and we will email your files within 24 hours.';
+        var hasWallets = coCoin.options.length > 0;
+        document.getElementById('coAddrWrap').style.display = hasWallets ? '' : 'none';
+        showAddr();
+        coMsg.textContent = ''; coMsg.classList.remove('error');
+        lastFocus = btn;
+        modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false');
+        document.getElementById('coEmail').focus();
+      }
+      function closeCheckout() {
+        modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true');
+        if (lastFocus) lastFocus.focus();
+      }
+      document.querySelectorAll('[data-checkout]').forEach(function (b) {
+        b.addEventListener('click', function () { openCheckout(b.dataset.checkout, b); });
+      });
+      document.getElementById('coClose').addEventListener('click', closeCheckout);
+      modal.addEventListener('click', function (e) { if (e.target === modal) closeCheckout(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) closeCheckout(); });
+
+      document.getElementById('coCopy').addEventListener('click', function () {
+        var btn = this, txt = document.getElementById('coAddr').textContent;
+        function done() { btn.textContent = 'Copied!'; setTimeout(function () { btn.textContent = 'Copy'; }, 1600); }
+        if (navigator.clipboard) { navigator.clipboard.writeText(txt).then(done, done); } else { done(); }
+      });
+
+      coForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var email = document.getElementById('coEmail').value.trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { coMsg.classList.add('error'); coMsg.textContent = 'Please enter a valid email address.'; return; }
+        coMsg.classList.remove('error');
+        var body = 'New order%0D%0APlan: ' + current.plan + '%0D%0APrice: $' + current.price + '/month (' + current.period + ')%0D%0ACoin: ' + encodeURIComponent(coCoin.value) + '%0D%0ACustomer email: ' + encodeURIComponent(email);
+        window.location.href = 'mailto:' + STORE.sellerEmail + '?subject=' + encodeURIComponent('Geostore order - ' + current.plan) + '&body=' + body;
+        coMsg.textContent = 'Your email app opened with the order details — press Send to finish.';
+      });
 
       // Footer year
       document.getElementById('year').textContent = new Date().getFullYear();
