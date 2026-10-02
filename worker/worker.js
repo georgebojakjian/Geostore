@@ -15,6 +15,7 @@
  *   Variable     ALLOWED_ORIGIN  (your shop address, e.g. https://myshop.pages.dev) — optional but recommended
  *   Wallet addresses are set in your dashboard (Settings) and sent here with "Sync to server".
  *   Optional fallbacks: WALLET (TRON address), WALLET_BTC (Bitcoin address), TRONGRID_KEY, SESSION_SECRET.
+ *   No Cron Trigger is needed.
  */
 
 const USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // USDT on TRON (TRC20)
@@ -72,6 +73,13 @@ const round2 = n => Math.round(n * 100) / 100;
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) && e.length <= 200;
 // The shop is stored as ONE small index (names, prices, wallets) plus one key per product holding its
 // big code. Orders only read the small index, which keeps every request fast on the free plan.
+// Cloudflare's free plan allows only 1,000 KV list() calls a day, so this server NEVER uses list().
+// Instead it keeps two tiny index lists (recent order ids, customer emails).
+async function pushIndex(env, key, val, max) {
+  const arr = (await env.ORDERS.get(key, 'json')) || [];
+  if (arr.indexOf(val) < 0) arr.push(val);
+  await env.ORDERS.put(key, JSON.stringify(arr.slice(-max)));
+}
 const getCatalog = env => env.ORDERS.get('idx', 'json');
 const saveOrder = (env, o, ttl) => env.ORDERS.put('order:' + o.id, JSON.stringify(o), ttl ? { expirationTtl: ttl } : undefined);
 const fmtAmount = (coin, a) => coin === 'btc' ? (a / 1e8).toFixed(8) : (a / 1e6).toFixed(3);
@@ -198,6 +206,7 @@ async function accountRoutes(req, env, path, apiBase) {
     if (await env.ORDERS.get('acct:' + email)) return fail(env, 'An account with this email already exists. Please sign in.', 409);
     const salt = hex(16), acct = { email, name: String(body.name || '').trim().slice(0, 80), phone: '', country: '', salt, iter: PBKDF2_ITER, hash: await pbkdf2(pw, salt, PBKDF2_ITER), createdAt: Date.now(), orders: [] };
     await env.ORDERS.put('acct:' + email, JSON.stringify(acct));
+    await pushIndex(env, 'cidx', email, 2000);
     return json(env, { token: await makeToken(env, acct), profile: profileOf(acct) });
   }
   if (path === '/api/account/login' && req.method === 'POST') {
@@ -212,7 +221,9 @@ async function accountRoutes(req, env, path, apiBase) {
   if (!acct) return fail(env, 'Please sign in again', 401);
   if (path === '/api/account/me' && req.method === 'GET') {
     const ids = (acct.orders || []).slice(-50).reverse();
-    const orders = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean).map(o => publicOrder(env, o, apiBase));
+    let found = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
+    found = await Promise.all(found.map((o, i) => o.status === 'pending' && i < 5 ? checkOrder(env, o) : o));   // detect payments when the customer comes back
+    const orders = found.map(o => publicOrder(env, o, apiBase));
     const spent = round2(orders.filter(o => o.status === 'paid').reduce((a, o) => a + (Number(o.usd) || 0), 0));
     return json(env, { profile: profileOf(acct), orders, spent });
   }
@@ -276,6 +287,7 @@ async function createOrder(req, env, apiBase) {
   await saveOrder(env, o, 7 * 86400);
   // the "amt:" key both reserves the amount AND is the list of open orders the cron job checks
   await env.ORDERS.put(amtKey, o.id, { expirationTtl: (C.minutes + C.graceMs / 60000 + 5) * 60 });
+  await pushIndex(env, 'oidx', o.id, 400);
   if (acct) { acct.orders = (acct.orders || []).concat(o.id).slice(-200); await env.ORDERS.put('acct:' + acct.email, JSON.stringify(acct)); }
   return json(env, publicOrder(env, o, apiBase));
 }
@@ -451,16 +463,16 @@ async function adminIndex(req, env) {
   return json(env, { ok: true, products: Object.keys(products).length });
 }
 async function adminOrders(env) {
-  const keys = (await env.ORDERS.list({ prefix: 'order:', limit: 200 })).keys;
-  const orders = (await Promise.all(keys.map(k => env.ORDERS.get(k.name, 'json')))).filter(Boolean)
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .map(o => ({ id: o.id, email: o.email, title: orderTitle(o), item: o.item || '', amount: fmtAmount(orderCoin(o), o.amount), coin: COINS[orderCoin(o)].short, usd: o.usd || null, status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null, key: o.key, account: o.account || null }));
+  const ids = ((await env.ORDERS.get('oidx', 'json')) || []).slice(-100).reverse();
+  let list = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
+  list = await Promise.all(list.map((o, i) => o.status === 'pending' && i < 8 ? checkOrder(env, o) : o));   // refresh waiting orders
+  const orders = list.map(o => ({ id: o.id, email: o.email, title: orderTitle(o), item: o.item || '', amount: fmtAmount(orderCoin(o), o.amount), coin: COINS[orderCoin(o)].short, usd: o.usd || null, status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null, key: o.key, account: o.account || null }));
   return json(env, { orders });
 }
 async function adminCustomers(env) {
-  const keys = (await env.ORDERS.list({ prefix: 'acct:', limit: 500 })).keys;
-  const customers = (await Promise.all(keys.map(k => env.ORDERS.get(k.name, 'json')))).filter(Boolean)
-    .sort((a, b) => b.createdAt - a.createdAt).map(a => ({ email: a.email, name: a.name || '', phone: a.phone || '', country: a.country || '', createdAt: a.createdAt, orders: (a.orders || []).length }));
+  const emails = ((await env.ORDERS.get('cidx', 'json')) || []).slice(-300).reverse();
+  const customers = (await Promise.all(emails.map(e => env.ORDERS.get('acct:' + e, 'json')))).filter(Boolean)
+    .map(a => ({ email: a.email, name: a.name || '', phone: a.phone || '', country: a.country || '', createdAt: a.createdAt, orders: (a.orders || []).length }));
   return json(env, { customers });
 }
 
@@ -473,7 +485,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, version: 4 });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, version: 5 });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (path === '/api/config' && req.method === 'GET') {
@@ -496,6 +508,7 @@ async function route(req, env) {
       if (!isAdmin(req, env)) return fail(env, 'Wrong or missing admin token', 401);
       if (path === '/api/admin/product' && req.method === 'POST') return await adminProduct(req, env);
       if (path === '/api/admin/index' && req.method === 'POST') return await adminIndex(req, env);
+      if (path === '/api/admin/ping') return json(env, { ok: true });
       if (path === '/api/admin/orders' && req.method === 'GET') return await adminOrders(env);
       if (path === '/api/admin/customers' && req.method === 'GET') return await adminCustomers(env);
       if (path === '/api/admin/markpaid' && req.method === 'POST') {
@@ -509,7 +522,9 @@ async function route(req, env) {
     return fail(env, 'Not found', 404);
   } catch (e) {
     // admin calls get the real reason (only you can reach them); customers get a short message
-    return fail(env, path.startsWith('/api/admin/') ? 'Server error: ' + ((e && e.message) || e) : 'Server error', 500);
+    const msg = String((e && e.message) || e);
+    if (/limit exceeded|too many requests|429/i.test(msg)) return fail(env, path.startsWith('/api/admin/') ? 'Server error: ' + msg : 'The shop is very busy right now. Please try again in a little while.', 503);
+    return fail(env, path.startsWith('/api/admin/') ? 'Server error: ' + msg : 'Server error', 500);
   }
 }
 
@@ -523,14 +538,8 @@ export default {
     Object.keys(c).forEach(k => h.set(k, c[k]));
     return new Response(res.body, { status: res.status, headers: h });
   },
-  // runs every 5 minutes (Cron Trigger) so payments are detected even if the customer closed the page
-  async scheduled(event, env, ctx) {
-    if (!env.ORDERS) return;
-    const keys = (await env.ORDERS.list({ prefix: 'amt:', limit: 50 })).keys;
-    for (const k of keys) {
-      const id = await env.ORDERS.get(k.name);
-      const o = id && await env.ORDERS.get('order:' + id, 'json');
-      if (o) await checkOrder(env, o);
-    }
-  }
+  // A Cron Trigger is NOT needed any more (it only wasted free daily limits). If you still have one in Cloudflare,
+  // this does nothing and costs nothing. Payments are detected when the customer's page, their account or your
+  // Orders screen looks at the order.
+  async scheduled() { /* intentionally empty */ }
 };

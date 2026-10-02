@@ -20,7 +20,9 @@ The dashboard talks to the server. The server talks to the shop. Customers only 
 3. Check: open `https://YOUR-WORKER-ADDRESS/api/health` in your browser. You should see `"ok":true` and `"kv":true` and `"version":4`.
    (If it says version 3 or lower, the new code was not pasted.)
 
-*(Your earlier settings — the KV storage, `ADMIN_TOKEN`, the 5-minute cron — stay as they are.)*
+*(Your earlier settings — the KV storage and `ADMIN_TOKEN` — stay as they are.)*
+
+**⚠️ Delete the Cron Trigger if you made one.** Cloudflare → your worker → **Settings → Triggers → Cron Triggers** → delete it. The shop does not need it any more, and every run used up part of Cloudflare's free daily limit (that is what caused the error “KV list() limit exceeded for the day”).
 
 ### Step 2 — Fill your dashboard
 1. Double-click `admin/admin.html`.
@@ -40,7 +42,7 @@ The dashboard talks to the server. The server talks to the shop. Customers only 
 4. Next time you press Sync it only uploads what you changed.
 
 > If you see a ❌ now, it shows the **real reason**. The most common one:
-> **“KV … limit”** or **“429”** = Cloudflare's free daily storage limit was reached. It resets every day at **00:00 UTC**. Just press Sync again tomorrow (or after midnight UTC). A full first sync uses about 37 of your 1,000 free daily writes.
+> **“KV … limit exceeded for the day”** = Cloudflare's FREE daily limit was reached. Nothing is broken: it **resets by itself every day at 00:00 UTC** (about 03:00 in Syria). The dashboard now tells you the exact time in your own clock. Do nothing, try again after that.
 
 ### Step 4 — Put the shop online
 1. Dashboard → **Publish** → **Download data.js**.
@@ -83,3 +85,22 @@ The dashboard talks to the server. The server talks to the shop. Customers only 
 - **Test connection says “Wrong or missing admin token”** → paste the same `ADMIN_TOKEN` in Settings and press Save.
 - **The shop does not show new products** → you did not upload the new `data.js` to Netlify (Step 4).
 - **A payment window turned green but I got no code** → ask the customer to open **Account → Orders**, or send them the link from the dashboard → Orders → **Open codes**.
+
+---
+
+## Will the Cloudflare limit error come back?
+
+**Only if you use more than the free daily allowance** — and the shop now uses very little of it:
+
+| What happens | Cloudflare writes used (free = 1,000 per day) | “list” calls (free = 1,000 per day) |
+|---|---|---|
+| First full Sync of 36 products | about 37 (only once) | **0** |
+| Later Syncs (only changed products) | about 1–3 | **0** |
+| A customer places an order | 3 | **0** |
+| That customer's payment is detected | 2 (+1 delete) | **0** |
+| Customers looking at the shop, watching the payment window, reading their account | **0** | **0** |
+
+So roughly **150–200 orders per day** fit inside the free plan. The errors you saw happened while we were *building and testing* (many syncs, plus a Cron Trigger that ran every minute). On a normal day with the Cron Trigger deleted you will not see them. If your shop grows beyond ~150 orders a day, Cloudflare's Workers Paid plan costs $5 per month and raises the limits to millions.
+
+## Do I have to Sync / upload again if I changed nothing?
+**No.** Sync sends your products to the server and it remembers them. You only Sync when you change a product, price, code, wallet or the All-Access pass — and the dashboard skips everything that did not change. (After the very first update to this version you need **one** Sync, because the server stores things in a new layout.)

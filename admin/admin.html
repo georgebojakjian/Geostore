@@ -447,7 +447,13 @@
     if (!/^https:\/\/[^\s]+$/.test(base())) return Promise.reject(new Error('The Payment server URL must start with https:// — check it in Settings.'));
     opt = opt || {};
     opt.headers = Object.assign({'content-type':'application/json', authorization:'Bearer ' + token()}, opt.headers || {});
-    return fetch(base() + path, opt).then(function(r){ return r.json().then(function(j){ if (!r.ok) throw new Error(j.error || ('Server error ' + r.status)); return j; }); }, function(){ throw new Error(NOREACH); });
+    return fetch(base() + path, opt).then(function(r){ return r.json().then(function(j){ if (!r.ok) throw new Error(limitHint(j.error || ('Server error ' + r.status))); return j; }); }, function(){ throw new Error(NOREACH); });
+  }
+  // Cloudflare's free plan has daily limits that reset at 00:00 UTC; tell the owner exactly when, in their own time.
+  function limitHint(m){
+    if (!/limit exceeded|too many requests|busy/i.test(m)) return m;
+    var d = new Date(); var next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1));
+    return m + ' → This is Cloudflare\'s FREE daily limit. It resets by itself at ' + next.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' your local time (00:00 UTC). Nothing is broken — try again after that.';
   }
   var NOREACH = 'Could not reach the server. Open YOUR-URL/api/health in a new browser tab — if it does not show {"ok":true…}, the URL is wrong or the Worker is not deployed. If it does, re-paste the latest worker.js into Cloudflare and press Deploy.';
   function srvStatus(t, bad){ var e = $('srvStatus'); e.textContent = t; e.style.color = bad ? 'var(--danger)' : 'var(--accent2)'; }
@@ -458,7 +464,7 @@
     fetch(base() + '/api/health').then(function(r){ return r.json(); }, function(){ throw new Error(NOREACH); }).then(function(h){
       var miss = []; if (!h.kv) miss.push('storage (KV binding ORDERS)'); if (!h.admin) miss.push('ADMIN_TOKEN');
       if (miss.length) return srvStatus('Server reachable, but missing: ' + miss.join(', '), true);
-      return api('/api/admin/orders').then(function(){ srvStatus('✅ Everything is connected and your admin token works.' + (h.wallet ? '' : ' (No wallet yet — add it in Settings, then press Sync.)')); });
+      return api('/api/admin/ping').then(function(){ srvStatus('✅ Everything is connected and your admin token works.' + (h.wallet ? '' : ' (No wallet yet — add it in Settings, then press Sync.)')); });
     }).catch(function(e){ srvStatus('❌ ' + e.message, true); });
   });
   // Sync = upload each CHANGED product on its own (small requests), then one small index.

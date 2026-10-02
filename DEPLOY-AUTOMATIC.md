@@ -37,7 +37,7 @@ You need a normal **TRON address** (starts with `T`, 34 characters) that can rec
    | `ADMIN_TOKEN` | **Secret** | a long password you invent (20+ random characters). Write it down! |
    | `ALLOWED_ORIGIN` | Text | your shop address, e.g. `https://myshop.pages.dev` (add after Part E; no slash at the end) |
    | `TRONGRID_KEY` | Secret (optional) | free key from https://www.trongrid.io — only needed if you get many sales |
-4. Worker → **Settings** → **Triggers** → **Cron Triggers** → **Add** → `*/5 * * * *` (every 5 minutes). This detects payments even when the customer closed the page. (Do not use every minute: Cloudflare's free plan allows only 1,000 list operations per day.)
+4. **No Cron Trigger is needed** (version 5). If you created one earlier, delete it — it only wasted your free daily limit.
 
 ## Part D — Connect your dashboard
 1. Open `admin/admin.html` → **Settings**.
@@ -100,3 +100,6 @@ Customers can create an account on your shop (name, email, password). They see a
 
 ## Sync, version 4 (fixes "server error")
 "Sync to server" now uploads each product in its own small request and then one small index — instead of one huge request. Cloudflare's free plan gives each request only a few milliseconds of processing time, which a single 2 MB upload could exceed. Unchanged products are skipped, so later syncs are fast. If a sync fails, the message after the ❌ is the real reason from the server. A full first sync uses ~37 KV writes of the 1,000 free per day.
+
+## Version 5: no more list() calls
+The server never uses Cloudflare's `list()` operation any more (free limit: 1,000 per day). Orders and customers are kept in two tiny index lists, and payments are detected when the customer's page, their account, or your Orders screen looks at the order. A full first Sync costs ~37 writes, an order ~3 writes plus 2 when paid.
