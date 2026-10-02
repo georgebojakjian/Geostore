@@ -3,856 +3,612 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Geostore — Launch Your Product Site in Minutes</title>
-  <meta name="description" content="Geostore is a premium, dark-mode landing page template for freelancers and startup founders. Fast, responsive and conversion-focused.">
+  <title>Geostore Codes — Ready-made Website Code for Navbars, Heroes, Product Grids &amp; More</title>
+  <meta name="description" content="Copy-paste website code built for freelancers, shop owners and anyone building a site. Live previews, free samples, pay with USDT and get your code automatically.">
   <meta name="theme-color" content="#0b0f1a">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236366f1'/%3E%3Cpath d='M16 6l8 5v10l-8 5-8-5V11z' fill='none' stroke='white' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/svg%3E">
   <style>
-    /* ============ Design Tokens ============ */
-    :root {
-      --bg: #0b0f1a;
-      --bg-soft: #111827;
-      --surface: #151c2c;
-      --surface-2: #1b2438;
-      --border: rgba(148, 163, 184, .14);
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --accent: #6366f1;       /* electric indigo */
-      --accent-2: #22d3a5;     /* emerald neon */
-      --accent-glow: rgba(99, 102, 241, .45);
-      --radius: 18px;
-      --radius-sm: 12px;
-      --ease: cubic-bezier(.22, .61, .36, 1);
-      --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
+    :root{--bg:#0b0f1a;--bg-soft:#111827;--surface:#151c2c;--surface-2:#1b2438;--border:rgba(148,163,184,.14);--text:#f8fafc;--muted:#94a3b8;--accent:#6366f1;--accent-2:#22d3a5;--glow:rgba(99,102,241,.45);--radius:18px;--ease:cubic-bezier(.22,.61,.36,1);--font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    [hidden]{display:none!important}
+    html{scroll-behavior:smooth;scroll-padding-top:90px}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none;transition:color .3s var(--ease)}
+    button,input,select{font:inherit;color:inherit}button{cursor:pointer;border:0;background:none}
+    :focus-visible{outline:2px solid var(--accent-2);outline-offset:3px;border-radius:6px}
+    .container{width:min(1160px,100% - 40px);margin-inline:auto}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:999px;font-weight:600;font-size:.93rem;white-space:nowrap;transition:transform .3s var(--ease),box-shadow .3s var(--ease),border-color .3s var(--ease),color .3s var(--ease)}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;box-shadow:0 8px 26px -8px var(--glow)}
+    .btn-primary:hover{transform:translateY(-3px);box-shadow:0 14px 32px -8px var(--glow)}
+    .btn-ghost{border:1px solid var(--border);background:rgba(255,255,255,.03)}.btn-ghost:hover{border-color:var(--accent-2);color:var(--accent-2);transform:translateY(-3px)}
+    .btn-block{width:100%}
 
-    /* ============ Reset ============ */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; scroll-padding-top: 90px; -webkit-text-size-adjust: 100%; }
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
-    }
-    img, svg { display: block; max-width: 100%; }
-    a { color: inherit; text-decoration: none; transition: color .3s var(--ease), opacity .3s var(--ease); }
-    ul { list-style: none; }
-    button, input { font: inherit; color: inherit; }
-    button { cursor: pointer; border: 0; background: none; }
-    :focus-visible { outline: 2px solid var(--accent-2); outline-offset: 3px; border-radius: 6px; }
+    header{position:fixed;top:14px;left:0;right:0;z-index:100;padding:0 14px}
+    .nav{width:min(1100px,100%);margin-inline:auto;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 10px 9px 20px;border-radius:999px;background:rgba(17,24,39,.7);border:1px solid var(--border);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+    .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em}
+    .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));transition:transform .4s var(--ease)}.logo:hover .mark{transform:rotate(-12deg) scale(1.08)}
+    .nav-right{display:flex;align-items:center;gap:6px}.nav-right a:not(.btn){padding:8px 14px;border-radius:999px;color:var(--muted);font-size:.92rem}.nav-right a:not(.btn):hover{color:#fff;background:rgba(255,255,255,.06)}
+    @media(max-width:560px){.nav-right a.hide-s{display:none}}
 
-    .container { width: min(1160px, 100% - 40px); margin-inline: auto; }
-    section { padding: clamp(70px, 10vw, 120px) 0; position: relative; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .eyebrow{display:inline-block;font-size:.8rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-2);margin-bottom:14px}
+    .grad{background:linear-gradient(120deg,#a5b4fc,var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
 
-    .eyebrow {
-      display: inline-block; font-size: .8rem; font-weight: 600; letter-spacing: .12em;
-      text-transform: uppercase; color: var(--accent-2); margin-bottom: 14px;
-    }
-    .section-head { text-align: center; max-width: 660px; margin: 0 auto clamp(40px, 6vw, 64px); }
-    .section-head h2 { font-size: clamp(1.9rem, 4.5vw, 2.9rem); line-height: 1.15; letter-spacing: -.02em; margin-bottom: 14px; }
-    .section-head p { color: var(--muted); font-size: 1.05rem; }
+    .tools{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin:34px 0 26px}
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{border:1px solid var(--border);padding:8px 18px;border-radius:999px;color:var(--muted);font-size:.9rem;transition:all .3s var(--ease)}.chip:hover{color:#fff;border-color:var(--accent)}.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+    .search{flex:1;min-width:200px;max-width:320px;padding:11px 18px;border-radius:999px;border:1px solid var(--border);background:var(--surface);outline:0;transition:border-color .3s,box-shadow .3s}.search:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(99,102,241,.18)}
 
-    /* ============ Buttons ============ */
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-      padding: 13px 26px; border-radius: 999px; font-weight: 600; font-size: .95rem;
-      transition: transform .3s var(--ease), box-shadow .3s var(--ease), background .3s var(--ease), border-color .3s var(--ease), color .3s var(--ease);
-      white-space: nowrap;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
-      color: #fff; box-shadow: 0 8px 28px -8px var(--accent-glow);
-    }
-    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 14px 34px -8px var(--accent-glow); }
-    .btn-primary:active { transform: translateY(-1px); }
-    .btn-ghost { border: 1px solid var(--border); background: rgba(255,255,255,.03); }
-    .btn-ghost:hover { border-color: var(--accent-2); color: var(--accent-2); transform: translateY(-3px); }
-    .btn-block { width: 100%; }
-    .btn svg { transition: transform .3s var(--ease); }
-    .btn:hover svg { transform: translateX(4px); }
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+    .card{display:flex;flex-direction:column;border-radius:var(--radius);border:1px solid var(--border);background:linear-gradient(180deg,var(--surface),var(--bg-soft));overflow:hidden;transition:transform .4s var(--ease),border-color .4s var(--ease),box-shadow .4s var(--ease)}
+    .card:hover{transform:translateY(-8px);border-color:rgba(99,102,241,.5);box-shadow:0 24px 60px -26px var(--glow)}
+    .prev{position:relative;height:210px;overflow:hidden;background:#0b0f1a;border-bottom:1px solid var(--border);cursor:pointer}
+    .prev iframe{position:absolute;top:0;left:0;width:800px;border:0;transform-origin:0 0;pointer-events:none;background:#0b0f1a}
+    .tag{position:absolute;top:12px;left:12px;z-index:2;background:rgba(11,15,26,.85);border:1px solid var(--border);color:var(--accent-2);font-size:.72rem;font-weight:700;padding:3px 12px;border-radius:999px;letter-spacing:.04em}
+    .body{display:flex;flex-direction:column;gap:6px;padding:20px 22px 22px;flex:1}
+    .body h3{font-size:1.1rem;letter-spacing:-.01em}.body p{color:var(--muted);font-size:.9rem;flex:1}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}.price{font-size:1.5rem;font-weight:800;letter-spacing:-.03em}
+    .row .btn{padding:10px 18px}
+    .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:60px 0}
 
-    /* ============ Navigation ============ */
-    .nav-wrap { position: fixed; top: 16px; left: 0; right: 0; z-index: 100; padding: 0 16px; }
-    .nav {
-      width: min(1100px, 100%); margin-inline: auto; display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 12px 10px 22px; border-radius: 999px;
-      background: rgba(17, 24, 39, .65); border: 1px solid var(--border);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      transition: background .3s var(--ease), box-shadow .3s var(--ease);
-    }
-    .nav.scrolled { background: rgba(11, 15, 26, .88); box-shadow: 0 10px 40px -12px rgba(0,0,0,.6); }
-    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.15rem; letter-spacing: -.02em; }
-    .logo-mark {
-      width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      transition: transform .4s var(--ease);
-    }
-    .logo:hover .logo-mark { transform: rotate(-12deg) scale(1.08); }
-    .nav-links { display: flex; align-items: center; gap: 6px; }
-    .nav-links a:not(.btn) { padding: 8px 16px; border-radius: 999px; color: var(--muted); font-size: .93rem; font-weight: 500; }
-    .nav-links a:not(.btn):hover { color: var(--text); background: rgba(255,255,255,.06); }
-    .nav-links .btn { padding: 10px 22px; margin-left: 8px; }
-    .burger { display: none; width: 44px; height: 44px; border-radius: 50%; place-items: center; transition: background .3s var(--ease); }
-    .burger:hover { background: rgba(255,255,255,.08); }
-    .burger span, .burger span::before, .burger span::after {
-      display: block; width: 20px; height: 2px; background: var(--text); border-radius: 2px; position: relative;
-      transition: transform .3s var(--ease), background .3s var(--ease);
-    }
-    .burger span::before, .burger span::after { content: ""; position: absolute; left: 0; }
-    .burger span::before { top: -6px; } .burger span::after { top: 6px; }
-    .burger[aria-expanded="true"] span { background: transparent; }
-    .burger[aria-expanded="true"] span::before { transform: translateY(6px) rotate(45deg); }
-    .burger[aria-expanded="true"] span::after { transform: translateY(-6px) rotate(-45deg); }
+    .pass{margin:64px 0 0;text-align:center;padding:clamp(36px,6vw,64px) 24px;border-radius:28px;border:1px solid transparent;background:radial-gradient(500px circle at 15% 0%,rgba(99,102,241,.28),transparent 60%),radial-gradient(500px circle at 90% 100%,rgba(34,211,165,.2),transparent 60%),var(--surface)}
+    .pass h2{font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:-.02em;margin-bottom:10px}.pass p{color:var(--muted);max-width:520px;margin:0 auto 22px}.pass .big{font-size:2.8rem;font-weight:800;letter-spacing:-.04em;margin-bottom:18px}
 
-    /* ============ Hero ============ */
-    .hero { padding-top: clamp(140px, 18vw, 200px); text-align: center; overflow: hidden; }
-    .hero::before, .hero::after {
-      content: ""; position: absolute; border-radius: 50%; filter: blur(110px); z-index: -1; pointer-events: none;
-    }
-    .hero::before { width: 520px; height: 520px; background: rgba(99,102,241,.35); top: -120px; left: 50%; transform: translateX(-90%); animation: float 12s ease-in-out infinite; }
-    .hero::after { width: 420px; height: 420px; background: rgba(34,211,165,.2); top: 40px; left: 50%; transform: translateX(10%); animation: float 14s ease-in-out infinite reverse; }
-    @keyframes float { 50% { margin-top: 40px; } }
-    .grid-bg {
-      position: absolute; inset: 0; z-index: -2; opacity: .5; pointer-events: none;
-      background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
-      background-size: 56px 56px;
-      mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 20%, transparent 75%);
-      -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 20%, transparent 75%);
-    }
-    .pill {
-      display: inline-flex; align-items: center; gap: 10px; padding: 7px 16px 7px 8px; border-radius: 999px;
-      border: 1px solid var(--border); background: rgba(255,255,255,.04); font-size: .85rem; color: var(--muted);
-      margin-bottom: 28px; transition: border-color .3s var(--ease);
-    }
-    .pill:hover { border-color: var(--accent); }
-    .pill b { background: var(--accent-2); color: #04130e; padding: 2px 10px; border-radius: 999px; font-size: .72rem; letter-spacing: .04em; }
-    .hero h1 {
-      font-size: clamp(2.6rem, 8vw, 5.4rem); line-height: 1.04; letter-spacing: -.035em; font-weight: 800;
-      max-width: 900px; margin: 0 auto 24px;
-    }
-    .gradient-text { background: linear-gradient(120deg, #a5b4fc, var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .hero p.lead { font-size: clamp(1.02rem, 2.2vw, 1.25rem); color: var(--muted); max-width: 620px; margin: 0 auto 38px; }
-    .hero-cta { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
-    .btn-pulse { position: relative; padding: 16px 34px; font-size: 1.02rem; }
-    .btn-pulse::after {
-      content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1;
-      box-shadow: 0 0 0 0 var(--accent-glow); animation: pulse 2.4s infinite;
-    }
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 var(--accent-glow); } 70%, 100% { box-shadow: 0 0 0 22px rgba(99,102,241,0); } }
-    .hero-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 44px; margin-top: 60px; color: var(--muted); font-size: .92rem; }
-    .hero-stats strong { display: block; font-size: 1.7rem; color: var(--text); letter-spacing: -.02em; }
+    footer{margin-top:90px;border-top:1px solid var(--border);padding:34px 0;color:var(--muted);font-size:.9rem}
+    .foot{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center}
 
-    .mockup {
-      margin: 64px auto 0; max-width: 940px; border-radius: var(--radius); border: 1px solid var(--border);
-      background: linear-gradient(180deg, var(--surface), var(--bg-soft)); padding: 14px;
-      box-shadow: 0 40px 100px -30px var(--accent-glow); text-align: left;
-    }
-    .mockup-bar { display: flex; gap: 7px; padding: 4px 6px 14px; }
-    .mockup-bar i { width: 11px; height: 11px; border-radius: 50%; background: #334155; }
-    .mockup-bar i:nth-child(1) { background: #f87171; } .mockup-bar i:nth-child(2) { background: #fbbf24; } .mockup-bar i:nth-child(3) { background: var(--accent-2); }
-    .mockup-body { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
-    .mock-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 20px; }
-    .mock-card small { color: var(--muted); font-size: .78rem; }
-    .mock-card h4 { font-size: 1.7rem; letter-spacing: -.02em; margin: 4px 0 14px; }
-    .bars { display: flex; align-items: flex-end; gap: 8px; height: 110px; }
-    .bars span { flex: 1; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, var(--accent), rgba(99,102,241,.2)); animation: grow 1.2s var(--ease) both; transform-origin: bottom; }
-    .bars span:nth-child(even) { background: linear-gradient(180deg, var(--accent-2), rgba(34,211,165,.15)); }
-    @keyframes grow { from { transform: scaleY(0); } }
-    .mock-list { display: grid; gap: 12px; }
-    .mock-row { display: flex; align-items: center; gap: 12px; font-size: .88rem; }
-    .mock-row i { width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); flex: none; }
-    .mock-row em { margin-left: auto; font-style: normal; color: var(--accent-2); font-weight: 600; }
+    .modal{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:16px;background:rgba(5,8,16,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility .3s}
+    .modal.open{opacity:1;visibility:visible}
+    .box{position:relative;width:min(960px,100%);max-height:calc(100vh - 32px);overflow-y:auto;border-radius:22px;border:1px solid var(--border);background:var(--surface);padding:28px;transform:translateY(20px) scale(.97);transition:transform .35s var(--ease)}
+    .modal.open .box{transform:none}.box.small{width:min(480px,100%)}
+    .x{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;font-size:1.4rem;line-height:1;color:var(--muted);transition:background .3s,color .3s}.x:hover{background:rgba(255,255,255,.08);color:#fff}
+    .box h3{font-size:1.4rem;padding-right:40px}.box .sub{color:var(--muted);margin:4px 0 16px}
+    .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}.tab{padding:8px 18px;border-radius:999px;border:1px solid var(--border);color:var(--muted);font-size:.9rem;transition:all .3s}.tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+    .demo{width:100%;height:min(440px,52vh);border:1px solid var(--border);border-radius:14px;background:#0b0f1a}
+    pre{max-height:min(440px,52vh);overflow:auto;background:#070a12;border:1px solid var(--border);border-radius:14px;padding:16px;font-size:.78rem;line-height:1.55;color:#c7d2fe;white-space:pre;tab-size:2}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:16px}.hint{color:var(--muted);font-size:.85rem;flex:1;min-width:200px}
+    .field{margin-bottom:14px}.field label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:6px}
+    .field input,.field select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg);outline:0;transition:border-color .3s,box-shadow .3s}.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(99,102,241,.18)}.field select option{background:var(--bg)}
+    .addr{display:flex;gap:8px}.addr code{flex:1;min-width:0;padding:12px 14px;border-radius:12px;border:1px dashed var(--accent);background:var(--bg);font-size:.8rem;word-break:break-all;color:#c7d2fe}.addr .btn{padding:0 18px}
+    .note{font-size:.8rem;color:var(--muted);margin:12px 0 18px}.msg{font-size:.85rem;min-height:22px;margin-top:10px;color:var(--accent-2)}.msg.err{color:#f87171}
+    .sum b{color:var(--accent-2)}
 
-    /* ============ Features ============ */
-    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-    .card {
-      position: relative; padding: 34px 30px; border-radius: var(--radius); border: 1px solid var(--border);
-      background: linear-gradient(180deg, var(--surface), var(--bg-soft)); overflow: hidden;
-      transition: transform .4s var(--ease), border-color .4s var(--ease), box-shadow .4s var(--ease);
-    }
-    .card::before {
-      content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .4s var(--ease); pointer-events: none;
-      background: radial-gradient(400px circle at var(--mx, 50%) var(--my, 0%), rgba(99,102,241,.18), transparent 60%);
-    }
-    .card:hover { transform: translateY(-8px); border-color: rgba(99,102,241,.5); box-shadow: 0 24px 60px -24px var(--accent-glow); }
-    .card:hover::before { opacity: 1; }
-    .icon {
-      width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center; margin-bottom: 22px;
-      background: rgba(99,102,241,.14); color: #a5b4fc; border: 1px solid rgba(99,102,241,.3);
-      transition: transform .4s var(--ease), background .4s var(--ease), color .4s var(--ease);
-    }
-    .card:hover .icon { transform: scale(1.1) rotate(-6deg); background: var(--accent); color: #fff; }
-    .card h3 { font-size: 1.2rem; margin-bottom: 10px; letter-spacing: -.01em; }
-    .card p { color: var(--muted); font-size: .96rem; }
+    .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .7s var(--ease)}.reveal.in{opacity:1;transform:none}
+    @media(max-width:980px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:640px){.grid{grid-template-columns:1fr}.box{padding:22px 18px}.tools{flex-direction:column;align-items:stretch}.search{max-width:none}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation:none!important;scroll-behavior:auto!important}.reveal{opacity:1;transform:none}}
+    /* ===== 3D home page ===== */
+    #bg3d{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+    body{background:radial-gradient(1200px 700px at 80% -10%,rgba(99,102,241,.16),transparent 60%),radial-gradient(900px 600px at -10% 40%,rgba(34,211,165,.10),transparent 60%),var(--bg)}
+    .progress{position:fixed;top:0;left:0;height:3px;width:100%;transform-origin:0 50%;transform:scaleX(var(--sp,0));background:linear-gradient(90deg,var(--accent),var(--accent-2));z-index:300}
+    html{overflow-x:clip}
+    .home-hero{overflow-x:clip;position:relative;padding:clamp(120px,14vw,170px) 0 70px}
+    .home-hero .container{display:grid;grid-template-columns:1.05fr 1fr;gap:40px;align-items:center}
+    .home-hero h1{font-size:clamp(2.3rem,5.6vw,4.3rem);line-height:1.06;letter-spacing:-.035em;margin-bottom:20px}
+    .home-hero .lead{color:var(--muted);font-size:clamp(1rem,1.9vw,1.18rem);max-width:540px;margin-bottom:28px}
+    .cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:26px}
+    .btn-lg{padding:15px 30px;font-size:1rem}
+    .perks{display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--muted);font-size:.88rem}.perks span::before{content:"✓ ";color:var(--accent-2);font-weight:800}
+    .stage{position:relative;height:clamp(300px,42vw,470px);perspective:1500px}
+    .stack{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(var(--srx,12deg)) rotateY(var(--sry,-24deg));transition:transform .2s ease-out;will-change:transform}
+    .layer{position:absolute;width:min(78%,430px);aspect-ratio:16/10;border-radius:16px;overflow:hidden;border:1px solid rgba(148,163,184,.28);background:#0b0f1a;box-shadow:0 40px 80px -30px rgba(0,0,0,.8),0 0 0 1px rgba(99,102,241,.18),0 0 60px -10px rgba(99,102,241,.35)}
+    .layer iframe{position:absolute;top:0;left:0;width:860px;border:0;transform-origin:0 0;pointer-events:none}
+    .layer .cap{position:absolute;left:12px;bottom:10px;z-index:2;font-size:.72rem;font-weight:700;letter-spacing:.05em;color:var(--accent-2);background:rgba(11,15,26,.85);padding:3px 11px;border-radius:999px;border:1px solid var(--border)}
+    .layer:nth-child(1){left:0;top:0;transform:translateZ(-110px)}
+    .layer:nth-child(2){left:13%;top:27%;transform:translateZ(30px)}
+    .layer:nth-child(3){left:26%;top:54%;transform:translateZ(170px)}
+    .float{animation:bob 6s ease-in-out infinite}.layer:nth-child(2).float{animation-delay:-2s}.layer:nth-child(3).float{animation-delay:-4s}
+    @keyframes bob{50%{translate:0 -14px}}
+    .section{padding:clamp(60px,9vw,110px) 0}
+    .section-head{text-align:center;max-width:680px;margin:0 auto clamp(34px,5vw,56px)}
+    .section-head h2{font-size:clamp(1.8rem,4.2vw,2.8rem);line-height:1.15;letter-spacing:-.02em;margin-bottom:12px}
+    .section-head p{color:var(--muted);font-size:1.05rem}
+    .scene{perspective:1100px}
+    .r3d{opacity:0;transform:perspective(1000px) rotateX(38deg) translateY(70px) translateZ(-80px) scale(.94);transform-origin:50% 100%;transition:opacity .9s var(--ease),transform .9s var(--ease);transition-delay:var(--d,0s)}
+    .r3d.in{opacity:1;transform:perspective(1000px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(0) translateZ(0) scale(1)}
+    .r3d.in.live{transition:transform .18s ease-out,border-color .4s var(--ease),box-shadow .4s var(--ease);transition-delay:0s}
+    .card.r3d.in:hover,.val.r3d.in:hover{transform:perspective(1000px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-10px) translateZ(26px)}
+    .values{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+    .val{padding:30px 28px;border-radius:var(--radius);border:1px solid var(--border);background:linear-gradient(180deg,rgba(21,28,44,.85),rgba(17,24,39,.85));backdrop-filter:blur(6px);transition:border-color .4s var(--ease),box-shadow .4s var(--ease)}
+    .val:hover{border-color:rgba(99,102,241,.5);box-shadow:0 24px 60px -26px var(--glow)}
+    .ico{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;margin-bottom:18px;background:rgba(99,102,241,.14);border:1px solid rgba(99,102,241,.3);font-size:1.5rem}
+    .val h3{font-size:1.15rem;margin-bottom:8px}.val p{color:var(--muted);font-size:.95rem}
+    .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;counter-reset:s}
+    .step{position:relative;padding:28px 22px 24px;border-radius:var(--radius);border:1px solid var(--border);background:rgba(17,24,39,.8);backdrop-filter:blur(6px)}
+    .step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:38px;height:38px;border-radius:50%;margin-bottom:14px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+    .step h3{font-size:1.05rem;margin-bottom:6px}.step p{color:var(--muted);font-size:.9rem}
+    .faq{max-width:780px;margin:0 auto;display:grid;gap:14px}
+    .fq{border:1px solid var(--border);border-radius:14px;background:rgba(21,28,44,.85);transition:border-color .3s,background .3s}.fq:hover{border-color:rgba(99,102,241,.45)}.fq.open{border-color:var(--accent)}
+    .fq>button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:18px;text-align:left;padding:20px 24px;font-weight:600;font-size:1.02rem}
+    .fq .pl{flex:none;width:28px;height:28px;border-radius:50%;border:1px solid var(--border);position:relative;transition:transform .4s var(--ease),background .3s}
+    .fq .pl::before,.fq .pl::after{content:"";position:absolute;top:50%;left:50%;width:11px;height:2px;background:#fff;border-radius:2px;transform:translate(-50%,-50%);transition:transform .4s var(--ease)}.fq .pl::after{transform:translate(-50%,-50%) rotate(90deg)}
+    .fq.open .pl{background:var(--accent);border-color:var(--accent);transform:rotate(180deg)}.fq.open .pl::after{transform:translate(-50%,-50%) rotate(0)}
+    .fq .an{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--ease)}.fq.open .an{grid-template-rows:1fr}.fq .an>div{overflow:hidden}.fq .an p{padding:0 24px 22px;color:var(--muted)}
+    footer{background:rgba(11,15,26,.92);position:relative}
+    .foot{align-items:flex-start}.foot .links{display:flex;gap:22px;flex-wrap:wrap}.foot .links a:hover{color:var(--accent-2)}
+    .foot p.blurb{max-width:340px;margin-top:10px}
+    @media(max-width:980px){.home-hero .container{grid-template-columns:1fr}.stage{order:-1;max-width:520px;width:100%;margin:0 auto}.values{grid-template-columns:1fr}.steps{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:560px){.steps{grid-template-columns:1fr}.cta-row .btn{width:100%}.layer{width:84%}}
+    @media(prefers-reduced-motion:reduce){.r3d{opacity:1;transform:none}.stack{transition:none}.float{animation:none}}
 
-    /* ============ Pricing ============ */
-    .pricing { background: linear-gradient(180deg, transparent, rgba(99,102,241,.05), transparent); }
-    .toggle { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 0 auto 52px; font-weight: 500; }
-    .toggle span { color: var(--muted); transition: color .3s var(--ease); }
-    .toggle span.active { color: var(--text); }
-    .switch {
-      position: relative; width: 62px; height: 34px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border);
-      transition: background .3s var(--ease);
-    }
-    .switch::after {
-      content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%;
-      background: #fff; transition: transform .35s var(--ease);
-    }
-    .switch[aria-checked="true"] { background: var(--accent); }
-    .switch[aria-checked="true"]::after { transform: translateX(28px); }
-    .save-badge { background: rgba(34,211,165,.14); color: var(--accent-2); border: 1px solid rgba(34,211,165,.3); padding: 3px 12px; border-radius: 999px; font-size: .78rem; font-weight: 600; }
-    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: stretch; }
-    .plan {
-      position: relative; display: flex; flex-direction: column; padding: 38px 32px; border-radius: var(--radius);
-      border: 1px solid var(--border); background: linear-gradient(180deg, var(--surface), var(--bg-soft));
-      transition: transform .4s var(--ease), box-shadow .4s var(--ease), border-color .4s var(--ease);
-    }
-    .plan:hover { transform: translateY(-8px); border-color: rgba(99,102,241,.5); }
-    .plan.popular {
-      border: 1px solid transparent; transform: scale(1.04);
-      background: linear-gradient(var(--surface), var(--bg-soft)) padding-box, linear-gradient(160deg, var(--accent), var(--accent-2)) border-box;
-      box-shadow: 0 30px 80px -30px var(--accent-glow);
-    }
-    .plan.popular:hover { transform: scale(1.04) translateY(-8px); }
-    .badge {
-      position: absolute; top: -14px; left: 50%; transform: translateX(-50%); white-space: nowrap;
-      padding: 6px 18px; border-radius: 999px; font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
-    }
-    .plan h3 { font-size: 1.25rem; margin-bottom: 6px; }
-    .plan .desc { color: var(--muted); font-size: .92rem; min-height: 44px; }
-    .price { display: flex; align-items: baseline; gap: 6px; margin: 22px 0 6px; }
-    .price .amount { font-size: 3.1rem; font-weight: 800; letter-spacing: -.04em; line-height: 1; transition: opacity .25s var(--ease), transform .25s var(--ease); }
-    .price .amount.swap { opacity: 0; transform: translateY(8px); }
-    .price .per { color: var(--muted); font-size: .95rem; }
-    .billed { color: var(--muted); font-size: .82rem; min-height: 20px; margin-bottom: 26px; }
-    .plan ul { display: grid; gap: 13px; margin-bottom: 34px; flex: 1; }
-    .plan li { display: flex; gap: 12px; align-items: flex-start; font-size: .95rem; }
-    .plan li svg { flex: none; margin-top: 3px; color: var(--accent-2); }
-
-    /* ============ FAQ ============ */
-    .faq-list { max-width: 780px; margin: 0 auto; display: grid; gap: 14px; }
-    .faq-item { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); transition: border-color .3s var(--ease), background .3s var(--ease); }
-    .faq-item:hover { border-color: rgba(99,102,241,.4); }
-    .faq-item.open { border-color: var(--accent); background: linear-gradient(180deg, var(--surface-2), var(--surface)); }
-    .faq-q {
-      width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 20px; text-align: left;
-      padding: 22px 26px; font-size: 1.05rem; font-weight: 600;
-    }
-    .faq-q .plus {
-      flex: none; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); position: relative;
-      transition: transform .4s var(--ease), background .3s var(--ease), border-color .3s var(--ease);
-    }
-    .faq-q .plus::before, .faq-q .plus::after { content: ""; position: absolute; top: 50%; left: 50%; width: 12px; height: 2px; background: var(--text); border-radius: 2px; transform: translate(-50%, -50%); transition: transform .4s var(--ease); }
-    .faq-q .plus::after { transform: translate(-50%, -50%) rotate(90deg); }
-    .faq-item.open .plus { background: var(--accent); border-color: var(--accent); transform: rotate(180deg); }
-    .faq-item.open .plus::after { transform: translate(-50%, -50%) rotate(0); }
-    .faq-a { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s var(--ease); }
-    .faq-item.open .faq-a { grid-template-rows: 1fr; }
-    .faq-a > div { overflow: hidden; }
-    .faq-a p { padding: 0 26px 24px; color: var(--muted); }
-
-    /* ============ CTA band ============ */
-    .cta-band {
-      text-align: center; padding: clamp(44px, 7vw, 76px) 24px; border-radius: 28px; border: 1px solid var(--border);
-      background: radial-gradient(600px circle at 20% 0%, rgba(99,102,241,.3), transparent 60%), radial-gradient(600px circle at 90% 100%, rgba(34,211,165,.2), transparent 60%), var(--surface);
-    }
-    .cta-band h2 { font-size: clamp(1.7rem, 4vw, 2.6rem); letter-spacing: -.02em; margin-bottom: 14px; line-height: 1.15; }
-    .cta-band p { color: var(--muted); max-width: 520px; margin: 0 auto 30px; }
-
-    /* ============ Footer ============ */
-    footer { border-top: 1px solid var(--border); padding: 70px 0 30px; background: var(--bg-soft); }
-    .footer-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.5fr; gap: 40px; margin-bottom: 56px; }
-    .footer-grid p { color: var(--muted); font-size: .94rem; margin-top: 16px; max-width: 280px; }
-    .footer-grid h4 { font-size: .85rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 18px; }
-    .footer-grid li { margin-bottom: 11px; }
-    .footer-grid li a { color: var(--muted); font-size: .94rem; }
-    .footer-grid li a:hover { color: var(--accent-2); }
-    .newsletter { display: flex; gap: 8px; padding: 6px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); transition: border-color .3s var(--ease), box-shadow .3s var(--ease); }
-    .newsletter:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(99,102,241,.18); }
-    .newsletter input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; padding: 0 14px; font-size: .93rem; }
-    .newsletter input::placeholder { color: #64748b; }
-    .newsletter .btn { padding: 10px 20px; }
-    .form-msg { font-size: .85rem; margin-top: 10px; min-height: 22px; color: var(--accent-2); }
-    .form-msg.error { color: #f87171; }
-    .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 18px; padding-top: 26px; border-top: 1px solid var(--border); color: var(--muted); font-size: .88rem; }
-    .socials { display: flex; gap: 10px; }
-    .socials a {
-      width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--border);
-      transition: transform .3s var(--ease), background .3s var(--ease), border-color .3s var(--ease), color .3s var(--ease);
-    }
-    .socials a:hover { transform: translateY(-4px); background: var(--accent); border-color: var(--accent); color: #fff; }
-
-    /* ============ Scroll reveal ============ */
-    .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s var(--ease), transform .8s var(--ease); transition-delay: var(--d, 0s); }
-    .reveal.in { opacity: 1; transform: none; }
-    .plan.popular.reveal { transform: translateY(28px) scale(1.04); }
-    .plan.popular.reveal.in { transform: scale(1.04); }
-
-
-    /* ============ Checkout modal ============ */
-    .modal { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px; background: rgba(5,8,16,.75); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; visibility: hidden; transition: opacity .3s var(--ease), visibility .3s; }
-    .modal.open { opacity: 1; visibility: visible; }
-    .modal-box { position: relative; width: min(480px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; padding: 34px 28px 28px; border-radius: 22px; border: 1px solid var(--border); background: var(--surface); transform: translateY(20px) scale(.97); transition: transform .35s var(--ease); }
-    .modal.open .modal-box { transform: none; }
-    .modal-close { position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%; font-size: 1.4rem; line-height: 1; color: var(--muted); transition: background .3s var(--ease), color .3s var(--ease); }
-    .modal-close:hover { background: rgba(255,255,255,.08); color: var(--text); }
-    .modal h3 { font-size: 1.4rem; margin-bottom: 4px; }
-    .modal .sum { color: var(--muted); margin-bottom: 20px; }
-    .modal .sum b { color: var(--accent-2); font-size: 1.15rem; }
-    .field { margin-bottom: 16px; }
-    .field label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: 7px; font-weight: 500; }
-    .field input, .field select { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); outline: 0; transition: border-color .3s var(--ease), box-shadow .3s var(--ease); }
-    .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(99,102,241,.18); }
-    .field select option { background: var(--bg); }
-    .addr { display: flex; gap: 8px; align-items: stretch; }
-    .addr code { flex: 1; min-width: 0; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px dashed var(--accent); background: var(--bg); font-size: .8rem; word-break: break-all; color: #c7d2fe; }
-    .addr .btn { padding: 0 18px; }
-    .note { font-size: .8rem; color: var(--muted); margin: 14px 0 20px; }
-    .note.warn { color: #fbbf24; }
-
-    /* ============ Responsive ============ */
-    @media (max-width: 1000px) {
-      .features-grid, .pricing-grid { grid-template-columns: repeat(2, 1fr); }
-      .plan.popular, .plan.popular.reveal.in { transform: none; }
-      .plan.popular:hover { transform: translateY(-8px); }
-      .plan.popular.reveal { transform: translateY(28px); }
-      .footer-grid { grid-template-columns: 1fr 1fr; }
-    }
-    @media (max-width: 820px) {
-      .burger { display: grid; }
-      .nav-links {
-        position: absolute; top: calc(100% + 10px); left: 16px; right: 16px; flex-direction: column; align-items: stretch; gap: 4px;
-        padding: 14px; border-radius: 22px; background: rgba(11,15,26,.96); border: 1px solid var(--border);
-        backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-        opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity .3s var(--ease), transform .3s var(--ease), visibility .3s;
-      }
-      .nav-links.open { opacity: 1; visibility: visible; transform: none; }
-      .nav-links a:not(.btn) { padding: 14px 18px; border-radius: 14px; }
-      .nav-links .btn { margin: 6px 0 0; padding: 14px; }
-      .mockup-body { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 640px) {
-      .features-grid, .pricing-grid { grid-template-columns: 1fr; }
-      .pricing-grid { max-width: 440px; margin-inline: auto; }
-      .footer-grid { grid-template-columns: 1fr; gap: 34px; }
-      .footer-bottom { flex-direction: column; text-align: center; }
-      .hero-cta .btn { width: 100%; }
-      .faq-q { padding: 18px; font-size: 1rem; }
-      .faq-a p { padding: 0 18px 20px; }
-      .toggle { gap: 10px; flex-wrap: wrap; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
-      .reveal { opacity: 1; transform: none; }
-    }
   </style>
 </head>
 <body>
+  <canvas id="bg3d" aria-hidden="true"></canvas>
+  <div class="progress" aria-hidden="true"></div>
 
-  <!-- ============ NAVIGATION ============ -->
-  <header class="nav-wrap">
-    <nav class="nav" aria-label="Main navigation">
-      <a href="#top" class="logo" aria-label="Geostore home">
-        <span class="logo-mark" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><path d="M12 2l9 5.5v9L12 22l-9-5.5v-9z"/><path d="M12 22V12M3 7.5L12 12l9-4.5" stroke-linecap="round"/></svg>
-        </span>
-        Geostore
-      </a>
-      <div class="nav-links" id="navLinks">
-        <a href="#features">Features</a>
-        <a href="#pricing">Pricing</a>
-        <a href="#faq">FAQ</a>
-        <a href="#contact">Contact</a>
-        <a href="shop.html" class="btn btn-primary">Code Shop</a>
+  <header>
+    <nav class="nav" aria-label="Main">
+      <a href="#top" class="logo"><span class="mark" aria-hidden="true"></span><span data-brand>Geostore Codes</span></a>
+      <div class="nav-right">
+        <a href="#about" class="hide-s">What we do</a>
+        <a href="#products" class="hide-s">Products</a>
+        <a href="#how" class="hide-s">How it works</a>
+        <a href="#faq" class="hide-s">FAQ</a>
+        <a href="#products" class="btn btn-primary">Browse codes</a>
       </div>
-      <button class="burger" id="burger" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks"><span></span></button>
     </nav>
   </header>
 
   <main id="top">
-
-    <!-- ============ HERO ============ -->
-    <section class="hero">
-      <div class="grid-bg" aria-hidden="true"></div>
+    <section class="home-hero">
       <div class="container">
-        <a href="#features" class="pill"><b>NEW</b> Geostore 2.0 is here — see what's inside</a>
-        <h1>Launch a stunning site <span class="gradient-text">that actually converts.</span></h1>
-        <p class="lead">Geostore is the premium dark-mode template built for freelancers and startup founders who want to ship a world-class landing page in minutes, not weeks.</p>
-        <div class="hero-cta">
-          <a href="shop.html" class="btn btn-primary btn-pulse">Browse the Code Shop
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </a>
-          <a href="#features" class="btn btn-ghost" style="padding:16px 34px;font-size:1.02rem">Explore Features</a>
-        </div>
-        <div class="hero-stats">
-          <div><strong data-count="12000" data-suffix="+">0</strong>Happy customers</div>
-          <div><strong data-count="99" data-suffix="%">0</strong>Lighthouse score</div>
-          <div><strong data-count="4.9" data-decimals="1" data-suffix="/5">0</strong>Average rating</div>
-        </div>
-
-        <div class="mockup reveal" aria-hidden="true">
-          <div class="mockup-bar"><i></i><i></i><i></i></div>
-          <div class="mockup-body">
-            <div class="mock-card">
-              <small>Monthly revenue</small>
-              <h4>$48,290</h4>
-              <div class="bars">
-                <span style="height:35%"></span><span style="height:52%"></span><span style="height:44%"></span><span style="height:68%"></span>
-                <span style="height:58%"></span><span style="height:82%"></span><span style="height:74%"></span><span style="height:100%"></span>
-              </div>
-            </div>
-            <div class="mock-card">
-              <small>Top products</small>
-              <div class="mock-list" style="margin-top:14px">
-                <div class="mock-row"><i></i>Atlas UI Kit <em>+24%</em></div>
-                <div class="mock-row"><i></i>Nova Icons <em>+18%</em></div>
-                <div class="mock-row"><i></i>Orbit Themes <em>+12%</em></div>
-                <div class="mock-row"><i></i>Pulse Fonts <em>+9%</em></div>
-              </div>
-            </div>
+        <div>
+          <span class="eyebrow">Ready-made website code</span>
+          <h1>Professional website code, <span class="grad">ready to paste.</span></h1>
+          <p class="lead">We build clean, tested HTML, CSS and JavaScript components — navbars, hero sections, product grids, pricing tables, FAQs and footers — so freelancers, shop owners and website builders can launch faster without starting from zero.</p>
+          <div class="cta-row">
+            <a href="#products" class="btn btn-primary btn-lg">Browse the codes</a>
+            <a href="#how" class="btn btn-ghost btn-lg">How it works</a>
           </div>
+          <div class="perks"><span>Live preview</span><span>Free sample of every code</span><span>Pay with USDT</span><span>Automatic delivery</span></div>
+        </div>
+        <div class="stage" id="stage" aria-hidden="true"><div class="stack" id="stack"></div></div>
+      </div>
+    </section>
+
+    <section class="section" id="about">
+      <div class="container scene">
+        <div class="section-head r3d"><span class="eyebrow">What is <span data-brand>Geostore Codes</span>?</span><h2>A shop for code you can use today</h2><p>Every item is a complete, working piece of a website. Look at it live, copy the free sample, and buy the full version when you want the polished one.</p></div>
+        <div class="values">
+          <div class="val r3d"><div class="ico">👁️</div><h3>See before you buy</h3><p>Every code has a live, interactive preview and a free basic sample you can copy and try right away.</p></div>
+          <div class="val r3d" style="--d:.1s"><div class="ico">🧩</div><h3>Plain HTML, CSS &amp; JS</h3><p>No frameworks and no libraries. Paste the code into any website, theme or project and it just works, on phones and desktops.</p></div>
+          <div class="val r3d" style="--d:.2s"><div class="ico">⚡</div><h3>Pay with USDT, get it instantly</h3><p>Pay with USDT (TRC20). Once the payment is confirmed on the blockchain, your private download page opens automatically.</p></div>
         </div>
       </div>
     </section>
 
-    <!-- ============ FEATURES ============ -->
-    <section id="features">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">Features</span>
-          <h2>Everything you need to look premium</h2>
-          <p>Thoughtfully crafted components and a rock-solid foundation, so you can focus on your product — not on pixels.</p>
+    <section class="section" id="products" style="padding-top:20px">
+      <div class="container scene">
+        <div class="section-head r3d"><span class="eyebrow">Products</span><h2>All codes</h2><p>Pick a category, search, or open any card for a live demo and free sample.</p></div>
+        <div class="tools">
+          <div class="chips" id="chips" role="tablist" aria-label="Categories"></div>
+          <input class="search" id="search" type="search" placeholder="Search codes…" aria-label="Search codes">
         </div>
-        <div class="features-grid">
-          <article class="card reveal">
-            <div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h8l-1 8 10-12h-8z"/></svg></div>
-            <h3>Lightning Fast</h3>
-            <p>Zero dependencies, one file. Pure HTML and CSS keeps load times near-instant and Lighthouse scores sky-high.</p>
-          </article>
-          <article class="card reveal" style="--d:.1s">
-            <div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M11 18h2"/></svg></div>
-            <h3>Fully Responsive</h3>
-            <p>Pixel-perfect on phones, tablets and desktops. Fluid typography and flexible grids adapt to any screen.</p>
-          </article>
-          <article class="card reveal" style="--d:.2s">
-            <div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 100 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2H18a4 4 0 004-4c0-5.5-4.5-9.4-10-9.4z"/></svg></div>
-            <h3>Easy Theming</h3>
-            <p>Change your brand colors in seconds. Every shade is driven by CSS variables at the top of the stylesheet.</p>
-          </article>
-          <article class="card reveal">
-            <div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg></div>
-            <h3>Dark-Mode First</h3>
-            <p>A refined slate palette with electric indigo and emerald accents delivers a modern look your clients will love.</p>
-          </article>
-          <article class="card reveal" style="--d:.1s">
-            <div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
-            <h3>SEO Optimized</h3>
-            <p>Semantic HTML5, proper heading hierarchy and meta tags give search engines everything they need to rank you.</p>
-          </article>
-          <article class="card reveal" style="--d:.2s">
-            <div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></svg></div>
-            <h3>Accessible by Design</h3>
-            <p>Keyboard navigation, ARIA attributes, visible focus states and reduced-motion support are built right in.</p>
-          </article>
+        <div class="grid" id="grid"></div>
+        <div class="pass r3d" id="pass" hidden>
+          <span class="eyebrow">Best value</span>
+          <h2 id="passTitle"></h2>
+          <p id="passDesc"></p>
+          <div class="big" id="passPrice"></div>
+          <button class="btn btn-primary btn-lg" id="passBuy" type="button">Get All-Access</button>
         </div>
       </div>
     </section>
 
-    <!-- ============ PRICING ============ -->
-    <section id="pricing" class="pricing">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">Pricing</span>
-          <h2>Simple, transparent pricing</h2>
-          <p>Pick the plan that fits your stage. Upgrade, downgrade or cancel anytime — no hidden fees.</p>
-        </div>
-
-        <div class="toggle reveal">
-          <span id="lblMonthly" class="active">Monthly</span>
-          <button class="switch" id="billingSwitch" role="switch" aria-checked="false" aria-label="Toggle annual billing"></button>
-          <span id="lblAnnual">Annual</span>
-          <em class="save-badge">Save 20%</em>
-        </div>
-
-        <div class="pricing-grid">
-          <article class="plan reveal">
-            <h3>Starter</h3>
-            <p class="desc">For freelancers launching their first project.</p>
-            <div class="price"><span class="amount" data-monthly="19" data-annual="15">$19</span><span class="per">/month</span></div>
-            <p class="billed" data-monthly="Billed monthly" data-annual="Billed $180 yearly">Billed monthly</p>
-            <ul>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>1 project</li>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Core UI components</li>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Community support</li>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Free updates for 6 months</li>
-            </ul>
-            <button type="button" class="btn btn-ghost btn-block" data-checkout="Starter">Choose Starter</button>
-          </article>
-
-          <article class="plan popular reveal" style="--d:.1s">
-            <span class="badge">★ Most Popular</span>
-            <h3>Professional</h3>
-            <p class="desc">For growing startups and busy agencies.</p>
-            <div class="price"><span class="amount" data-monthly="49" data-annual="39">$49</span><span class="per">/month</span></div>
-            <p class="billed" data-monthly="Billed monthly" data-annual="Billed $468 yearly">Billed monthly</p>
-            <ul>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>10 projects</li>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Full component library</li>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Priority email support</li>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Lifetime updates</li>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Commercial license</li>
-            </ul>
-            <button type="button" class="btn btn-primary btn-block" data-checkout="Professional">Choose Professional</button>
-          </article>
-
-          <article class="plan reveal" style="--d:.2s">
-            <h3>Enterprise</h3>
-            <p class="desc">For teams that need scale, speed and support.</p>
-            <div class="price"><span class="amount" data-monthly="99" data-annual="79">$99</span><span class="per">/month</span></div>
-            <p class="billed" data-monthly="Billed monthly" data-annual="Billed $948 yearly">Billed monthly</p>
-            <ul>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Unlimited projects</li>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>White-label rights</li>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>24/7 dedicated support</li>
-              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Custom onboarding call</li>
-            </ul>
-            <button type="button" class="btn btn-ghost btn-block" data-checkout="Enterprise">Choose Enterprise</button>
-          </article>
+    <section class="section" id="how">
+      <div class="container scene">
+        <div class="section-head r3d"><span class="eyebrow">How it works</span><h2>From preview to your project in minutes</h2></div>
+        <div class="steps">
+          <div class="step r3d"><h3>Preview it</h3><p>Open any code to see it live and copy the free sample.</p></div>
+          <div class="step r3d" style="--d:.08s"><h3>Choose &amp; pay</h3><p>Click Buy, enter your email and send the exact USDT amount shown (TRC20 network).</p></div>
+          <div class="step r3d" style="--d:.16s"><h3>We detect it</h3><p>The payment is recognised automatically on the blockchain. Usually within a minute or two.</p></div>
+          <div class="step r3d" style="--d:.24s"><h3>Get your code</h3><p>Your private page opens with the full code, a live preview and a Copy button.</p></div>
         </div>
       </div>
     </section>
 
-    <!-- ============ FAQ ============ -->
-    <section id="faq">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">FAQ</span>
-          <h2>Frequently asked questions</h2>
-          <p>Can't find what you're looking for? Reach out to our team anytime.</p>
-        </div>
-        <div class="faq-list">
-          <div class="faq-item reveal">
-            <button class="faq-q" aria-expanded="false" aria-controls="a1" id="q1">Do I need coding skills to use Geostore?<span class="plus" aria-hidden="true"></span></button>
-            <div class="faq-a" id="a1" role="region" aria-labelledby="q1"><div><p>Not at all. Geostore is a single HTML file — open it in any text editor, swap the text and brand colors, and you're ready to publish. Basic HTML knowledge makes deeper customization even easier.</p></div></div>
-          </div>
-          <div class="faq-item reveal">
-            <button class="faq-q" aria-expanded="false" aria-controls="a2" id="q2">Can I use it for client projects?<span class="plus" aria-hidden="true"></span></button>
-            <div class="faq-a" id="a2" role="region" aria-labelledby="q2"><div><p>Yes. The Professional and Enterprise plans include a commercial license, so you can build unlimited sites for your clients. Enterprise adds white-label rights for agencies.</p></div></div>
-          </div>
-          <div class="faq-item reveal">
-            <button class="faq-q" aria-expanded="false" aria-controls="a3" id="q3">Does it rely on any frameworks or libraries?<span class="plus" aria-hidden="true"></span></button>
-            <div class="faq-a" id="a3" role="region" aria-labelledby="q3"><div><p>No. Geostore is built with raw semantic HTML5, CSS3 Grid and Flexbox, and a small amount of vanilla JavaScript. There is no Tailwind, Bootstrap or jQuery — which keeps it blazing fast.</p></div></div>
-          </div>
-          <div class="faq-item reveal">
-            <button class="faq-q" aria-expanded="false" aria-controls="a4" id="q4">How do I change the colors and fonts?<span class="plus" aria-hidden="true"></span></button>
-            <div class="faq-a" id="a4" role="region" aria-labelledby="q4"><div><p>Open the file and edit the CSS variables inside the <code>:root</code> block at the top of the stylesheet. Updating <code>--accent</code> and <code>--accent-2</code> instantly re-themes the entire page.</p></div></div>
-          </div>
-          <div class="faq-item reveal">
-            <button class="faq-q" aria-expanded="false" aria-controls="a5" id="q5">What is your refund policy?<span class="plus" aria-hidden="true"></span></button>
-            <div class="faq-a" id="a5" role="region" aria-labelledby="q5"><div><p>We offer a 14-day money-back guarantee on every plan. If Geostore isn't the right fit, contact us within 14 days of purchase for a full refund — no questions asked.</p></div></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ CTA ============ -->
-    <section style="padding-top:0">
-      <div class="container">
-        <div class="cta-band reveal">
-          <h2>Ready to launch something beautiful?</h2>
-          <p>Join thousands of freelancers and founders shipping faster with Geostore.</p>
-          <a href="shop.html" class="btn btn-primary btn-pulse">Open the Code Shop
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </a>
+    <section class="section" id="faq" style="padding-top:20px">
+      <div class="container scene">
+        <div class="section-head r3d"><span class="eyebrow">FAQ</span><h2>Good to know</h2></div>
+        <div class="faq" id="faqList">
+          <div class="fq open r3d"><button type="button" aria-expanded="true">What exactly do I receive?<span class="pl"></span></button><div class="an"><div><p>A complete, ready-to-use HTML file for each code you buy, with a live preview and a Copy button on your private delivery page. You can paste it into your own website or project.</p></div></div></div>
+          <div class="fq r3d"><button type="button" aria-expanded="false">Can I use the code for my clients?<span class="pl"></span></button><div class="an"><div><p>Yes. Use the codes in your own projects and in client projects. Please do not resell or share the code files themselves.</p></div></div></div>
+          <div class="fq r3d"><button type="button" aria-expanded="false">How does payment work?<span class="pl"></span></button><div class="an"><div><p>You pay in USDT on the TRON (TRC20) network. We show you an exact amount and a wallet address. Send precisely that amount; the payment is detected automatically and your delivery page unlocks.</p></div></div></div>
+          <div class="fq r3d"><button type="button" aria-expanded="false">I paid but my page did not unlock<span class="pl"></span></button><div class="an"><div><p>Keep the payment page open for a few minutes — blockchain confirmations take a moment. If it still does not unlock, email us with your order ID and the transaction ID and we will fix it.</p></div></div></div>
+          <div class="fq r3d"><button type="button" aria-expanded="false">Do I need coding skills?<span class="pl"></span></button><div class="an"><div><p>Basic knowledge of HTML helps, but the codes are simple: copy the file, change the text and images, and publish.</p></div></div></div>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- ============ FOOTER ============ -->
-  <footer id="contact">
-    <div class="container">
-      <div class="footer-grid">
-        <div>
-          <a href="#top" class="logo">
-            <span class="logo-mark" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><path d="M12 2l9 5.5v9L12 22l-9-5.5v-9z"/><path d="M12 22V12M3 7.5L12 12l9-4.5" stroke-linecap="round"/></svg>
-            </span>
-            Geostore
-          </a>
-          <p>The premium dark-mode template for freelancers and startup founders who ship fast.</p>
-        </div>
-        <div>
-          <h4>Product</h4>
-          <ul>
-            <li><a href="#features">Features</a></li>
-            <li><a href="#pricing">Pricing</a></li>
-            <li><a href="#faq">FAQ</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4>Company</h4>
-          <ul>
-            <li><a href="#top">About</a></li>
-            <li><a href="mailto:YOUR-EMAIL@example.com">Contact</a></li>
-            <li><a href="#top">Privacy Policy</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4>Stay in the loop</h4>
-          <form class="newsletter" id="newsletter" novalidate>
-            <label for="email" class="sr-only">Email address</label>
-            <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required>
-            <button type="submit" class="btn btn-primary">Subscribe</button>
-          </form>
-          <p class="form-msg" id="formMsg" role="status" aria-live="polite"></p>
-        </div>
+  <footer>
+    <div class="container foot">
+      <div>
+        <a href="#top" class="logo"><span class="mark" aria-hidden="true"></span><span data-brand>Geostore Codes</span></a>
+        <p class="blurb" id="tagline" style="color:var(--muted);font-size:.9rem">Premium copy-paste website code.</p>
       </div>
-      <div class="footer-bottom">
-        <p>&copy; <span id="year">2026</span> Geostore. All rights reserved.</p>
-        <div class="socials">
-          <a href="#" aria-label="Twitter / X"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2H21.5l-7.1 8.12L22.75 22h-6.54l-5.12-6.7L5.2 22H1.94l7.6-8.68L1.5 2h6.7l4.63 6.12zm-1.14 18h1.8L7.2 3.9H5.27z"/></svg></a>
-          <a href="#" aria-label="GitHub"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 00-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 015.76 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0012 .5z"/></svg></a>
-          <a href="#" aria-label="LinkedIn"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46zM5.34 7.43a2.06 2.06 0 110-4.12 2.06 2.06 0 010 4.12zM7.12 20.45H3.56V9h3.56zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg></a>
-          <a href="#" aria-label="Instagram"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></svg></a>
-        </div>
-      </div>
+      <div class="links"><a href="#products">Products</a><a href="#how">How it works</a><a href="#faq">FAQ</a><a href="#" data-contact>Contact us</a></div>
     </div>
+    <div class="container" style="margin-top:26px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:.88rem">&copy; <span id="year">2026</span> <span data-brand>Geostore Codes</span>. All rights reserved.</div>
   </footer>
 
-
-  <!-- ============ CHECKOUT MODAL ============ -->
-  <div class="modal" id="checkout" role="dialog" aria-modal="true" aria-labelledby="coTitle" aria-hidden="true">
-    <div class="modal-box">
-      <button type="button" class="modal-close" id="coClose" aria-label="Close checkout">&times;</button>
-      <h3 id="coTitle">Checkout</h3>
-      <p class="sum" id="coSum"></p>
-      <form id="coForm" novalidate>
-        <div class="field"><label for="coEmail">Your email (we deliver your files here)</label><input type="email" id="coEmail" placeholder="you@example.com" autocomplete="email" required></div>
-        <div class="field"><label for="coCoin">Pay with</label><select id="coCoin"></select></div>
-        <div class="field" id="coAddrWrap"><label>Send the exact amount to this wallet address</label>
-          <div class="addr"><code id="coAddr"></code><button type="button" class="btn btn-ghost" id="coCopy">Copy</button></div>
-        </div>
-        <p class="note" id="coNote"></p>
-        <button type="submit" class="btn btn-primary btn-block" id="coSubmit">I've paid — confirm order</button>
-        <p class="form-msg" id="coMsg" role="status" aria-live="polite"></p>
-      </form>
+  <!-- Product modal -->
+  <div class="modal" id="pm" role="dialog" aria-modal="true" aria-labelledby="pmTitle" aria-hidden="true">
+    <div class="box">
+      <button class="x" type="button" data-close aria-label="Close">&times;</button>
+      <h3 id="pmTitle"></h3>
+      <p class="sub" id="pmSub"></p>
+      <div class="tabs"><button type="button" class="tab on" data-tab="demo">Live demo</button><button type="button" class="tab" data-tab="code">Free sample code</button></div>
+      <iframe class="demo" id="pmDemo" sandbox="allow-scripts" title="Live demo"></iframe>
+      <pre id="pmCode" hidden></pre>
+      <div class="actions">
+        <span class="hint">The free sample is a basic version. The full version adds animations, mobile menu / interactivity and polished styling.</span>
+        <span style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-ghost" id="pmCopy">Copy free sample</button><button type="button" class="btn btn-primary" id="pmBuy"></button></span>
+      </div>
     </div>
   </div>
 
+  <!-- Checkout modal -->
+  <div class="modal" id="co" role="dialog" aria-modal="true" aria-labelledby="coTitle" aria-hidden="true">
+    <div class="box small">
+      <button class="x" type="button" data-close aria-label="Close">&times;</button>
+      <h3 id="coTitle">Checkout</h3>
+      <p class="sub sum" id="coSum"></p>
+      <form id="coForm" novalidate>
+        <div class="field"><label for="coEmail">Your email (your code is delivered here)</label><input type="email" id="coEmail" placeholder="you@example.com" autocomplete="email" required></div>
+        <div class="field" id="fCoin"><label for="coCoin">Pay with</label><select id="coCoin"></select></div>
+        <div class="field" id="fAddr"><label>Send the exact amount to this address</label><div class="addr"><code id="coAddr"></code><button type="button" class="btn btn-ghost" id="coCopy">Copy</button></div></div>
+        <p class="note" id="manualNote">Pick the coin's network exactly as shown — the wrong network means lost funds. After sending, press confirm and your code is emailed as soon as the payment is verified (usually within 24 hours).</p>
+        <button type="submit" class="btn btn-primary btn-block" id="coGo">I've paid — confirm order</button>
+        <p class="msg" id="coMsg" role="status" aria-live="polite"></p>
+      </form>
+      <div id="coPay" hidden>
+        <p class="sub" id="payTitle"></p>
+        <div class="field"><label>1. Send exactly this amount of USDT</label><div class="addr"><code id="payAmt" style="font-size:1.15rem;color:#fff"></code><button type="button" class="btn btn-ghost" id="payAmtCopy">Copy</button></div></div>
+        <div class="field"><label>2. To this address — network: <b>TRON (TRC20)</b></label><div class="addr"><code id="payAddr"></code><button type="button" class="btn btn-ghost" id="payAddrCopy">Copy</button></div></div>
+        <p class="note" style="color:#fbbf24">The amount must match <b>exactly</b>, including the small decimals — that is how we recognise your payment. If you pay from an exchange, add its withdrawal fee on top so the exact amount arrives. Wrong network = lost funds.</p>
+        <p class="msg" id="payStatus" role="status" aria-live="polite" style="font-size:.95rem"></p>
+        <a class="btn btn-primary btn-block" id="payOpen" target="_blank" rel="noopener" hidden>Open my codes</a>
+        <p class="note" id="payKeep" hidden>Bookmark the page that opens — it is your permanent link to your codes.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
   <script>
-    (function () {
-      'use strict';
+  (function(){
+    'use strict';
+    'use strict';
+    var D = window.GEOSTORE_DATA || {settings:{},products:[]};
+    var S = D.settings || {};
+    var ALL = (D.products || []).filter(function(p){ return p.published !== false; });
+    var $ = function(id){ return document.getElementById(id); };
+    function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    function money(n){ return '$' + (Math.round(n*100)/100).toString(); }
 
+    document.title = (S.storeName || 'Shop') + ' — Premium Website Code Snippets';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-brand]'), function(e){ e.textContent = S.storeName || 'Shop'; });
+    if (S.tagline && $('tagline')) $('tagline').textContent = S.tagline;
+    $('year').textContent = new Date().getFullYear();
+    Array.prototype.forEach.call(document.querySelectorAll('[data-contact]'), function(a){ a.href = 'mailto:' + (S.email || ''); });
 
-      // ============================================================
-      // STORE SETTINGS — EDIT THIS BLOCK, THEN YOU ARE READY TO SELL
-      // ============================================================
-      var STORE = {
-        sellerEmail: 'YOUR-EMAIL@example.com',   // where order notifications arrive
-        // Option A (easiest): paste your own wallet addresses (leave '' to hide a coin)
-        wallets: {
-          'USDT (TRC20 network)': 'PASTE_YOUR_USDT_TRC20_ADDRESS',
-          'Bitcoin (BTC)':        'PASTE_YOUR_BTC_ADDRESS',
-          'Ethereum (ETH)':       'PASTE_YOUR_ETH_ADDRESS'
-        },
-        // Option B (automatic): paste a hosted crypto checkout link per plan
-        // (Coinbase Commerce / NOWPayments / Cryptomus). If set, it is used instead of Option A.
-        paymentLinks: { Starter: '', Professional: '', Enterprise: '' }
-      };
+    /* ---- catalogue ---- */
+    var cat = 'All', q = '';
+    var cats = ['All'];
+    ALL.forEach(function(p){ if (p.category && cats.indexOf(p.category) < 0) cats.push(p.category); });
+    $('chips').innerHTML = cats.map(function(c){ return '<button type="button" class="chip'+(c===cat?' on':'')+'" data-c="'+esc(c)+'">'+esc(c)+'</button>'; }).join('');
+    $('chips').addEventListener('click', function(e){
+      var b = e.target.closest('.chip'); if (!b) return;
+      cat = b.dataset.c;
+      Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(x){ x.classList.toggle('on', x === b); });
+      render();
+    });
+    $('search').addEventListener('input', function(){ q = this.value.trim().toLowerCase(); render(); });
 
-      // Checkout modal
-      var modal = document.getElementById('checkout');
-      var coForm = document.getElementById('coForm');
-      var coMsg = document.getElementById('coMsg');
-      var coCoin = document.getElementById('coCoin');
-      var current = null, lastFocus = null;
-
-      Object.keys(STORE.wallets).forEach(function (name) {
-        if (!STORE.wallets[name]) return;
-        var o = document.createElement('option'); o.value = name; o.textContent = name; coCoin.appendChild(o);
+    function render(){
+      var list = ALL.filter(function(p){
+        return (cat==='All' || p.category===cat) && (!q || (p.title+' '+p.tagline+' '+p.category).toLowerCase().indexOf(q) > -1);
       });
-      function showAddr() {
-        var a = STORE.wallets[coCoin.value] || '';
-        document.getElementById('coAddr').textContent = a;
-      }
-      coCoin.addEventListener('change', showAddr);
-
-      function openCheckout(plan, btn) {
-        var card = btn.closest('.plan');
-        var annual = document.getElementById('billingSwitch').getAttribute('aria-checked') === 'true';
-        var price = card.querySelector('.amount').dataset[annual ? 'annual' : 'monthly'];
-        var link = STORE.paymentLinks[plan];
-        var period = annual ? 'billed yearly' : 'billed monthly';
-        if (link) { window.open(link, '_blank', 'noopener'); return; }
-        current = { plan: plan, price: price, period: period };
-        document.getElementById('coSum').innerHTML = plan + ' plan — <b>$' + price + '/month</b> (' + period + ')';
-        document.getElementById('coNote').textContent = 'Send the amount in USD value of the coin you pick. Network matters: sending on the wrong network loses the funds. After sending, click confirm and we will email your files within 24 hours.';
-        var hasWallets = coCoin.options.length > 0;
-        document.getElementById('coAddrWrap').style.display = hasWallets ? '' : 'none';
-        showAddr();
-        coMsg.textContent = ''; coMsg.classList.remove('error');
-        lastFocus = btn;
-        modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false');
-        document.getElementById('coEmail').focus();
-      }
-      function closeCheckout() {
-        modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true');
-        if (lastFocus) lastFocus.focus();
-      }
-      document.querySelectorAll('[data-checkout]').forEach(function (b) {
-        b.addEventListener('click', function () { openCheckout(b.dataset.checkout, b); });
+      $('grid').innerHTML = list.length ? list.map(function(p){
+        return '<article class="card r3d"><div class="prev" data-id="'+esc(p.id)+'"><span class="tag">'+esc(p.category||'Code')+'</span>' +
+          '<iframe sandbox="" tabindex="-1" aria-hidden="true" loading="lazy" title="Preview of '+esc(p.title)+'" srcdoc="'+esc(p.sample)+'"></iframe></div>' +
+          '<div class="body"><h3>'+esc(p.title)+'</h3><p>'+esc(p.tagline||'')+'</p>' +
+          '<div class="row"><span class="price">'+money(p.price)+'</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-ghost" data-view="'+esc(p.id)+'">Preview</button><button type="button" class="btn btn-primary" data-buy="'+esc(p.id)+'">Buy</button></span></div></div></article>';
+      }).join('') : '<p class="empty">No codes found. Try another category or search.</p>';
+      scalePreviews(); observe();
+    }
+    function scalePreviews(){
+      Array.prototype.forEach.call(document.querySelectorAll('.prev'), function(w){
+        var f = w.querySelector('iframe'); if (!f) return;
+        var s = w.clientWidth / 800;
+        f.style.transform = 'scale(' + s + ')';
+        f.style.height = (w.clientHeight / s) + 'px';
       });
-      document.getElementById('coClose').addEventListener('click', closeCheckout);
-      modal.addEventListener('click', function (e) { if (e.target === modal) closeCheckout(); });
-      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) closeCheckout(); });
+    }
+    window.addEventListener('resize', scalePreviews);
 
-      document.getElementById('coCopy').addEventListener('click', function () {
-        var btn = this, txt = document.getElementById('coAddr').textContent;
-        function done() { btn.textContent = 'Copied!'; setTimeout(function () { btn.textContent = 'Copy'; }, 1600); }
-        if (navigator.clipboard) { navigator.clipboard.writeText(txt).then(done, done); } else { done(); }
+    var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function(es){
+      es.forEach(function(e){ if (e.isIntersecting){ var t = e.target; t.classList.add('in'); io.unobserve(t); setTimeout(function(){ t.classList.add('live'); }, 1000); } });
+    }, {threshold:.1}) : null;
+    function observe(){
+      Array.prototype.forEach.call(document.querySelectorAll('.reveal:not(.in), .r3d:not(.in)'), function(el){ io ? io.observe(el) : el.classList.add('in'); el.classList.add('live'); });
+    }
+
+    /* ---- all-access ---- */
+    var AA = S.allAccess;
+    if (AA && AA.enabled && ALL.length){
+      $('pass').hidden = false;
+      $('passTitle').textContent = AA.title || 'All-Access Pass';
+      $('passDesc').textContent = AA.description || '';
+      $('passPrice').textContent = money(AA.price);
+      $('passBuy').addEventListener('click', function(){ openCheckout({id:'ALL', title:AA.title||'All-Access Pass', price:AA.price}); });
+    }
+
+    /* ---- modals ---- */
+    var lastFocus = null;
+    function openModal(m, from){ lastFocus = from || document.activeElement; m.classList.add('open'); m.setAttribute('aria-hidden','false'); }
+    function closeModal(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); if (m.id==='pm') $('pmDemo').srcdoc=''; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+    Array.prototype.forEach.call(document.querySelectorAll('.modal'), function(m){
+      m.addEventListener('click', function(e){ if (e.target===m || e.target.closest('[data-close]')) closeModal(m); });
+    });
+    document.addEventListener('keydown', function(e){
+      if (e.key==='Escape') Array.prototype.forEach.call(document.querySelectorAll('.modal.open'), closeModal);
+    });
+
+    var cur = null;
+    function byId(id){ return ALL.filter(function(p){ return p.id===id; })[0]; }
+    function openProduct(p, from){
+      cur = p;
+      $('pmTitle').textContent = p.title;
+      $('pmSub').textContent = (p.category ? p.category + ' · ' : '') + (p.tagline || '');
+      $('pmDemo').srcdoc = p.sample;
+      $('pmCode').textContent = p.sample;
+      $('pmBuy').textContent = 'Buy full version — ' + money(p.price);
+      showTab('demo');
+      openModal($('pm'), from);
+    }
+    function showTab(t){
+      Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){ b.classList.toggle('on', b.dataset.tab===t); });
+      $('pmDemo').hidden = t!=='demo'; $('pmCode').hidden = t!=='code';
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){ b.addEventListener('click', function(){ showTab(b.dataset.tab); }); });
+    $('pmCopy').addEventListener('click', function(){
+      var b = this; if (!cur) return;
+      function done(){ b.textContent = 'Copied!'; setTimeout(function(){ b.textContent = 'Copy free sample'; }, 1600); }
+      if (navigator.clipboard) navigator.clipboard.writeText(cur.sample).then(done, done); else done();
+    });
+    $('pmBuy').addEventListener('click', function(){ var p = cur; closeModal($('pm')); openCheckout(p); });
+
+    $('grid').addEventListener('click', function(e){
+      var v = e.target.closest('[data-view]'), b = e.target.closest('[data-buy]'), pv = e.target.closest('.prev');
+      if (v) return openProduct(byId(v.dataset.view), v);
+      if (b) return openCheckout(byId(b.dataset.buy), b);
+      if (pv) return openProduct(byId(pv.dataset.id), pv);
+    });
+
+    /* ---- checkout (crypto) ---- */
+    var API = String(S.apiUrl || '').replace(/\/+$/, '');   // set => AUTOMATIC payments
+    var item = null, coin = $('coCoin'), wallets = S.wallets || {}, poll = null, tick = null;
+    Object.keys(wallets).forEach(function(n){ if (!wallets[n]) return; var o = document.createElement('option'); o.value = o.textContent = n; coin.appendChild(o); });
+    function showAddr(){ $('coAddr').textContent = wallets[coin.value] || 'No wallet configured yet'; }
+    coin.addEventListener('change', showAddr);
+    function copyBtn(btn, getText, label){
+      btn.addEventListener('click', function(){
+        var t = getText();
+        function done(){ btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = label; }, 1600); }
+        if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, done); else done();
       });
+    }
+    copyBtn($('coCopy'), function(){ return $('coAddr').textContent; }, 'Copy');
+    copyBtn($('payAmtCopy'), function(){ return $('payAmt').textContent; }, 'Copy');
+    copyBtn($('payAddrCopy'), function(){ return $('payAddr').textContent; }, 'Copy');
 
-      coForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var email = document.getElementById('coEmail').value.trim();
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { coMsg.classList.add('error'); coMsg.textContent = 'Please enter a valid email address.'; return; }
-        coMsg.classList.remove('error');
-        var body = 'New order%0D%0APlan: ' + current.plan + '%0D%0APrice: $' + current.price + '/month (' + current.period + ')%0D%0ACoin: ' + encodeURIComponent(coCoin.value) + '%0D%0ACustomer email: ' + encodeURIComponent(email);
-        window.location.href = 'mailto:' + STORE.sellerEmail + '?subject=' + encodeURIComponent('Geostore order - ' + current.plan) + '&body=' + body;
-        coMsg.textContent = 'Your email app opened with the order details — press Send to finish.';
-      });
+    function stopTimers(){ clearInterval(poll); clearInterval(tick); poll = tick = null; }
+    function resetCheckout(){ stopTimers(); $('coForm').hidden = false; $('coPay').hidden = true; $('coTitle').textContent = 'Checkout'; }
+    $('co').addEventListener('click', function(e){ if (e.target===$('co') || e.target.closest('[data-close]')) stopTimers(); });
 
-      // Footer year
-      document.getElementById('year').textContent = new Date().getFullYear();
+    function openCheckout(it, from){
+      if (!it) return;
+      item = it; resetCheckout();
+      $('coSum').innerHTML = esc(it.title) + ' — <b>' + money(it.price) + '</b>';
+      $('coMsg').textContent = ''; $('coMsg').classList.remove('err');
+      var auto = !!API;
+      $('fCoin').hidden = auto; $('fAddr').hidden = auto; $('manualNote').hidden = auto;
+      $('coGo').textContent = auto ? 'Continue to payment' : "I've paid — confirm order";
+      if (!auto) showAddr();
+      openModal($('co'), from);
+      $('coEmail').focus();
+    }
 
-      // Nav: scrolled state + mobile menu
-      var nav = document.querySelector('.nav');
-      var burger = document.getElementById('burger');
-      var links = document.getElementById('navLinks');
-      function onScroll() { nav.classList.toggle('scrolled', window.scrollY > 20); }
-      window.addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
-
-      function setMenu(open) {
-        links.classList.toggle('open', open);
-        burger.setAttribute('aria-expanded', String(open));
+    /* automatic mode: show the payment screen and watch the order */
+    function leftText(ms){ if (ms <= 0) return 'expired'; var m = Math.floor(ms/60000), s = Math.floor(ms%60000/1000); return m + ':' + (s<10?'0':'') + s + ' left'; }
+    function showPay(o){
+      $('coForm').hidden = true; $('coPay').hidden = false;
+      $('coTitle').textContent = 'Pay with USDT';
+      $('coSum').innerHTML = esc(o.title) + ' — <b>' + esc(o.amount) + ' USDT</b>';
+      $('payAmt').textContent = o.amount; $('payAddr').textContent = o.wallet;
+      try { localStorage.setItem('geostore_order', o.id); } catch(e) {}
+      render2(o);
+      stopTimers();
+      if (o.status === 'pending'){
+        poll = setInterval(function(){ refresh(o.id); }, 8000);
+        tick = setInterval(function(){ if (cur2) render2(cur2); }, 1000);
       }
-      burger.addEventListener('click', function () { setMenu(!links.classList.contains('open')); });
-      links.addEventListener('click', function (e) { if (e.target.closest('a')) setMenu(false); });
-      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
-      document.addEventListener('click', function (e) { if (!e.target.closest('.nav')) setMenu(false); });
-
-      // Scroll reveal
-      var reveals = document.querySelectorAll('.reveal');
-      if ('IntersectionObserver' in window) {
-        var io = new IntersectionObserver(function (entries) {
-          entries.forEach(function (en) {
-            if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
-          });
-        }, { threshold: 0.12 });
-        reveals.forEach(function (el) { io.observe(el); });
+    }
+    var cur2 = null;
+    function render2(o){
+      cur2 = o;
+      var st = $('payStatus'), open = $('payOpen');
+      st.classList.remove('err');
+      if (o.status === 'paid'){
+        st.textContent = '✅ Payment received — thank you!'; open.hidden = false; $('payKeep').hidden = false; open.href = o.deliveryUrl; stopTimers();
+      } else if (o.status === 'expired'){
+        st.classList.add('err'); st.textContent = 'This order expired. If you already paid, email us your order ID: ' + o.id; open.hidden = true; stopTimers();
       } else {
-        reveals.forEach(function (el) { el.classList.add('in'); });
+        var left = o.expiresAt - Date.now();
+        st.textContent = '⏳ Waiting for your payment… ' + leftText(left) + '. This page updates by itself.'; open.hidden = true;
+        if (left <= 0) { st.classList.add('err'); st.textContent = 'Time is up. If you already sent the payment it may still be detected — keep this page open for a few minutes.'; }
       }
+    }
+    function refresh(id){
+      fetch(API + '/api/order/' + id).then(function(r){ return r.json(); }).then(function(o){ if (o && o.status) render2(o); }).catch(function(){});
+    }
+    // come back to an unfinished or paid order
+    (function resume(){
+      if (!API) return;
+      var id = null;
+      try { id = new URLSearchParams(location.search).get('order') || localStorage.getItem('geostore_order'); } catch(e) {}
+      if (!id || !/^[a-f0-9]{32}$/.test(id)) return;
+      fetch(API + '/api/order/' + id).then(function(r){ return r.ok ? r.json() : null; }).then(function(o){
+        if (!o || (o.status !== 'pending' && o.status !== 'paid')) { try { localStorage.removeItem('geostore_order'); } catch(e) {} return; }
+        item = {title:o.title}; openModal($('co'), null); showPay(o);
+      }).catch(function(){});
+    })();
 
-      // Animated counters
-      var counters = document.querySelectorAll('[data-count]');
-      function runCounter(el) {
-        var target = parseFloat(el.dataset.count);
-        var dec = parseInt(el.dataset.decimals || '0', 10);
-        var suffix = el.dataset.suffix || '';
-        var start = null, dur = 1600;
-        function step(ts) {
-          if (!start) start = ts;
-          var p = Math.min((ts - start) / dur, 1);
-          var eased = 1 - Math.pow(1 - p, 3);
-          var val = target * eased;
-          el.textContent = (dec ? val.toFixed(dec) : Math.round(val).toLocaleString('en-US')) + suffix;
-          if (p < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
+    $('coForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var email = $('coEmail').value.trim(), msg = $('coMsg');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ msg.classList.add('err'); msg.textContent = 'Please enter a valid email address.'; return; }
+      msg.classList.remove('err');
+      if (API){
+        msg.textContent = 'Creating your order…';
+        fetch(API + '/api/order', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ item: item.id, email: email }) })
+          .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+          .then(function(x){
+            if (!x.ok){ msg.classList.add('err'); msg.textContent = x.j.error || 'Something went wrong. Please try again.'; return; }
+            msg.textContent = ''; showPay(x.j);
+          })
+          .catch(function(){ msg.classList.add('err'); msg.textContent = 'Could not reach the payment server. Please try again.'; });
+        return;
       }
-      if ('IntersectionObserver' in window) {
-        var co = new IntersectionObserver(function (entries) {
-          entries.forEach(function (en) { if (en.isIntersecting) { runCounter(en.target); co.unobserve(en.target); } });
-        }, { threshold: 0.6 });
-        counters.forEach(function (c) { co.observe(c); });
-      } else {
-        counters.forEach(runCounter);
-      }
+      var body = 'New order\r\nItem: ' + item.title + ' (' + item.id + ')\r\nPrice: ' + money(item.price) + '\r\nCoin: ' + coin.value + '\r\nCustomer email: ' + email;
+      window.location.href = 'mailto:' + (S.email||'') + '?subject=' + encodeURIComponent('Order: ' + item.title) + '&body=' + encodeURIComponent(body);
+      msg.textContent = 'Your email app opened with the order details — press Send to finish.';
+    });
 
-      // Card spotlight follows cursor
-      document.querySelectorAll('.card').forEach(function (card) {
-        card.addEventListener('pointermove', function (e) {
-          var r = card.getBoundingClientRect();
-          card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
-          card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+
+    /* ---------- extra: FAQ accordion ---------- */
+    (function(){
+      var items = document.querySelectorAll('.fq');
+      Array.prototype.forEach.call(items, function(it){
+        it.querySelector('button').addEventListener('click', function(){
+          var open = !it.classList.contains('open');
+          Array.prototype.forEach.call(items, function(x){ x.classList.remove('open'); x.querySelector('button').setAttribute('aria-expanded','false'); });
+          if (open){ it.classList.add('open'); this.setAttribute('aria-expanded','true'); }
         });
-      });
-
-      // Pricing toggle
-      var sw = document.getElementById('billingSwitch');
-      var lblM = document.getElementById('lblMonthly');
-      var lblA = document.getElementById('lblAnnual');
-      var amounts = document.querySelectorAll('.amount');
-      var billed = document.querySelectorAll('.billed');
-      var pers = document.querySelectorAll('.price .per');
-      function setBilling(annual) {
-        sw.setAttribute('aria-checked', String(annual));
-        lblM.classList.toggle('active', !annual);
-        lblA.classList.toggle('active', annual);
-        amounts.forEach(function (a) {
-          a.classList.add('swap');
-          setTimeout(function () {
-            a.textContent = '$' + (annual ? a.dataset.annual : a.dataset.monthly);
-            a.classList.remove('swap');
-          }, 220);
-        });
-        billed.forEach(function (b) { b.textContent = annual ? b.dataset.annual : b.dataset.monthly; });
-        pers.forEach(function (p) { p.textContent = '/month'; });
-      }
-      sw.addEventListener('click', function () { setBilling(sw.getAttribute('aria-checked') !== 'true'); });
-      lblM.addEventListener('click', function () { setBilling(false); });
-      lblA.addEventListener('click', function () { setBilling(true); });
-
-      // FAQ accordion (one open at a time)
-      var items = document.querySelectorAll('.faq-item');
-      items.forEach(function (item) {
-        var btn = item.querySelector('.faq-q');
-        btn.addEventListener('click', function () {
-          var willOpen = !item.classList.contains('open');
-          items.forEach(function (i) {
-            i.classList.remove('open');
-            i.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
-          });
-          if (willOpen) {
-            item.classList.add('open');
-            btn.setAttribute('aria-expanded', 'true');
-          }
-        });
-      });
-      // Open first item by default
-      if (items[0]) { items[0].classList.add('open'); items[0].querySelector('.faq-q').setAttribute('aria-expanded', 'true'); }
-
-      // Newsletter form (front-end validation; connect to your provider's endpoint)
-      var form = document.getElementById('newsletter');
-      var msg = document.getElementById('formMsg');
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var email = form.email.value.trim();
-        var ok = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
-        msg.classList.toggle('error', !ok);
-        if (!ok) { msg.textContent = 'Please enter a valid email address.'; return; }
-        msg.textContent = 'Thanks for subscribing — welcome aboard!';
-        form.reset();
       });
     })();
+
+    /* ---------- extra: 3D tilt on cards / panels ---------- */
+    var fine = window.matchMedia && matchMedia('(hover:hover) and (pointer:fine)').matches;
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (fine && !reduce){
+      document.addEventListener('pointermove', function(e){
+        var el = e.target.closest && e.target.closest('.r3d.live');
+        if (!el) return;
+        var r = el.getBoundingClientRect(), px = (e.clientX - r.left)/r.width - .5, py = (e.clientY - r.top)/r.height - .5;
+        el.style.setProperty('--ry', (px * 12).toFixed(2) + 'deg');
+        el.style.setProperty('--rx', (-py * 10).toFixed(2) + 'deg');
+      });
+      document.addEventListener('pointerout', function(e){
+        var el = e.target.closest && e.target.closest('.r3d');
+        if (el && !el.contains(e.relatedTarget)){ el.style.setProperty('--rx','0deg'); el.style.setProperty('--ry','0deg'); }
+      });
+    }
+
+    /* ---------- extra: hero 3D stack of real products ---------- */
+    var stack = $('stack'), mx = 0, my = 0, sc = 0;
+    (function(){
+      var pick = ['hero','product-grid','pricing'].map(function(id){ return byId(id); }).filter(Boolean);
+      ALL.forEach(function(p){ if (pick.length < 3 && pick.indexOf(p) < 0) pick.push(p); });
+      pick = pick.slice(0,3);
+      if (!pick.length){ $('stage').style.display = 'none'; return; }
+      stack.innerHTML = pick.map(function(p){
+        return '<div class="layer float"><span class="cap">'+esc(p.title)+'</span><iframe sandbox="" tabindex="-1" title="" srcdoc="'+esc(p.sample)+'"></iframe></div>';
+      }).join('');
+      function fit(){ Array.prototype.forEach.call(stack.querySelectorAll('.layer'), function(l){ var f = l.firstElementChild.nextElementSibling, s = l.clientWidth / 860; f.style.transform = 'scale('+s+')'; f.style.height = (l.clientHeight / s) + 'px'; }); }
+      fit(); window.addEventListener('resize', fit);
+    })();
+    function poseStack(){
+      if (!stack) return;
+      stack.style.setProperty('--sry', (-24 + mx * 14 + sc * 28).toFixed(1) + 'deg');
+      stack.style.setProperty('--srx', (12 - my * 10 + sc * 18).toFixed(1) + 'deg');
+    }
+
+    /* ---------- extra: scroll progress + parallax values ---------- */
+    var camZ = 0, mouseX = 0, mouseY = 0;
+    function onScroll(){
+      var h = document.documentElement.scrollHeight - innerHeight;
+      var p = h > 0 ? scrollY / h : 0;
+      document.documentElement.style.setProperty('--sp', p.toFixed(4));
+      sc = Math.min(scrollY / (innerHeight * .9), 1.2);
+      camZ = scrollY * 0.012;
+      poseStack();
+    }
+    window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+    if (fine && !reduce) window.addEventListener('pointermove', function(e){
+      mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; mouseX = mx; mouseY = my; poseStack();
+    });
+
+    /* ---------- extra: 3D background (canvas, no libraries) ---------- */
+    (function(){
+      var cv = $('bg3d'), ctx = cv.getContext && cv.getContext('2d'); if (!ctx) return;
+      var W, H, dpr, L = 44, shapes = [], running = true;
+      var CUBE = {v:[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]],
+                  e:[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]]};
+      var OCTA = {v:[[1.3,0,0],[-1.3,0,0],[0,1.3,0],[0,-1.3,0],[0,0,1.3],[0,0,-1.3]],
+                  e:[[0,2],[0,3],[0,4],[0,5],[1,2],[1,3],[1,4],[1,5],[2,4],[2,5],[3,4],[3,5]]};
+      var PRISM = {v:[[-1,-1,-1],[1,-1,-1],[0,1.2,-1],[-1,-1,1],[1,-1,1],[0,1.2,1]],
+                   e:[[0,1],[1,2],[2,0],[3,4],[4,5],[5,3],[0,3],[1,4],[2,5]]};
+      var kinds = [CUBE, OCTA, PRISM], cols = ['99,102,241','34,211,165','165,180,252'];
+      function rnd(a,b){ return a + Math.random()*(b-a); }
+      function size(){
+        dpr = Math.min(window.devicePixelRatio || 1, 1.5); W = innerWidth; H = innerHeight;
+        cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+        var n = W < 700 ? 12 : 24; shapes = [];
+        for (var i=0;i<n;i++) shapes.push({k:kinds[i%3], c:cols[i%3], x:rnd(-14,14), y:rnd(-9,9), z:rnd(0,L), s:rnd(.6,1.7),
+          rx:rnd(0,6), ry:rnd(0,6), rz:rnd(0,6), vx:rnd(-.3,.3), vy:rnd(-.3,.3), vz:rnd(-.2,.2)});
+      }
+      function rot(p, a, b, c){
+        var x=p[0], y=p[1], z=p[2], t;
+        t = y*Math.cos(a) - z*Math.sin(a); z = y*Math.sin(a) + z*Math.cos(a); y = t;
+        t = x*Math.cos(b) + z*Math.sin(b); z = -x*Math.sin(b) + z*Math.cos(b); x = t;
+        t = x*Math.cos(c) - y*Math.sin(c); y = x*Math.sin(c) + y*Math.cos(c); x = t;
+        return [x,y,z];
+      }
+      var last = 0;
+      function draw(ts){
+        if (!running) return;
+        var dt = Math.min((ts - last)/1000 || 0.016, .05); last = ts;
+        ctx.clearRect(0,0,W,H);
+        var f = Math.min(W,H) * 0.9, cx = W/2 - mouseX*60, cy = H/2 - mouseY*40;
+        ctx.lineWidth = 1.2;
+        for (var i=0;i<shapes.length;i++){
+          var s = shapes[i];
+          if (!reduce){ s.rx += s.vx*dt; s.ry += s.vy*dt; s.rz += s.vz*dt; }
+          var z = (((s.z - camZ) % L) + L) % L + 1.5;
+          var a = Math.max(0, Math.min(1, (L - z)/L)) * Math.min(1, z/6) * .55;
+          if (a < .02) continue;
+          var pts = s.k.v.map(function(v){
+            var r = rot([v[0]*s.s, v[1]*s.s, v[2]*s.s], s.rx, s.ry, s.rz);
+            var zz = z + r[2], k = f / Math.max(zz, .5);
+            return [cx + (s.x + r[0]) * k, cy + (s.y + r[1]) * k + sc*0, zz];
+          });
+          ctx.strokeStyle = 'rgba(' + s.c + ',' + a.toFixed(3) + ')';
+          ctx.beginPath();
+          for (var j=0;j<s.k.e.length;j++){ var e = s.k.e[j]; ctx.moveTo(pts[e[0]][0], pts[e[0]][1]); ctx.lineTo(pts[e[1]][0], pts[e[1]][1]); }
+          ctx.stroke();
+        }
+        if (!reduce) requestAnimationFrame(draw);
+      }
+      size(); window.addEventListener('resize', size);
+      document.addEventListener('visibilitychange', function(){ running = !document.hidden; if (running){ last = 0; requestAnimationFrame(draw); } });
+      requestAnimationFrame(draw);
+      if (reduce) window.addEventListener('scroll', function(){ requestAnimationFrame(draw); }, {passive:true});
+    })();
+
+    render();
+  })();
   </script>
 </body>
 </html>

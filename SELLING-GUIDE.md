@@ -9,8 +9,7 @@ Customers see a live preview and a FREE sample. After they pay, you send the FUL
 
 | Folder / file | What it is | Upload to the internet? |
 |---|---|---|
-| `site/shop.html` | Your public shop | YES |
-| `site/index.html` | A landing-page template (also sellable) | YES |
+| `site/index.html` | Your home page and shop (all products) | YES |
 | `site/data.js` | Your product list + free samples | YES |
 | `admin/admin.html` | Your private dashboard | **NEVER** |
 | `admin/private.js` | The paid FULL code | **NEVER** |
@@ -46,7 +45,7 @@ Many card/PayPal services do not work in Syria, so crypto is the practical choic
 1. Admin → **Publish** → **Download data.js**.
 2. Put it inside the `site` folder (replace the old one).
 3. Go to https://app.netlify.com/drop and drag the whole **`site`** folder onto the page.
-4. You get a live link. Open `/shop.html` on it. Later you can connect a domain you buy.
+4. You get a live link. Open the home page on it. Later you can connect a domain you buy.
 Repeat steps 1–3 after every change.
 
 ## Step 5 — When someone buys

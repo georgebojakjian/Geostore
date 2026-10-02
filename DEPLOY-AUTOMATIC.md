@@ -44,12 +44,12 @@ You need a normal **TRON address** (starts with `T`, 34 characters) that can rec
 
 ## Part E — Put the shop online (free)
 1. In the dashboard, check **Settings** has your **Payment server URL** saved. Then **Publish** → **Download data.js**.
-2. On your computer, copy that downloaded `data.js` into the `site` folder, replacing the old `data.js`. The `site` folder must now contain: `index.html`, `shop.html`, `data.js`.
+2. On your computer, copy that downloaded `data.js` into the `site` folder, replacing the old `data.js`. The `site` folder must now contain: `index.html`, `shop.html` (a small redirect), `data.js`.
 3. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** tab → **Upload assets** (Direct Upload).
 4. Project name: for example `myshop` → **Create project**.
 5. Drag the **`site` folder** (the folder itself, with the 3 files inside) onto the upload area → **Deploy site**.
-6. Cloudflare gives you an address like `https://myshop.pages.dev`. Open `https://myshop.pages.dev/shop.html` — your shop should appear with the 6 products.
-7. Go back to your Worker → **Settings** → **Variables and Secrets** → add `ALLOWED_ORIGIN` = `https://myshop.pages.dev` (no slash at the end, no `/shop.html`) → Deploy.
+6. Cloudflare gives you an address like `https://myshop.pages.dev`. Open `https://myshop.pages.dev` — your home page should appear with the products.
+7. Go back to your Worker → **Settings** → **Variables and Secrets** → add `ALLOWED_ORIGIN` = `https://myshop.pages.dev` (no slash at the end) → Deploy.
 8. **Never upload the `admin` folder.**
 Whenever you change products or prices later: Download `data.js` again → replace it in `site` → in Pages open your project → **Create deployment** → upload the `site` folder again. (Also press **Sync to server**.)
 
