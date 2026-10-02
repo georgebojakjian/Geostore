@@ -19,6 +19,11 @@ const USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // USDT on TRON (TRC
 const ORDER_MINUTES = 60;                 // customer has 60 minutes to pay
 const GRACE_MS = 15 * 60 * 1000;          // keep checking 15 min after expiry
 const THROTTLE_MS = 7000;                 // don't ask TronGrid more often than this per order
+// Cloudflare's FREE plan allows only 1,000 KV writes and 1,000 KV list calls per day,
+// so this server writes ONLY when something really changes (new order, paid, expired)
+// and keeps "when did I last look" in memory instead of in storage.
+const lastLook = new Map();               // orderId -> time of last blockchain check
+const ipHits = new Map();                 // ip -> [timestamps] of recent order requests
 
 /* ---------------- helpers ---------------- */
 // Admin + health routes are protected by the secret token, so any origin may call them
@@ -66,8 +71,16 @@ const publicOrder = (env, o, apiBase) => ({
 });
 
 /* ---------------- create order ---------------- */
+function tooMany(req) {
+  const ip = req.headers.get('cf-connecting-ip') || 'x', now = Date.now();
+  const hits = (ipHits.get(ip) || []).filter(t => now - t < 10 * 60000);
+  hits.push(now); ipHits.set(ip, hits);
+  if (ipHits.size > 500) ipHits.clear();
+  return hits.length > 6;                 // at most 6 new orders per IP per 10 minutes
+}
 async function createOrder(req, env, apiBase) {
   if (!env.WALLET) return fail(env, 'Server wallet is not configured', 503);
+  if (tooMany(req)) return fail(env, 'Too many orders from your connection. Please wait a few minutes.', 429);
   const b = await req.json().catch(() => null) || {};
   const email = String(b.email || '').trim().slice(0, 200);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return fail(env, 'Please enter a valid email address');
@@ -98,8 +111,8 @@ async function createOrder(req, env, apiBase) {
   const now = Date.now();
   const o = { id: hex(16), key: hex(16), email, item: itemId, title, amount: micro, status: 'pending', createdAt: now, expiresAt: now + ORDER_MINUTES * 60000, lastCheck: 0 };
   await saveOrder(env, o, 7 * 86400);
+  // the "amt:" key both reserves the amount AND is the list of open orders the cron job checks
   await env.ORDERS.put('amt:' + micro, o.id, { expirationTtl: (ORDER_MINUTES + 20) * 60 });
-  await env.ORDERS.put('pending:' + o.id, '1', { expirationTtl: 2 * 3600 });
   return json(env, publicOrder(env, o, apiBase));
 }
 
@@ -108,7 +121,6 @@ async function markPaid(env, o, txid) {
   o.status = 'paid'; o.paidAt = Date.now(); o.txid = txid || 'manual';
   await saveOrder(env, o);
   if (txid) await env.ORDERS.put('tx:' + txid, o.id);
-  await env.ORDERS.delete('pending:' + o.id);
   await env.ORDERS.delete('amt:' + o.amount);
 }
 async function checkOrder(env, o) {
@@ -116,11 +128,12 @@ async function checkOrder(env, o) {
   const now = Date.now();
   if (now > o.expiresAt + GRACE_MS) {
     o.status = 'expired'; await saveOrder(env, o);
-    await env.ORDERS.delete('pending:' + o.id); await env.ORDERS.delete('amt:' + o.amount);
+    await env.ORDERS.delete('amt:' + o.amount);
     return o;
   }
-  if (now - o.lastCheck < THROTTLE_MS) return o;
-  o.lastCheck = now;
+  if (now - (lastLook.get(o.id) || 0) < THROTTLE_MS) return o;   // memory only: no storage write
+  lastLook.set(o.id, now);
+  if (lastLook.size > 1000) lastLook.clear();
   const url = 'https://api.trongrid.io/v1/accounts/' + env.WALLET + '/transactions/trc20' +
     '?only_confirmed=true&only_to=true&limit=200&contract_address=' + USDT_CONTRACT + '&min_timestamp=' + o.createdAt;
   let list = null;
@@ -135,8 +148,7 @@ async function checkOrder(env, o) {
       if (ok && !(await env.ORDERS.get('tx:' + t.transaction_id))) { await markPaid(env, o, t.transaction_id); return o; }
     }
   }
-  await saveOrder(env, o, 7 * 86400);
-  return o;
+  return o;                                 // still waiting: nothing to save
 }
 
 /* ---------------- delivery page ---------------- */
@@ -233,12 +245,13 @@ export default {
     Object.keys(c).forEach(k => h.set(k, c[k]));
     return new Response(res.body, { status: res.status, headers: h });
   },
-  // runs every minute (Cron Trigger) so payments are detected even if the customer closed the page
+  // runs every 5 minutes (Cron Trigger) so payments are detected even if the customer closed the page
   async scheduled(event, env, ctx) {
     if (!env.ORDERS || !env.WALLET) return;
-    const keys = (await env.ORDERS.list({ prefix: 'pending:', limit: 50 })).keys;
+    const keys = (await env.ORDERS.list({ prefix: 'amt:', limit: 50 })).keys;
     for (const k of keys) {
-      const o = await env.ORDERS.get('order:' + k.name.slice(8), 'json');
+      const id = await env.ORDERS.get(k.name);
+      const o = id && await env.ORDERS.get('order:' + id, 'json');
       if (o) await checkOrder(env, o);
     }
   }

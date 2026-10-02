@@ -34,7 +34,7 @@ You need a normal **TRON address** (starts with `T`, 34 characters) that can rec
    | `ADMIN_TOKEN` | **Secret** | a long password you invent (20+ random characters). Write it down! |
    | `ALLOWED_ORIGIN` | Text | your shop address, e.g. `https://myshop.pages.dev` (add after Part E; no slash at the end) |
    | `TRONGRID_KEY` | Secret (optional) | free key from https://www.trongrid.io — only needed if you get many sales |
-4. Worker → **Settings** → **Triggers** → **Cron Triggers** → **Add** → `* * * * *` (every minute). This detects payments even when the customer closed the page.
+4. Worker → **Settings** → **Triggers** → **Cron Triggers** → **Add** → `*/5 * * * *` (every 5 minutes). This detects payments even when the customer closed the page. (Do not use every minute: Cloudflare's free plan allows only 1,000 list operations per day.)
 
 ## Part D — Connect your dashboard
 1. Open `admin/admin.html` → **Settings**.
@@ -78,3 +78,7 @@ Whenever you change products or prices later: Download `data.js` again → repla
 2. If `/api/health` works but the dashboard still fails, you are running an old `worker.js`. Open `worker/worker.js` from the latest project, copy everything, paste it into Cloudflare (Edit code), and press **Deploy**.
 3. The URL in dashboard Settings must start with `https://` and have no space or `/api` at the end.
 4. Still stuck? Send me a screenshot of the `/api/health` tab and of your Settings page (hide the token).
+
+## If Cloudflare says "KV requests are temporarily blocked"
+That means the free daily storage limit (1,000 writes) was used up. The limit resets every day at 00:00 UTC, and everything works again after that, with no action needed. (Or upgrade to Workers Paid for $5/month.)
+The current `worker.js` is built to stay far below the limit: it writes to storage only when an order is created, paid or expired, and the cron check runs every 5 minutes. If you ever see this message again, make sure you pasted the latest `worker.js` and that the Cron Trigger is `*/5 * * * *`.
