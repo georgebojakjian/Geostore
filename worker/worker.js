@@ -377,6 +377,11 @@ async function deliveryData(env, o, cat) {
   return '{"order":' + J({ id: o.id.slice(0, 8), email: o.email }) + ',"store":' + J(cat.storeName || '') + ',"sections":[' + parts.join(',') + ']}';
 }
 const SHELL_CORE = String.raw`
+function guardFn(){var t;function note(m){var n=document.getElementById("__dm");if(!n){n=document.createElement("div");n.id="__dm";n.style.cssText="position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;background:#111;color:#fff;border:1px solid #c5f442;padding:10px 16px;border-radius:99px;font:600 13px system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:92vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none";document.body.appendChild(n)}n.textContent=m;n.style.opacity=1;clearTimeout(t);t=setTimeout(function(){n.style.opacity=0},2800)}
+document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a)return;var h=a.getAttribute("href")||"";if(h.length>1&&h.charAt(0)==="#"){e.preventDefault();var el=document.getElementById(h.slice(1));if(el)el.scrollIntoView({behavior:"smooth"});else note("Demo: this link has no page in the preview");return}e.preventDefault();note(h==="#"||h===""?"Demo link — in your real site this goes to your own page":"Demo: this link goes to another page ("+h.slice(0,40)+") that you add in your real site")},true);
+document.addEventListener("submit",function(e){if(!e.defaultPrevented){e.preventDefault();note("Demo form — connect it to your email or server in your real site")}});
+window.open=function(u){note("Demo: this would open "+String(u||"a new page").slice(0,50)+" in your real site");return null}}
+function guard(html){html=String(html||"");var g="<script>("+guardFn.toString()+")()<\/script>",i=html.lastIndexOf("</body>");return i<0?html+g:html.slice(0,i)+g+html.slice(i)}
 function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
 function cp(btn,text,label){btn.onclick=function(){function d(){btn.textContent="Copied!";setTimeout(function(){btn.textContent=label},1500)}if(navigator.clipboard){navigator.clipboard.writeText(text).then(d,d)}else{d()}}}
 window.__render=function(d,app){
@@ -396,7 +401,7 @@ window.__render=function(d,app){
       if(s.guide){var det=el("details","gd");det.open=true;det.appendChild(el("summary","","How to use & connect your data"));var gb=el("div","gb");gb.innerHTML=s.guide;det.appendChild(gb);sec.appendChild(det)}
       (s.variants||[]).forEach(function(v){
         var h3=el("h3","",v.name);h3.style.cssText="margin:22px 0 4px;font-size:1.05rem";sec.appendChild(h3);
-        var f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts");f.title="Preview";f.srcdoc=v.full;sec.appendChild(f);
+        var f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts allow-forms");f.title="Preview";f.srcdoc=guard(v.full);sec.appendChild(f);
         var bar=el("div","bar");bar.appendChild(el("b","","Full code"));var b=el("button","","Copy code");cp(b,v.full,"Copy code");bar.appendChild(b);sec.appendChild(bar);sec.appendChild(el("pre","",v.full));
       });
     }

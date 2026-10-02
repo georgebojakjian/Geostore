@@ -103,7 +103,7 @@
             <label for="fSample">FREE sample code (shown publicly — a basic complete HTML page)</label><textarea id="fSample" spellcheck="false"></textarea>
             <label for="fFull" style="margin-top:12px">FULL code (private — sent to the customer after payment)</label><textarea id="fFull" spellcheck="false"></textarea>
             <div class="bar" style="margin:14px 0 0"><span class="help">Preview what you typed:</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-g btn-s" id="pvS">Preview free sample</button><button type="button" class="btn btn-g btn-s" id="pvF">Preview full code</button></span></div>
-            <iframe class="pv" id="pvFrame" sandbox="allow-scripts" title="Preview" style="margin-top:12px"></iframe>
+            <iframe class="pv" id="pvFrame" sandbox="allow-scripts allow-forms" title="Preview" style="margin-top:12px"></iframe>
           </div>
           <div class="full" id="digFields" hidden>
             <div class="form"><div><label for="fIcon">Card icon (one emoji)</label><input id="fIcon" placeholder="🎁"></div><div><label>In stock</label><div class="help" id="stockCount" style="padding-top:10px"></div></div></div>
@@ -277,6 +277,27 @@
   function backToList(){ editing=null; $('pedit').hidden=true; $('plist').hidden=false; renderProducts(); }
   var draft = null, vi = 0;
   var TPL = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>New code</title>\n<style>\n body{font-family:system-ui,sans-serif;background:#0b0f1a;color:#fff;margin:0}\n</style>\n</head>\n<body>\n<!-- your code here -->\n</body>\n</html>\n';
+
+  /* ---- demo guard: links/forms inside a live preview must never leave the preview ---- */
+    function guardFn(){
+      var t;
+      function note(m){var n=document.getElementById('__dm');if(!n){n=document.createElement('div');n.id='__dm';n.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;background:#111;color:#fff;border:1px solid #c5f442;padding:10px 16px;border-radius:99px;font:600 13px system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:92vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none';document.body.appendChild(n)}n.textContent=m;n.style.opacity=1;clearTimeout(t);t=setTimeout(function(){n.style.opacity=0},2800)}
+      document.addEventListener('click',function(e){
+        var a=e.target.closest&&e.target.closest('a[href]');if(!a)return;
+        var h=a.getAttribute('href')||'';
+        if(h.length>1&&h.charAt(0)==='#'){e.preventDefault();var el=document.getElementById(h.slice(1));if(el)el.scrollIntoView({behavior:'smooth'});else note('Demo: this link has no page in the preview');return}
+        e.preventDefault();
+        note(h==='#'||h===''?'Demo link — in your real site this goes to your own page':'Demo: this link goes to another page ('+h.slice(0,40)+') that you add in your real site');
+      },true);
+      document.addEventListener('submit',function(e){if(!e.defaultPrevented){e.preventDefault();note('Demo form — connect it to your email or server in your real site')}});
+      window.open=function(u){note('Demo: this would open '+String(u||'a new page').slice(0,50)+' in your real site');return null};
+    }
+    function guard(html){
+      html = String(html || '');
+      var g = '<script>(' + guardFn.toString() + ')()<\/script>', i = html.lastIndexOf('</body>');
+      return i < 0 ? html + g : html.slice(0, i) + g + html.slice(i);
+    }
+
   function saveVariantFields(){
     if (!draft || draft.type !== 'code') return;
     var v = draft.variants[vi]; v.name = $('vName').value.trim() || ('Style ' + (vi + 1)); v.sample = $('fSample').value; v.full = $('fFull').value;
@@ -284,7 +305,7 @@
   function renderVariants(){
     $('vRow').innerHTML = draft.variants.map(function(v, i){ return '<button type="button" class="btn btn-s ' + (i===vi ? 'btn-p' : 'btn-g') + '" data-vi="' + i + '">' + esc(v.name || ('Style ' + (i+1))) + '</button>'; }).join('');
     var v = draft.variants[vi]; $('vName').value = v.name || ''; $('fSample').value = v.sample || ''; $('fFull').value = v.full || '';
-    $('pvFrame').srcdoc = v.sample || ''; $('vDel').hidden = draft.variants.length < 2;
+    $('pvFrame').srcdoc = guard(v.sample || ''); $('vDel').hidden = draft.variants.length < 2;
   }
   function stockCount(){ var n = $('fStock').value.split('\n').filter(function(x){ return x.trim(); }).length; $('stockCount').textContent = n + ' code(s) listed' + (draft && draft.used ? ' · ' + draft.used + ' already used (manual delivery)' : ''); }
   function toggleType(){
@@ -318,8 +339,8 @@
     if (du){ var src = state.products.filter(function(p){return p.id===du.dataset.dup;})[0]; var c = clone(src); c.id = uid(); c.title += ' (copy)'; c.used = 0; state.products.push(c); save(); renderProducts(); toast('Duplicated'); }
   });
   $('peBack').addEventListener('click', backToList);
-  $('pvS').addEventListener('click', function(){ $('pvFrame').srcdoc = $('fSample').value; });
-  $('pvF').addEventListener('click', function(){ $('pvFrame').srcdoc = $('fFull').value; });
+  $('pvS').addEventListener('click', function(){ $('pvFrame').srcdoc = guard($('fSample').value); });
+  $('pvF').addEventListener('click', function(){ $('pvFrame').srcdoc = guard($('fFull').value); });
   $('pf').addEventListener('submit', function(e){
     e.preventDefault();
     var p = editing; if (!p) return;

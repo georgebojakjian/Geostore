@@ -161,7 +161,9 @@
     @media(max-width:1120px){.nav-mid a:nth-child(n+4){display:none}}
     .navbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-size:.86rem;color:var(--text);transition:all .3s}.navbtn:hover{border-color:var(--accent);color:var(--accent)}
     .cc{min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:var(--accent);color:var(--on-accent);font-size:.72rem;font-weight:800;display:inline-grid;place-items:center}
-    @media(max-width:700px){.hide-m{display:none}.navbtn{padding:8px 11px}}
+    @media(max-width:700px){.cartfab{display:inline-flex}.hide-m{display:none}.navbtn{padding:8px 11px}}
+    .cartfab{position:fixed;right:14px;bottom:14px;z-index:150;display:none;align-items:center;gap:8px;padding:12px 18px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:.9rem;box-shadow:0 14px 34px -10px var(--glow);transition:transform .25s var(--ease)}.cartfab:hover{transform:translateY(-3px)}.cartfab .cc{background:var(--on-accent);color:var(--accent)}
+    @media(max-width:700px){.cartfab{display:inline-flex}}
     .from{font-size:.68rem;font-weight:500;color:var(--muted);letter-spacing:0}
     .wgrid{grid-template-columns:repeat(2,1fr)}.wcard .prev{height:260px}
     .demo.tall{height:min(560px,60vh)}
@@ -336,7 +338,8 @@
       <p class="sub" id="pmSub"></p>
       <div class="vtabs" id="pmVars" hidden></div>
       <div class="tabs"><button type="button" class="tab on" data-tab="demo">Live demo</button><button type="button" class="tab" data-tab="code">Free sample code</button><button type="button" class="tab" data-tab="guide" id="pmGuideTab" hidden>How to use &amp; connect your data</button></div>
-      <iframe class="demo" id="pmDemo" sandbox="allow-scripts" title="Live demo"></iframe>
+      <iframe class="demo" id="pmDemo" sandbox="allow-scripts allow-forms" title="Live demo"></iframe>
+      <p class="hint" id="demoNote" style="margin-top:8px">💡 This is a live demo — you can click and scroll inside it. Links and forms are for show and never leave this window.</p>
       <pre id="pmCode" hidden></pre>
       <div class="gbox" id="pmGuide" hidden></div>
       <div class="opts" id="pmOpts" hidden></div>
@@ -388,6 +391,7 @@
     </div>
   </div>
 
+  <button type="button" class="cartfab" data-opencart aria-label="Open cart">🛒 <span>Cart</span> <span class="cc" data-cartcount hidden>0</span></button>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="data.js"></script>
@@ -443,7 +447,7 @@
       return '<article class="card r3d'+(wide?' wcard':'')+'"><div class="prev" data-id="'+esc(p.id)+'" data-w="'+(wide?1200:800)+'"><span class="tag">'+esc(p.category||'Code')+'</span>'+(p.variants.length>1?'<span class="tag" style="left:auto;right:12px">'+p.variants.length+' styles</span>':'')+
         '<iframe sandbox="allow-scripts" tabindex="-1" aria-hidden="true" loading="lazy" title="Preview of '+esc(p.title)+'" srcdoc="'+esc(p.sample)+'"></iframe></div>' +
         '<div class="body"><h3>'+esc(p.title)+'</h3><p>'+esc(p.tagline||'')+'</p>' +
-        '<div class="row"><span class="price">'+money(p.price)+(p.variants.length>1?'<small class="from"> all styles</small>':'')+'</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-ghost" data-view="'+esc(p.id)+'">Preview</button><button type="button" class="btn btn-primary" data-add="'+esc(p.id)+'">Add</button></span></div></div></article>';
+        '<div class="row"><span class="price">'+money(p.price)+(p.variants.length>1?'<small class="from"> all styles</small>':'')+'</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-ghost" data-view="'+esc(p.id)+'">Preview</button><button type="button" class="btn btn-primary" data-add="'+esc(p.id)+'">🛒 Add to cart</button></span></div></div></article>';
     }
     var shown = 9, wshown = 6;
     function render(reset){
@@ -504,12 +508,33 @@
       if (e.key==='Escape') Array.prototype.forEach.call(document.querySelectorAll('.modal.open'), closeModal);
     });
 
+
+    /* ---- demo guard: links/forms inside a live preview must never leave the preview ---- */
+    function guardFn(){
+      var t;
+      function note(m){var n=document.getElementById('__dm');if(!n){n=document.createElement('div');n.id='__dm';n.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;background:#111;color:#fff;border:1px solid #c5f442;padding:10px 16px;border-radius:99px;font:600 13px system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:92vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none';document.body.appendChild(n)}n.textContent=m;n.style.opacity=1;clearTimeout(t);t=setTimeout(function(){n.style.opacity=0},2800)}
+      document.addEventListener('click',function(e){
+        var a=e.target.closest&&e.target.closest('a[href]');if(!a)return;
+        var h=a.getAttribute('href')||'';
+        if(h.length>1&&h.charAt(0)==='#'){e.preventDefault();var el=document.getElementById(h.slice(1));if(el)el.scrollIntoView({behavior:'smooth'});else note('Demo: this link has no page in the preview');return}
+        e.preventDefault();
+        note(h==='#'||h===''?'Demo link — in your real site this goes to your own page':'Demo: this link goes to another page ('+h.slice(0,40)+') that you add in your real site');
+      },true);
+      document.addEventListener('submit',function(e){if(!e.defaultPrevented){e.preventDefault();note('Demo form — connect it to your email or server in your real site')}});
+      window.open=function(u){note('Demo: this would open '+String(u||'a new page').slice(0,50)+' in your real site');return null};
+    }
+    function guard(html){
+      html = String(html || '');
+      var g = '<script>(' + guardFn.toString() + ')()<\/script>', i = html.lastIndexOf('</body>');
+      return i < 0 ? html + g : html.slice(0, i) + g + html.slice(i);
+    }
+
     /* ---- product window: styles, options, guide ---- */
     var cur = null, curV = 0, opt = 'all';
     function byId(id){ return live.filter(function(p){ return p.id===id; })[0]; }
     function showVariant(i){
       curV = i; var v = cur.variants[i];
-      $('pmDemo').srcdoc = v.sample; $('pmCode').textContent = v.sample;
+      $('pmDemo').srcdoc = guard(v.sample); $('pmCode').textContent = v.sample;
       Array.prototype.forEach.call($('pmVars').children, function(b,k){ b.classList.toggle('on', k===i); });
       renderOpts();
     }
@@ -540,7 +565,7 @@
     $('pmVars').addEventListener('click', function(e){ var b = e.target.closest('.vt'); if (b) showVariant(+b.dataset.v); });
     function showTab(t){
       Array.prototype.forEach.call(document.querySelectorAll('#pm .tab'), function(b){ b.classList.toggle('on', b.dataset.tab===t); });
-      $('pmDemo').hidden = t!=='demo'; $('pmCode').hidden = t!=='code'; $('pmGuide').hidden = t!=='guide';
+      $('pmDemo').hidden = t!=='demo'; $('demoNote').hidden = t!=='demo'; $('pmCode').hidden = t!=='code'; $('pmGuide').hidden = t!=='guide';
     }
     Array.prototype.forEach.call(document.querySelectorAll('#pm .tab'), function(b){ b.addEventListener('click', function(){ showTab(b.dataset.tab); }); });
     $('pmCopy').addEventListener('click', function(){
@@ -721,7 +746,7 @@
       me ? renderIn() : renderOut('in');
     }
     function renderOut(tab){
-      if (!API){ $('acctBody').innerHTML = '<p class="empty">Accounts are available once your payment server is connected.</p>'; return; }
+      if (!API){ $('acctBody').innerHTML = '<p class="empty" style="padding:24px 0"><b style="color:var(--text)">Customer accounts are ready.</b><br><br>They switch on as soon as the payment server is connected (dashboard → Settings → Payment server URL, then Sync).<br>Until then, customers can still order — their order is sent to you by email.</p>'; return; }
       var ids = (store('geostore_orders') || []).slice().reverse();
       $('acctBody').innerHTML =
         '<div class="tabs"><button type="button" class="tab '+(tab==='in'?'on':'')+'" data-at="in">Sign in</button><button type="button" class="tab '+(tab==='up'?'on':'')+'" data-at="up">Create account</button></div>' +
@@ -778,7 +803,6 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-opencart]'), function(b){ b.addEventListener('click', function(){ openCart(b); }); });
     $('acctM').addEventListener('click', function(){});
     updateNav(); saveCart();
-    if (!API){ Array.prototype.forEach.call(document.querySelectorAll('[data-openacct]'), function(b){ b.hidden = true; }); }
 
     /* ---------- FAQ accordion ---------- */
     (function(){
