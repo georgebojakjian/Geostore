@@ -70,7 +70,9 @@ function isAdmin(req, env) {
 }
 const round2 = n => Math.round(n * 100) / 100;
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) && e.length <= 200;
-const getCatalog = env => env.ORDERS.get('catalog', 'json');
+// The shop is stored as ONE small index (names, prices, wallets) plus one key per product holding its
+// big code. Orders only read the small index, which keeps every request fast on the free plan.
+const getCatalog = env => env.ORDERS.get('idx', 'json');
 const saveOrder = (env, o, ttl) => env.ORDERS.put('order:' + o.id, JSON.stringify(o), ttl ? { expirationTtl: ttl } : undefined);
 const fmtAmount = (coin, a) => coin === 'btc' ? (a / 1e8).toFixed(8) : (a / 1e6).toFixed(3);
 function tooMany(map, key, max, windowMs) {
@@ -119,7 +121,7 @@ function priceCart(cat, raw) {
     if (it.v === undefined || it.v === null || it.v === 'all') g.all = true;
     else {
       const n = Number(it.v);
-      if (!Number.isInteger(n) || n < 0 || n >= p.variants.length) return { error: 'Unknown style' };
+      if (!Number.isInteger(n) || n < 0 || n >= (p.variants || []).length) return { error: 'Unknown style' };
       g.styles.add(n);
     }
   }
@@ -129,11 +131,11 @@ function priceCart(cat, raw) {
     const g = byProd[id], p = g.p;
     if (p.type === 'digital') { lines.push({ id, title: p.title, type: 'digital', mode: 'all', price: Number(p.price) }); continue; }
     if (hasAll) continue;                                  // already included in All-Access
-    const n = p.variants.length, sp = stylePriceOf(p);
+    const n = (p.variants || []).length, sp = stylePriceOf(p);
     if (n < 2 || g.all || g.styles.size >= n || g.styles.size * sp >= p.price) lines.push({ id, title: p.title, type: 'code', mode: 'all', price: Number(p.price) });
     else {
       const styles = [...g.styles].sort((a, b) => a - b);
-      lines.push({ id, title: p.title + ' — ' + styles.map(i => p.variants[i].name).join(', '), type: 'code', mode: 'styles', styles, price: round2(styles.length * sp) });
+      lines.push({ id, title: p.title + ' — ' + styles.map(i => p.variants[i]).join(', '), type: 'code', mode: 'styles', styles, price: round2(styles.length * sp) });
     }
   }
   if (!lines.length) return { error: 'Your cart is empty' };
@@ -252,7 +254,7 @@ async function createOrder(req, env, apiBase) {
   for (const l of priced.lines) {                              // digital items: refuse when stock is gone
     if (l.type !== 'digital') continue;
     const p = cat.products[l.id], used = Number(await env.ORDERS.get('used:' + l.id)) || 0;
-    if (used >= (p.stock || []).length) return fail(env, 'Sorry, "' + p.title + '" is out of stock right now.', 409);
+    if (used >= (p.stockN || 0)) return fail(env, 'Sorry, "' + p.title + '" is out of stock right now.', 409);
   }
 
   // amount in the coin's smallest unit, plus a tiny unique offset so every open order is identifiable on-chain
@@ -287,7 +289,8 @@ async function markPaid(env, o, txid) {
     const cat = await getCatalog(env); o.codes = {};
     for (const l of dig) {
       const p = cat && cat.products && cat.products[l.id]; if (!p) continue;
-      const used = Number(await env.ORDERS.get('used:' + l.id)) || 0, code = (p.stock || [])[used];
+      const stock = await env.ORDERS.get('stock:' + l.id, 'json') || [];
+      const used = Number(await env.ORDERS.get('used:' + l.id)) || 0, code = stock[used];
       if (code) { o.codes[l.id] = code; await env.ORDERS.put('used:' + l.id, String(used + 1)); }
     }
   }
@@ -337,77 +340,110 @@ async function checkOrder(env, o) {
 }
 
 /* ---------------- delivery page ---------------- */
-function resolveSections(o, cat) {
-  const out = [], prods = cat.products || {};
-  for (const l of itemsOf(o)) {
-    if (l.id === 'ALL') {
-      Object.keys(prods).forEach(id => { const p = prods[id]; if (p.type !== 'digital' && p.variants && p.variants.length) out.push({ p, variants: p.variants }); });
-      continue;
-    }
-    const p = prods[l.id]; if (!p) continue;
-    if (p.type === 'digital') { const c = o.codes && !Array.isArray(o.codes) ? o.codes[l.id] : (Array.isArray(o.codes) ? o.codes[0] : ''); out.push({ p, code: c || '' }); continue; }
-    const vs = l.mode === 'styles' && Array.isArray(l.styles) ? l.styles.map(i => p.variants[i]).filter(Boolean) : (p.variants || []);
-    if (vs.length) out.push({ p, variants: vs });
+// The server sends a tiny page plus the data as JSON; the customer's browser draws the previews and code.
+// (This keeps the server fast even when someone buys every product.)
+const J = JSON.stringify;
+async function deliveryData(env, o, cat) {
+  const prods = cat.products || {}, parts = [], jobs = [];
+  const head = (id, p) => '{"id":' + J(id) + ',"title":' + J(p.title) + ',"tagline":' + J(p.tagline || '') + ',';
+  async function code(id, styles) {
+    const p = prods[id]; if (!p) return null;
+    const txt = await env.ORDERS.get('prod:' + id, 'text'); if (!txt) return null;
+    if (!styles) return head(id, p) + txt.slice(1);              // whole product: no parsing needed
+    const d = JSON.parse(txt); d.variants = styles.map(i => d.variants[i]).filter(Boolean);
+    return d.variants.length ? head(id, p) + J(d).slice(1) : null;
   }
-  return out;
-}
-function bundle(o, cat) {
-  let n = 0;
-  const items = resolveSections(o, cat).map(s => {
-    const p = s.p;
+  for (const l of itemsOf(o)) {
+    if (l.id === 'ALL') { Object.keys(prods).forEach(id => { const p = prods[id]; if (p.type !== 'digital' && (p.variants || []).length) jobs.push(code(id)); }); continue; }
+    const p = prods[l.id]; if (!p) continue;
     if (p.type === 'digital') {
-      const i = n++;
-      return '<section><h2>' + esc(p.title) + '</h2><p class="d">' + esc(p.tagline || '') + '</p>' +
-        (s.code ? '<div class="bar"><b>Your code</b><button onclick="cp(' + i + ',this)">Copy</button></div><pre id="c' + i + '" style="font-size:1.05rem">' + esc(s.code) + '</pre>'
-                : '<p class="d">Your code is being prepared — please contact us with your order ID: ' + esc(o.id) + '</p>') + '</section>';
-    }
-    return '<section><h2>' + esc(p.title) + '</h2><p class="d">' + esc(p.tagline || '') + '</p>' +
-      (p.guide ? '<details class="gd" open><summary>How to use &amp; connect your data</summary><div class="gb">' + p.guide + '</div></details>' : '') +
-      s.variants.map(v => {
-        const i = n++;
-        return '<h3 style="margin:22px 0 4px;font-size:1.05rem">' + esc(v.name) + '</h3><iframe sandbox="allow-scripts" srcdoc="' + esc(v.full) + '" title="Preview"></iframe>' +
-          '<div class="bar"><b>Full code</b><button onclick="cp(' + i + ',this)">Copy code</button></div><pre id="c' + i + '">' + esc(v.full) + '</pre>';
-      }).join('') + '</section>';
-  }).join('');
-  return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your codes — ' + esc(cat.storeName || '') + '</title><style>' +
-    'body{margin:0;font-family:system-ui,sans-serif;background:#0b0f1a;color:#f8fafc;line-height:1.6}.w{max-width:960px;margin:auto;padding:30px 18px 80px}h1{margin-bottom:4px}.d{color:#94a3b8}' +
-    'section{margin-top:36px;padding:22px;border:1px solid #243049;border-radius:16px;background:#111827}iframe{width:100%;height:380px;border:1px solid #243049;border-radius:12px;background:#0b0f1a;margin:10px 0}' +
-    '.bar{display:flex;justify-content:space-between;align-items:center;margin:8px 0}button{background:#c5f442;color:#0a1000;border:0;padding:9px 18px;border-radius:10px;font-weight:600;cursor:pointer}' +
-    'pre{max-height:360px;overflow:auto;background:#070a12;border:1px solid #243049;border-radius:12px;padding:14px;font-size:.78rem;color:#c7d2fe}' +
-    '.gd{margin:14px 0;border:1px solid #2f3b55;border-radius:12px;background:#0d1424}.gd summary{cursor:pointer;padding:12px 16px;font-weight:700;color:#c5f442}.gb{padding:4px 18px 16px;color:#cbd5e1;font-size:.93rem}.gb h4{margin:16px 0 4px;color:#f8fafc}.gb code{background:#1b2640;padding:1px 6px;border-radius:5px;font-size:.85em}.gb ul,.gb ol{margin:6px 0 6px 20px}</style></head><body><div class="w">' +
-    '<h1><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="34" height="34" style="vertical-align:middle;margin-right:10px"><rect width="32" height="32" rx="9" fill="#c5f442"/><path d="M16 6.2l8.6 4.9-8.6 4.9-8.6-4.9z" fill="#0a1000"/><path d="M7.4 12.9l8.6 4.9v8.6l-8.6-4.9z" fill="#0a1000" fill-opacity=".72"/><path d="M24.6 12.9l-8.6 4.9v8.6l8.6-4.9z" fill="#0a1000" fill-opacity=".42"/></svg>Thank you! 🎉</h1><p class="d">Order ' + esc(o.id.slice(0, 8)) + ' · ' + esc(o.email) + '. Each code has a live preview and a copy button. Save this page (Ctrl+S) or bookmark this link — it is yours to come back to.</p>' + items +
-    '<p class="d" style="margin-top:40px">Licence: use these codes in your own and your clients\' projects. Do not resell or share the code files themselves.</p></div>' +
-    '<script>function cp(i,b){var t=document.getElementById("c"+i).textContent;function d(){b.textContent="Copied!";setTimeout(function(){b.textContent="Copy"},1500)}if(navigator.clipboard){navigator.clipboard.writeText(t).then(d,d)}else{d()}}<\/script></body></html>';
+      const c = o.codes && !Array.isArray(o.codes) ? o.codes[l.id] : (Array.isArray(o.codes) ? o.codes[0] : '');
+      jobs.push(Promise.resolve(head(l.id, p) + '"code":' + J(c || '') + '}'));
+    } else jobs.push(code(l.id, l.mode === 'styles' && Array.isArray(l.styles) ? l.styles : null));
+  }
+  (await Promise.all(jobs)).forEach(x => { if (x) parts.push(x); });
+  return '{"order":' + J({ id: o.id.slice(0, 8), email: o.email }) + ',"store":' + J(cat.storeName || '') + ',"sections":[' + parts.join(',') + ']}';
 }
-async function delivery(env, id, url) {
+const SHELL_CORE = String.raw`
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function cp(btn,text,label){btn.onclick=function(){function d(){btn.textContent="Copied!";setTimeout(function(){btn.textContent=label},1500)}if(navigator.clipboard){navigator.clipboard.writeText(text).then(d,d)}else{d()}}}
+window.__render=function(d,app){
+  app.innerHTML="";
+  var h=el("h1");h.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="34" height="34" style="vertical-align:middle;margin-right:10px"><rect width="32" height="32" rx="9" fill="#c5f442"/><path d="M16 6.2l8.6 4.9-8.6 4.9-8.6-4.9z" fill="#0a1000"/><path d="M7.4 12.9l8.6 4.9v8.6l-8.6-4.9z" fill="#0a1000" fill-opacity=".72"/><path d="M24.6 12.9l-8.6 4.9v8.6l8.6-4.9z" fill="#0a1000" fill-opacity=".42"/></svg>';
+  h.appendChild(document.createTextNode("Thank you! 🎉"));app.appendChild(h);
+  app.appendChild(el("p","d","Order "+d.order.id+" · "+d.order.email+". Every code has a live preview and a Copy button. Use the button below to keep a copy of everything on your computer."));
+  var dl=el("button","",window.__standalone?"This page is your saved copy":"⬇ Download all my codes as one file");dl.style.marginTop="8px";
+  if(window.__standalone)dl.disabled=true;else dl.onclick=function(){window.__download(d)};app.appendChild(dl);
+  var n=0;
+  d.sections.forEach(function(s){
+    var sec=el("section");sec.appendChild(el("h2","",s.title));sec.appendChild(el("p","d",s.tagline||""));
+    if(s.code!==undefined){
+      var i=n++,bar=el("div","bar");bar.appendChild(el("b","",s.code?"Your code":"Your code is being prepared — please contact us with your order ID "+d.order.id));
+      if(s.code){var b=el("button","","Copy");cp(b,s.code,"Copy");bar.appendChild(b);var pre=el("pre","",s.code);pre.style.fontSize="1.05rem";sec.appendChild(bar);sec.appendChild(pre)}else sec.appendChild(bar);
+    }else{
+      if(s.guide){var det=el("details","gd");det.open=true;det.appendChild(el("summary","","How to use & connect your data"));var gb=el("div","gb");gb.innerHTML=s.guide;det.appendChild(gb);sec.appendChild(det)}
+      (s.variants||[]).forEach(function(v){
+        var h3=el("h3","",v.name);h3.style.cssText="margin:22px 0 4px;font-size:1.05rem";sec.appendChild(h3);
+        var f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts");f.title="Preview";f.srcdoc=v.full;sec.appendChild(f);
+        var bar=el("div","bar");bar.appendChild(el("b","","Full code"));var b=el("button","","Copy code");cp(b,v.full,"Copy code");bar.appendChild(b);sec.appendChild(bar);sec.appendChild(el("pre","",v.full));
+      });
+    }
+    app.appendChild(sec);
+  });
+  app.appendChild(el("p","d","Licence: use these codes in your own and your clients' projects. Do not resell or share the code files themselves.")).style.marginTop="40px";
+};
+window.__download=function(d){
+  var css=document.getElementById("css").textContent,core=document.getElementById("core").textContent;
+  var html='<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My codes</title><style id="css">'+css+'</style></head><body><div class="w" id="app"></div><script id="core" type="text/plain">'+core.replace(/<\/script/g,"<\\/script")+'<\/script><script>window.__standalone=true;var DATA='+JSON.stringify(d).replace(/</g,"\\u003c")+';new Function(document.getElementById("core").textContent)();window.__render(DATA,document.getElementById("app"))<\/script></body></html>';
+  var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download="my-codes.html";document.body.appendChild(a);a.click();a.remove();
+};
+`;
+const SHELL_CSS = 'body{margin:0;font-family:system-ui,sans-serif;background:#0b0f1a;color:#f8fafc;line-height:1.6}.w{max-width:960px;margin:auto;padding:30px 18px 80px}h1{margin-bottom:4px}.d{color:#94a3b8}' +
+  'section{margin-top:36px;padding:22px;border:1px solid #243049;border-radius:16px;background:#111827}iframe{width:100%;height:380px;border:1px solid #243049;border-radius:12px;background:#0b0f1a;margin:10px 0}' +
+  '.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0}button{background:#c5f442;color:#0a1000;border:0;padding:9px 18px;border-radius:10px;font-weight:600;cursor:pointer}button:disabled{opacity:.5}' +
+  'pre{max-height:360px;overflow:auto;background:#070a12;border:1px solid #243049;border-radius:12px;padding:14px;font-size:.78rem;color:#c7d2fe}' +
+  '.gd{margin:14px 0;border:1px solid #2f3b55;border-radius:12px;background:#0d1424}.gd summary{cursor:pointer;padding:12px 16px;font-weight:700;color:#c5f442}.gb{padding:4px 18px 16px;color:#cbd5e1;font-size:.93rem}.gb h4{margin:16px 0 4px;color:#f8fafc}.gb code{background:#1b2640;padding:1px 6px;border-radius:5px;font-size:.85em}.gb ul,.gb ol{margin:6px 0 6px 20px}';
+function shellPage(storeName) {
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your codes — ' + esc(storeName) + '</title><style id="css">' + SHELL_CSS + '</style></head><body><div class="w" id="app"><p class="d">Loading your codes…</p></div>' +
+    '<script id="core" type="text/plain">' + SHELL_CORE.replace(/<\/script/g, '<\\/script') + '<\/script>' +
+    '<script>fetch(location.pathname+"/data"+location.search).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(d){new Function(document.getElementById("core").textContent)();window.__render(d,document.getElementById("app"))}).catch(function(){document.getElementById("app").textContent="Could not load your codes. Please refresh the page or contact us with your order ID."})<\/script></body></html>';
+}
+async function delivery(env, id, url, wantData) {
   const o = await env.ORDERS.get('order:' + id, 'json');
   const k = url.searchParams.get('k') || '';
   if (!o || !safeEqual(k, o.key)) return new Response('Not found', { status: 404 });
   if (o.status !== 'paid') return new Response('This order has not been paid yet.', { status: 402 });
   const cat = await getCatalog(env) || { products: {} };
-  const headers = { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' };
-  if (url.searchParams.get('download')) headers['content-disposition'] = 'attachment; filename="codes-' + o.id.slice(0, 8) + '.html"';
-  return new Response(bundle(o, cat), { headers });
+  if (wantData) return new Response(await deliveryData(env, o, cat), { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
+  return new Response(shellPage(cat.storeName || ''), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
 }
 
 /* ---------------- admin ---------------- */
-async function adminSync(req, env) {
+// The dashboard uploads each product on its own (small requests), then the small index.
+async function adminProduct(req, env) {
+  const p = await req.json().catch(() => null);
+  if (!p || !p.id) return fail(env, 'Bad data');
+  const id = String(p.id);
+  const variants = (Array.isArray(p.variants) ? p.variants : []).map(v => ({ name: String(v.name || ''), full: String(v.full || '') })).filter(v => v.full);
+  await env.ORDERS.put('prod:' + id, J({ guide: String(p.guide || '').slice(0, 30000), variants }));
+  if (p.type === 'digital') await env.ORDERS.put('stock:' + id, J((Array.isArray(p.stock) ? p.stock : []).map(String).filter(Boolean)));
+  return json(env, { ok: true, id });
+}
+async function adminIndex(req, env) {
   const b = await req.json().catch(() => null);
   if (!b || !Array.isArray(b.products)) return fail(env, 'Bad data');
   const products = {};
   b.products.forEach(p => {
     if (!p || !p.id) return;
-    const variants = (Array.isArray(p.variants) ? p.variants : (p.full ? [{ name: 'Standard', full: p.full }] : []))
-      .map(v => ({ name: String(v.name || ''), full: String(v.full || '') })).filter(v => v.full);
     products[String(p.id)] = {
       title: String(p.title || ''), tagline: String(p.tagline || ''), price: Number(p.price) || 0, stylePrice: Number(p.stylePrice) || 0,
-      type: p.type === 'digital' ? 'digital' : 'code', guide: String(p.guide || '').slice(0, 30000),
-      variants, stock: Array.isArray(p.stock) ? p.stock.map(String).filter(Boolean) : [],
-      published: p.published !== false
+      type: p.type === 'digital' ? 'digital' : 'code', variants: (Array.isArray(p.variants) ? p.variants : []).map(String),
+      stockN: Number(p.stockN) || 0, published: p.published !== false
     };
   });
+  for (const id of (Array.isArray(b.remove) ? b.remove : []).slice(0, 100)) { await env.ORDERS.delete('prod:' + id); await env.ORDERS.delete('stock:' + id); }
   const aa = b.allAccess || {}, w = b.wallets || {};
-  await env.ORDERS.put('catalog', JSON.stringify({
+  await env.ORDERS.put('idx', J({
     storeName: String(b.storeName || ''), products,
     wallets: { usdt_trc20: String(w.usdt_trc20 || '').trim().slice(0, 120), btc: String(w.btc || '').trim().slice(0, 120) },
     allAccess: { enabled: !!aa.enabled, title: String(aa.title || 'All-Access Pass'), price: Number(aa.price) || 0 }
@@ -437,7 +473,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, version: 3 });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, version: 4 });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (path === '/api/config' && req.method === 'GET') {
@@ -453,12 +489,13 @@ async function route(req, env) {
       o = await checkOrder(env, o);
       return json(env, publicOrder(env, o, apiBase));
     }
-    m = path.match(/^\/api\/delivery\/([a-f0-9]{32})$/);
-    if (m && req.method === 'GET') return await delivery(env, m[1], url);
+    m = path.match(/^\/api\/delivery\/([a-f0-9]{32})(\/data)?$/);
+    if (m && req.method === 'GET') return await delivery(env, m[1], url, !!m[2]);
     if (path.startsWith('/api/account/')) return await accountRoutes(req, env, path, apiBase);
     if (path.startsWith('/api/admin/')) {
       if (!isAdmin(req, env)) return fail(env, 'Wrong or missing admin token', 401);
-      if (path === '/api/admin/sync' && req.method === 'POST') return await adminSync(req, env);
+      if (path === '/api/admin/product' && req.method === 'POST') return await adminProduct(req, env);
+      if (path === '/api/admin/index' && req.method === 'POST') return await adminIndex(req, env);
       if (path === '/api/admin/orders' && req.method === 'GET') return await adminOrders(env);
       if (path === '/api/admin/customers' && req.method === 'GET') return await adminCustomers(env);
       if (path === '/api/admin/markpaid' && req.method === 'POST') {
@@ -471,7 +508,8 @@ async function route(req, env) {
     }
     return fail(env, 'Not found', 404);
   } catch (e) {
-    return fail(env, 'Server error', 500);
+    // admin calls get the real reason (only you can reach them); customers get a short message
+    return fail(env, path.startsWith('/api/admin/') ? 'Server error: ' + ((e && e.message) || e) : 'Server error', 500);
   }
 }
 

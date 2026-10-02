@@ -1,6 +1,8 @@
 # Automatic Payments — Setup Guide (no coding, all free)
 
-> **Version 3 — what changed:** wallets (USDT *and* Bitcoin) are now set in your **dashboard → Settings** and sent to the server with **Sync to server** — you no longer need a `WALLET` variable in Cloudflare. Customers can build a **cart**, buy **one style** or all styles, pay in **USDT or Bitcoin**, and keep their orders in a **customer account**. After updating, paste the new `worker/worker.js` into Cloudflare, then open the dashboard → Settings → fill both wallets → Publish → **Sync to server**.
+> **Simplest instructions: `START-HERE.md`.**
+>
+> **Version 3/4 — what changed:** wallets (USDT *and* Bitcoin) are now set in your **dashboard → Settings** and sent to the server with **Sync to server** — you no longer need a `WALLET` variable in Cloudflare. Customers can build a **cart**, buy **one style** or all styles, pay in **USDT or Bitcoin**, and keep their orders in a **customer account**. After updating, paste the new `worker/worker.js` into Cloudflare, then open the dashboard → Settings → fill both wallets → Publish → **Sync to server**.
 
 **How it works.** Your shop (the `site` folder) talks to a tiny free server (`worker/worker.js`) on **Cloudflare**.
 1. A customer clicks **Buy** → the server makes an order with a *unique* amount, e.g. `12.037` USDT.
@@ -95,3 +97,6 @@ Customers can create an account on your shop (name, email, password). They see a
 - Guests can still buy without an account; their orders stay in **Account → Orders placed on this device**.
 - Accounts are stored in the same free Cloudflare storage (one write per sign-up and per order). Passwords are salted and hashed; sessions last 30 days.
 - No email verification yet (it needs an email service). If a customer forgets a password, create a new account with another email or contact support.
+
+## Sync, version 4 (fixes "server error")
+"Sync to server" now uploads each product in its own small request and then one small index — instead of one huge request. Cloudflare's free plan gives each request only a few milliseconds of processing time, which a single 2 MB upload could exceed. Unchanged products are skipped, so later syncs are fast. If a sync fails, the message after the ❌ is the real reason from the server. A full first sync uses ~37 KV writes of the 1,000 free per day.
