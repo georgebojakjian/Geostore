@@ -155,6 +155,32 @@
     .soon{border:1px dashed rgba(197,244,66,.4);border-radius:26px;padding:clamp(30px,5vw,56px);text-align:center;background:radial-gradient(500px circle at 50% 0%,rgba(197,244,66,.08),transparent 60%)}
     .soon h3{font-size:1.5rem;letter-spacing:-.02em;margin:10px 0 6px}.soon p{color:var(--muted);max-width:520px;margin:0 auto}.soon .ico{font-size:2.4rem}
     @media(max-width:1000px){.dgrid{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.dgrid{grid-template-columns:1fr}}
+
+    .logo span,.navbtn,.nav-mid a,.status{white-space:nowrap}
+    @media(max-width:1280px){.status{display:none}}
+    @media(max-width:1120px){.nav-mid a:nth-child(n+4){display:none}}
+    .navbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-size:.86rem;color:var(--text);transition:all .3s}.navbtn:hover{border-color:var(--accent);color:var(--accent)}
+    .cc{min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:var(--accent);color:var(--on-accent);font-size:.72rem;font-weight:800;display:inline-grid;place-items:center}
+    @media(max-width:700px){.hide-m{display:none}.navbtn{padding:8px 11px}}
+    .from{font-size:.68rem;font-weight:500;color:var(--muted);letter-spacing:0}
+    .wgrid{grid-template-columns:repeat(2,1fr)}.wcard .prev{height:260px}
+    .demo.tall{height:min(560px,60vh)}
+    .gbox{max-height:min(440px,52vh);overflow:auto;border:1px solid var(--border);border-radius:14px;padding:6px 20px 18px;background:rgba(255,255,255,.03);font-size:.93rem;color:#cdd5c8}
+    .gbox h4{margin:18px 0 4px;color:var(--text);font-size:1rem}.gbox p{margin:6px 0}.gbox code{background:rgba(255,255,255,.08);padding:1px 6px;border-radius:5px;font-family:var(--mono);font-size:.82em}.gbox ul,.gbox ol{margin:6px 0 6px 20px}.gbox a{color:var(--accent);text-decoration:underline}
+    .opts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.op{flex:1;min-width:210px;display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:14px;cursor:pointer;background:rgba(255,255,255,.03);transition:border-color .3s,background .3s}
+    .op:has(input:checked){border-color:var(--accent);background:rgba(197,244,66,.07)}.op input{accent-color:var(--accent);margin-top:4px}.op span{display:flex;flex-direction:column;font-size:.92rem}.op b{color:var(--accent);font-size:1.05rem}.op small{color:var(--muted);font-size:.74rem}
+    .clist{display:grid;gap:8px;margin:6px 0 4px}.cl{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:11px 14px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.03);font-size:.92rem}.cl b{color:var(--accent)}
+    .rm{width:26px;height:26px;border-radius:50%;color:var(--muted);font-size:1.1rem;line-height:1}.rm:hover{background:rgba(255,255,255,.1);color:#fff}
+    .ctotal{display:flex;justify-content:space-between;align-items:center;padding:14px 4px;font-size:1.05rem;border-top:1px solid var(--border);margin:8px 0 16px}.ctotal b{font-size:1.5rem;color:var(--accent)}.ctotal:empty{display:none}
+    .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);z-index:600;background:#10170f;border:1px solid var(--accent);color:var(--text);padding:11px 20px;border-radius:99px;font-size:.9rem;box-shadow:0 18px 40px rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:all .3s var(--ease)}.toast.show{opacity:1;transform:translate(-50%,0)}
+    .pill2{display:inline-block;padding:2px 11px;border-radius:99px;font-size:.72rem;font-weight:700;border:1px solid var(--border);white-space:nowrap}.pill2.paid{color:var(--accent);border-color:rgba(197,244,66,.5)}.pill2.pending{color:#fbbf24;border-color:rgba(251,191,36,.5)}.pill2.expired{color:var(--muted)}
+    .oc{border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;background:rgba(255,255,255,.03)}.oh{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:4px}.oa{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+    .btn-s{padding:8px 16px;font-size:.84rem}
+    .sh{margin:22px 0 10px;font-size:1rem}.tw{overflow-x:auto}.pt{width:100%;border-collapse:collapse;font-size:.88rem}.pt th{color:var(--muted);text-align:left;font-weight:500;font-size:.74rem;text-transform:uppercase;letter-spacing:.06em}.pt th,.pt td{padding:10px 8px;border-bottom:1px solid var(--border);vertical-align:top}.pt a{color:var(--accent);text-decoration:underline}
+    .stats2{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}.stats2 div{border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.03)}.stats2 small{color:var(--muted);display:block;font-size:.72rem}.stats2 b{font-size:1.1rem}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}@media(max-width:560px){.two{grid-template-columns:1fr}.stats2{grid-template-columns:1fr}}
+    #acctBody .field input:disabled{opacity:.6}
+    @media(max-width:1000px){.wgrid{grid-template-columns:1fr}}
     @media(max-width:1000px){.hero .container{grid-template-columns:1fr}.win{max-width:560px}.head{grid-template-columns:1fr}.head p{justify-self:start}.values{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}.pass{grid-template-columns:1fr}.pass .big,.pass .side{text-align:left}}
     @media(max-width:640px){.grid,.steps{grid-template-columns:1fr}.box{padding:22px 18px}.tools{flex-direction:column;align-items:stretch}.search{max-width:none}.cta-row .btn{width:100%}.badge-float.b{left:8px}}
     @media(hover:none){.cursor{display:none}}
@@ -171,8 +197,8 @@
   <header id="hdr">
     <nav class="nav" aria-label="Main">
       <a href="#top" class="logo"><img src="logo.svg" alt="" width="30" height="30"><span data-brand>Geostore Codes</span></a>
-      <div class="nav-mid"><a href="#about">What we do</a><a href="#products">Products</a><a href="#digital" id="navDig">Digital items</a><a href="#how">How it works</a><a href="#faq">FAQ</a></div>
-      <div class="nav-right"><span class="status"><i></i><span id="statusTxt">store open</span></span><a href="#products" class="btn btn-primary">Browse codes</a></div>
+      <div class="nav-mid"><a href="#about">What we do</a><a href="#products">Products</a><a href="#websites" id="navWeb">Websites</a><a href="#digital" id="navDig">Digital items</a><a href="#how">How it works</a><a href="#faq">FAQ</a></div>
+      <div class="nav-right"><span class="status"><i></i><span id="statusTxt">store open</span></span><button type="button" class="navbtn" data-openacct aria-label="Account">👤 <span data-acctlabel>Sign in</span></button><button type="button" class="navbtn" data-opencart aria-label="Cart">🛒 <span class="cc" data-cartcount hidden>0</span></button><a href="#products" class="btn btn-primary hide-m">Browse codes</a></div>
     </nav>
   </header>
 
@@ -235,6 +261,14 @@
           <div><span class="eyebrow">best value</span><h2 id="passTitle"></h2><p id="passDesc"></p></div>
           <div class="side"><div class="big" id="passPrice"></div><button class="btn btn-primary btn-lg" id="passBuy" type="button">Get All-Access</button></div>
         </div>
+      </div>
+    </section>
+
+    <section class="section" id="websites" hidden style="padding-top:20px">
+      <div class="container scene">
+        <div class="head r3d"><h2>Complete <span class="s">websites.</span></h2><p>Ready-to-launch 3D websites for shops, restaurants, pharmacies, clinics and more. Each one comes in 3 colour styles and includes a step-by-step guide to add your own products and data.</p></div>
+        <div class="grid wgrid" id="wgrid"></div>
+        <div style="text-align:center;margin-top:26px"><button type="button" class="btn btn-ghost btn-lg" id="wmore" hidden>Show more websites</button></div>
       </div>
     </section>
 
@@ -301,44 +335,64 @@
       <h3 id="pmTitle"></h3>
       <p class="sub" id="pmSub"></p>
       <div class="vtabs" id="pmVars" hidden></div>
-      <div class="tabs"><button type="button" class="tab on" data-tab="demo">Live demo</button><button type="button" class="tab" data-tab="code">Free sample code</button></div>
+      <div class="tabs"><button type="button" class="tab on" data-tab="demo">Live demo</button><button type="button" class="tab" data-tab="code">Free sample code</button><button type="button" class="tab" data-tab="guide" id="pmGuideTab" hidden>How to use &amp; connect your data</button></div>
       <iframe class="demo" id="pmDemo" sandbox="allow-scripts" title="Live demo"></iframe>
       <pre id="pmCode" hidden></pre>
+      <div class="gbox" id="pmGuide" hidden></div>
+      <div class="opts" id="pmOpts" hidden></div>
       <div class="actions">
         <span class="hint" id="pmHint"></span>
-        <span style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-ghost" id="pmCopy">Copy free sample</button><button type="button" class="btn btn-primary" id="pmBuy"></button></span>
+        <span style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-ghost" id="pmCopy">Copy free sample</button><button type="button" class="btn btn-ghost" id="pmAdd">Add to cart</button><button type="button" class="btn btn-primary" id="pmBuy">Buy now</button></span>
       </div>
     </div>
   </div>
 
-  <!-- Checkout modal -->
-  <div class="modal" id="co" role="dialog" aria-modal="true" aria-labelledby="coTitle" aria-hidden="true">
+  <!-- Cart + checkout + payment modal -->
+  <div class="modal" id="cartM" role="dialog" aria-modal="true" aria-labelledby="cartTitle" aria-hidden="true">
     <div class="box small">
       <button class="x" type="button" data-close aria-label="Close">&times;</button>
-      <h3 id="coTitle">Checkout</h3>
-      <p class="sub sum" id="coSum"></p>
-      <form id="coForm" novalidate>
-        <div class="field"><label for="coEmail">Your email (your code is delivered here)</label><input type="email" id="coEmail" placeholder="you@example.com" autocomplete="email" required></div>
-        <div class="field" id="fCoin"><label for="coCoin">Pay with</label><select id="coCoin"></select></div>
-        <div class="field" id="fAddr"><label>Send the exact amount to this address</label><div class="addr"><code id="coAddr"></code><button type="button" class="btn btn-ghost" id="coCopy">Copy</button></div></div>
-        <p class="note" id="manualNote">Pick the coin's network exactly as shown — the wrong network means lost funds. After sending, press confirm and your code is emailed as soon as the payment is verified (usually within 24 hours).</p>
-        <button type="submit" class="btn btn-primary btn-block" id="coGo">I've paid — confirm order</button>
-        <p class="msg" id="coMsg" role="status" aria-live="polite"></p>
-      </form>
-      <div id="coPay" hidden>
+      <h3 id="cartTitle">Your cart</h3>
+      <div id="cartStep">
+        <div id="cartList" class="clist"></div>
+        <div class="ctotal" id="cartTotal"></div>
+        <form id="cartForm" novalidate>
+          <div class="field" id="fEmail"><label for="coEmail">Your email (your order is saved to it)</label><input type="email" id="coEmail" placeholder="you@example.com" autocomplete="email"></div>
+          <p class="note" id="signedAs" hidden></p>
+          <div class="field" id="fCoin"><label for="coCoin">Pay with</label><select id="coCoin"></select></div>
+          <div class="field" id="fAddr" hidden><label>Send the exact total to this address</label><div class="addr"><code id="coAddr"></code><button type="button" class="btn btn-ghost" id="coCopy">Copy</button></div></div>
+          <p class="note" id="manualNote" hidden>Pick the coin's network exactly as shown — the wrong network means lost funds. After sending, press confirm and your code is emailed as soon as the payment is verified.</p>
+          <button type="submit" class="btn btn-primary btn-block" id="coGo">Continue to payment</button>
+          <p class="msg" id="coMsg" role="status" aria-live="polite"></p>
+          <p class="note" style="text-align:center">Have an account? <a href="#" id="cartSignin" style="color:var(--accent);text-decoration:underline">Sign in</a> to keep all your orders and codes in one place.</p>
+        </form>
+      </div>
+      <div id="payView" hidden>
         <p class="sub" id="payTitle"></p>
-        <div class="field"><label>1. Send exactly this amount of USDT</label><div class="addr"><code id="payAmt" style="font-size:1.15rem;color:#fff"></code><button type="button" class="btn btn-ghost" id="payAmtCopy">Copy</button></div></div>
-        <div class="field"><label>2. To this address — network: <b>TRON (TRC20)</b></label><div class="addr"><code id="payAddr"></code><button type="button" class="btn btn-ghost" id="payAddrCopy">Copy</button></div></div>
-        <p class="note" style="color:#fbbf24">The amount must match <b>exactly</b>, including the small decimals — that is how we recognise your payment. If you pay from an exchange, add its withdrawal fee on top so the exact amount arrives. Wrong network = lost funds.</p>
+        <div class="field"><label id="payL1">1. Send exactly this amount</label><div class="addr"><code id="payAmt" style="font-size:1.15rem;color:#fff"></code><button type="button" class="btn btn-ghost" id="payAmtCopy">Copy</button></div></div>
+        <div class="field"><label id="payL2">2. To this address</label><div class="addr"><code id="payAddr"></code><button type="button" class="btn btn-ghost" id="payAddrCopy">Copy</button></div></div>
+        <p class="note" style="color:#fbbf24">The amount must match <b>exactly</b>, including all the decimals — that is how we recognise your payment. If you pay from an exchange, add its withdrawal fee on top so the exact amount arrives. Wrong network = lost funds.</p>
         <p class="msg" id="payStatus" role="status" aria-live="polite" style="font-size:.95rem"></p>
         <a class="btn btn-primary btn-block" id="payOpen" target="_blank" rel="noopener" hidden>Open my codes</a>
-        <p class="note" id="payKeep" hidden>Bookmark the page that opens — it is your permanent link to your codes.</p>
+        <p class="note" id="payKeep" hidden>Bookmark the page that opens — it is your permanent link. You can also find it any time under <b>Account → Orders</b>.</p>
+        <p class="note" style="margin-top:14px">Closed this window by mistake? Your order is saved: open <b>Account</b> at the top of the page and press “Continue payment”.</p>
       </div>
     </div>
   </div>
+
+  <!-- Account modal -->
+  <div class="modal" id="acctM" role="dialog" aria-modal="true" aria-labelledby="acctTitle" aria-hidden="true">
+    <div class="box" style="width:min(760px,100%)">
+      <button class="x" type="button" data-close aria-label="Close">&times;</button>
+      <h3 id="acctTitle">Account</h3>
+      <div id="acctBody"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="data.js"></script>
   <script src="pack-1.js"></script>
+  <script src="pack-2.js"></script>
   <script>
   (function(){
     'use strict';
@@ -354,11 +408,16 @@
       p.sample = p.variants[0].sample;
     });
     var live = every.filter(function(p){ return p.published !== false; });
-    var ALL = live.filter(function(p){ return p.type === 'code'; });
+    var ALL = live.filter(function(p){ return p.type === 'code'; });                 // every code product (snippets + websites)
+    var WEBS = ALL.filter(function(p){ return p.group === 'website'; });
+    var CODES = ALL.filter(function(p){ return p.group !== 'website'; });
     var DIGITAL = live.filter(function(p){ return p.type === 'digital'; });
     var $ = function(id){ return document.getElementById(id); };
-    function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     function money(n){ return '$' + (Math.round(n*100)/100).toString(); }
+    function round2(n){ return Math.round(n*100)/100; }
+    function toast(m){ var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function(){ t.classList.remove('show'); }, 2400); }
+    function store(k, v){ try { if (v === undefined) return JSON.parse(localStorage.getItem(k)); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} return null; }
 
     document.title = (S.storeName || 'Shop') + ' — Premium Website Code Snippets';
     Array.prototype.forEach.call(document.querySelectorAll('[data-brand]'), function(e){ e.textContent = S.storeName || 'Shop'; });
@@ -369,7 +428,7 @@
     /* ---- catalogue ---- */
     var cat = 'All', q = '';
     var cats = ['All'];
-    ALL.forEach(function(p){ if (p.category && cats.indexOf(p.category) < 0) cats.push(p.category); });
+    CODES.forEach(function(p){ if (p.category && cats.indexOf(p.category) < 0) cats.push(p.category); });
     $('chips').innerHTML = cats.map(function(c){ return '<button type="button" class="chip'+(c===cat?' on':'')+'" data-c="'+esc(c)+'">'+esc(c)+'</button>'; }).join('');
     $('chips').addEventListener('click', function(e){
       var b = e.target.closest('.chip'); if (!b) return;
@@ -379,39 +438,49 @@
     });
     $('search').addEventListener('input', function(){ q = this.value.trim().toLowerCase(); render(); });
 
-    var shown = 9;
+    function sp(p){ return +p.stylePrice > 0 ? +p.stylePrice : Math.max(1, Math.ceil(p.price / 2)); }
+    function cardHTML(p, wide){
+      return '<article class="card r3d'+(wide?' wcard':'')+'"><div class="prev" data-id="'+esc(p.id)+'" data-w="'+(wide?1200:800)+'"><span class="tag">'+esc(p.category||'Code')+'</span>'+(p.variants.length>1?'<span class="tag" style="left:auto;right:12px">'+p.variants.length+' styles</span>':'')+
+        '<iframe sandbox="allow-scripts" tabindex="-1" aria-hidden="true" loading="lazy" title="Preview of '+esc(p.title)+'" srcdoc="'+esc(p.sample)+'"></iframe></div>' +
+        '<div class="body"><h3>'+esc(p.title)+'</h3><p>'+esc(p.tagline||'')+'</p>' +
+        '<div class="row"><span class="price">'+money(p.price)+(p.variants.length>1?'<small class="from"> all styles</small>':'')+'</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-ghost" data-view="'+esc(p.id)+'">Preview</button><button type="button" class="btn btn-primary" data-add="'+esc(p.id)+'">Add</button></span></div></div></article>';
+    }
+    var shown = 9, wshown = 6;
     function render(reset){
       if (reset !== false) shown = 9;
-      var all = ALL.filter(function(p){
+      var all = CODES.filter(function(p){
         return (cat==='All' || p.category===cat) && (!q || (p.title+' '+p.tagline+' '+p.category).toLowerCase().indexOf(q) > -1);
       });
-      var list = all.slice(0, shown);
       $('more').hidden = all.length <= shown;
       $('more').textContent = 'Show more (' + (all.length - shown) + ' more)';
-      $('grid').innerHTML = list.length ? list.map(function(p){
-        return '<article class="card r3d"><div class="prev" data-id="'+esc(p.id)+'"><span class="tag">'+esc(p.category||'Code')+'</span>'+(p.variants.length>1?'<span class="tag" style="left:auto;right:12px">'+p.variants.length+' styles</span>':'')+
-          '<iframe sandbox="allow-scripts" tabindex="-1" aria-hidden="true" loading="lazy" title="Preview of '+esc(p.title)+'" srcdoc="'+esc(p.sample)+'"></iframe></div>' +
-          '<div class="body"><h3>'+esc(p.title)+'</h3><p>'+esc(p.tagline||'')+'</p>' +
-          '<div class="row"><span class="price">'+money(p.price)+'</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-ghost" data-view="'+esc(p.id)+'">Preview</button><button type="button" class="btn btn-primary" data-buy="'+esc(p.id)+'">Buy</button></span></div></div></article>';
-      }).join('') : '<p class="empty">No codes found. Try another category or search.</p>';
+      $('grid').innerHTML = all.slice(0, shown).map(function(p){ return cardHTML(p); }).join('') || '<p class="empty">No codes found. Try another category or search.</p>';
+      scalePreviews(); observe();
+    }
+    function renderWebs(){
+      $('websites').hidden = !WEBS.length; $('navWeb').hidden = !WEBS.length;
+      if (!WEBS.length) return;
+      $('wmore').hidden = WEBS.length <= wshown;
+      $('wmore').textContent = 'Show more websites (' + (WEBS.length - wshown) + ' more)';
+      $('wgrid').innerHTML = WEBS.slice(0, wshown).map(function(p){ return cardHTML(p, true); }).join('');
       scalePreviews(); observe();
     }
     function scalePreviews(){
       Array.prototype.forEach.call(document.querySelectorAll('.prev'), function(w){
         var f = w.querySelector('iframe'); if (!f) return;
-        var s = w.clientWidth / 800;
-        f.style.transform = 'scale(' + s + ')';
+        var W = +w.dataset.w || 800, s = w.clientWidth / W;
+        f.style.width = W + 'px'; f.style.transform = 'scale(' + s + ')';
         f.style.height = (w.clientHeight / s) + 'px';
       });
     }
     window.addEventListener('resize', scalePreviews);
     $('more').addEventListener('click', function(){ shown += 9; render(false); });
+    $('wmore').addEventListener('click', function(){ wshown += 6; renderWebs(); });
 
     var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function(es){
       es.forEach(function(e){ if (e.isIntersecting){ var t = e.target; t.classList.add('in'); io.unobserve(t); setTimeout(function(){ t.classList.add('live'); }, 1000); } });
     }, {threshold:.1}) : null;
     function observe(){
-      Array.prototype.forEach.call(document.querySelectorAll('.reveal:not(.in), .r3d:not(.in)'), function(el){ io ? io.observe(el) : el.classList.add('in'); el.classList.add('live'); });
+      Array.prototype.forEach.call(document.querySelectorAll('.reveal:not(.in), .r3d:not(.in)'), function(el){ io ? io.observe(el) : (el.classList.add('in'), el.classList.add('live')); });
     }
 
     /* ---- all-access ---- */
@@ -421,13 +490,13 @@
       $('passTitle').textContent = AA.title || 'All-Access Pass';
       $('passDesc').textContent = AA.description || '';
       $('passPrice').textContent = money(AA.price);
-      $('passBuy').addEventListener('click', function(){ openCheckout({id:'ALL', title:AA.title||'All-Access Pass', price:AA.price}); });
+      $('passBuy').addEventListener('click', function(){ addToCart('ALL', 'all'); openCart(); });
     }
 
     /* ---- modals ---- */
-    var lastFocus = null;
+    var lastFocus = null, onClose = {};
     function openModal(m, from){ lastFocus = from || document.activeElement; m.classList.add('open'); m.setAttribute('aria-hidden','false'); }
-    function closeModal(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); if (m.id==='pm') $('pmDemo').srcdoc=''; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+    function closeModal(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); if (m.id==='pm') $('pmDemo').srcdoc=''; if (onClose[m.id]) onClose[m.id](); if (lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch(e) {} }
     Array.prototype.forEach.call(document.querySelectorAll('.modal'), function(m){
       m.addEventListener('click', function(e){ if (e.target===m || e.target.closest('[data-close]')) closeModal(m); });
     });
@@ -435,55 +504,128 @@
       if (e.key==='Escape') Array.prototype.forEach.call(document.querySelectorAll('.modal.open'), closeModal);
     });
 
-    var cur = null;
+    /* ---- product window: styles, options, guide ---- */
+    var cur = null, curV = 0, opt = 'all';
     function byId(id){ return live.filter(function(p){ return p.id===id; })[0]; }
-    var curV = 0;
     function showVariant(i){
       curV = i; var v = cur.variants[i];
       $('pmDemo').srcdoc = v.sample; $('pmCode').textContent = v.sample;
       Array.prototype.forEach.call($('pmVars').children, function(b,k){ b.classList.toggle('on', k===i); });
+      renderOpts();
     }
+    function renderOpts(){
+      var n = cur.variants.length;
+      $('pmOpts').hidden = n < 2;
+      if (n < 2){ opt = 'all'; return; }
+      $('pmOpts').innerHTML =
+        '<label class="op"><input type="radio" name="opt" value="all"'+(opt==='all'?' checked':'')+'><span>All '+n+' styles <b>'+money(cur.price)+'</b><small>best value</small></span></label>' +
+        '<label class="op"><input type="radio" name="opt" value="one"'+(opt==='one'?' checked':'')+'><span>Only “'+esc(cur.variants[curV].name)+'” <b>'+money(sp(cur))+'</b><small>one style</small></span></label>';
+    }
+    $('pmOpts').addEventListener('change', function(e){ if (e.target.name === 'opt') opt = e.target.value; });
     function openProduct(p, from){
-      cur = p;
+      cur = p; opt = 'all';
       $('pmTitle').textContent = p.title;
       $('pmSub').textContent = (p.category ? p.category + ' · ' : '') + (p.tagline || '');
       var n = p.variants.length;
       $('pmVars').hidden = n < 2;
       $('pmVars').innerHTML = p.variants.map(function(v,k){ return '<button type="button" class="vt'+(k===0?' on':'')+'" data-v="'+k+'">'+esc(v.name)+'</button>'; }).join('');
-      $('pmBuy').textContent = 'Buy full version' + (n > 1 ? ' (all ' + n + ' styles)' : '') + ' — ' + money(p.price);
+      $('pmGuideTab').hidden = !p.guide; $('pmGuide').innerHTML = p.guide || '';
       $('pmHint').textContent = n > 1
-        ? 'This is the free, basic sample of each style. Buying unlocks the full code of all ' + n + ' styles — with animations, JavaScript, mobile layout and extra sections.'
+        ? 'Free, basic sample of each style. Buying unlocks the full code — with animations, JavaScript, mobile layout and extra sections.'
         : 'The free sample is a basic version. The full version adds animations, interactivity and polished styling.';
+      $('pmDemo').className = 'demo' + (p.group === 'website' ? ' tall' : '');
       showVariant(0); showTab('demo');
       openModal($('pm'), from);
     }
     $('pmVars').addEventListener('click', function(e){ var b = e.target.closest('.vt'); if (b) showVariant(+b.dataset.v); });
     function showTab(t){
-      Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){ b.classList.toggle('on', b.dataset.tab===t); });
-      $('pmDemo').hidden = t!=='demo'; $('pmCode').hidden = t!=='code';
+      Array.prototype.forEach.call(document.querySelectorAll('#pm .tab'), function(b){ b.classList.toggle('on', b.dataset.tab===t); });
+      $('pmDemo').hidden = t!=='demo'; $('pmCode').hidden = t!=='code'; $('pmGuide').hidden = t!=='guide';
     }
-    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){ b.addEventListener('click', function(){ showTab(b.dataset.tab); }); });
+    Array.prototype.forEach.call(document.querySelectorAll('#pm .tab'), function(b){ b.addEventListener('click', function(){ showTab(b.dataset.tab); }); });
     $('pmCopy').addEventListener('click', function(){
       var b = this; if (!cur) return;
       function done(){ b.textContent = 'Copied!'; setTimeout(function(){ b.textContent = 'Copy free sample'; }, 1600); }
       var t = cur.variants[curV].sample;
       if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, done); else done();
     });
-    $('pmBuy').addEventListener('click', function(){ var p = cur; closeModal($('pm')); openCheckout(p); });
+    function chosen(){ return opt === 'one' && cur.variants.length > 1 ? curV : 'all'; }
+    $('pmAdd').addEventListener('click', function(){ addToCart(cur.id, chosen()); });
+    $('pmBuy').addEventListener('click', function(){ addToCart(cur.id, chosen(), true); closeModal($('pm')); openCart(); });
 
-    $('grid').addEventListener('click', function(e){
-      var v = e.target.closest('[data-view]'), b = e.target.closest('[data-buy]'), pv = e.target.closest('.prev');
+    function clickGrid(e){
+      var v = e.target.closest('[data-view]'), a = e.target.closest('[data-add]'), pv = e.target.closest('.prev');
       if (v) return openProduct(byId(v.dataset.view), v);
-      if (b) return openCheckout(byId(b.dataset.buy), b);
+      if (a){ addToCart(a.dataset.add, 'all'); return openCart(); }
       if (pv) return openProduct(byId(pv.dataset.id), pv);
-    });
+    }
+    $('grid').addEventListener('click', clickGrid);
+    $('wgrid').addEventListener('click', clickGrid);
 
-    /* ---- checkout (crypto) ---- */
-    var API = String(S.apiUrl || '').replace(/\/+$/, '');   // set => AUTOMATIC payments
-    var item = null, coin = $('coCoin'), wallets = S.wallets || {}, poll = null, tick = null;
-    Object.keys(wallets).forEach(function(n){ if (!wallets[n]) return; var o = document.createElement('option'); o.value = o.textContent = n; coin.appendChild(o); });
+    /* ---- cart (kept in this browser) ---- */
+    var cart = store('geostore_cart') || [];
+    if (!Array.isArray(cart)) cart = [];
+    function saveCart(){ store('geostore_cart', cart); var n = lines().length; Array.prototype.forEach.call(document.querySelectorAll('[data-cartcount]'), function(e){ e.textContent = n; e.hidden = !n; }); }
+    function addToCart(id, v, quiet){
+      var p = id === 'ALL' ? null : byId(id);
+      if (id !== 'ALL' && !p) return;
+      if (id === 'ALL'){ cart = cart.filter(function(i){ var q = byId(i.id); return q && q.type === 'digital'; }); cart.push({id:'ALL', v:'all'}); }
+      else if (cart.some(function(i){ return i.id === 'ALL'; }) && p.type !== 'digital'){ if (!quiet) toast('Already included in your All-Access pass'); return; }
+      else if (p.type === 'digital'){ if (!cart.some(function(i){ return i.id === id; })) cart.push({id:id, v:'all'}); }
+      else if (v === 'all'){ cart = cart.filter(function(i){ return i.id !== id; }); cart.push({id:id, v:'all'}); }
+      else if (!cart.some(function(i){ return i.id === id && (i.v === 'all' || i.v === v); })) cart.push({id:id, v:v});
+      saveCart(); if (!quiet) toast('Added to cart');
+    }
+    // the same pricing rules as the server (the server always has the final say)
+    function lines(){
+      var out = [], hasAll = cart.some(function(i){ return i.id === 'ALL'; }), by = {}, order = [];
+      cart.forEach(function(i){
+        if (i.id === 'ALL') return;
+        var p = byId(i.id); if (!p) return;
+        if (!by[i.id]){ by[i.id] = {p:p, all:false, st:[]}; order.push(i.id); }
+        var g = by[i.id];
+        if (p.type === 'digital' || i.v === 'all') g.all = true; else if (g.st.indexOf(i.v) < 0) g.st.push(i.v);
+      });
+      if (hasAll && AA && AA.enabled) out.push({id:'ALL', title:AA.title || 'All-Access Pass', price:+AA.price});
+      order.forEach(function(id){
+        var g = by[id], p = g.p, n = p.variants.length;
+        if (p.type === 'digital'){ out.push({id:id, title:p.title, price:+p.price}); return; }
+        if (hasAll) return;
+        if (n < 2 || g.all || g.st.length >= n || g.st.length * sp(p) >= p.price) out.push({id:id, title:p.title + (n > 1 ? ' (all ' + n + ' styles)' : ''), price:+p.price});
+        else { g.st.sort(); out.push({id:id, title:p.title + ' — ' + g.st.map(function(k){ return p.variants[k].name; }).join(', '), price:round2(g.st.length * sp(p))}); }
+      });
+      return out;
+    }
+    function renderCart(){
+      var L = lines(), total = round2(L.reduce(function(a, l){ return a + l.price; }, 0));
+      $('cartList').innerHTML = L.length ? L.map(function(l){ return '<div class="cl"><span>'+esc(l.title)+'</span><b>'+money(l.price)+'</b><button type="button" class="rm" data-rm="'+esc(l.id)+'" aria-label="Remove">×</button></div>'; }).join('') : '<p class="empty" style="padding:26px 0">Your cart is empty.<br>Add a code, a website or a digital item to get started.</p>';
+      $('cartTotal').innerHTML = L.length ? '<span>Total</span><b>'+money(total)+'</b>' : '';
+      $('cartForm').hidden = !L.length;
+      saveCart(); return L;
+    }
+    $('cartList').addEventListener('click', function(e){ var b = e.target.closest('[data-rm]'); if (!b) return; cart = cart.filter(function(i){ return i.id !== b.dataset.rm; }); renderCart(); });
+
+    /* ---- payment (automatic: USDT + Bitcoin through your Cloudflare server; or manual) ---- */
+    var API = String(S.apiUrl || '').replace(/\/+$/, '');
+    var coin = $('coCoin'), wallets = S.wallets || {}, coins = [];
+    var token = store('geostore_token') || '', me = store('geostore_me') || null, poll = null, tick = null, curOrder = null;
+    function authH(){ var h = {'content-type':'application/json'}; if (token) h.authorization = 'Bearer ' + token; return h; }
+    function apiCall(path, body, method){
+      return fetch(API + path, {method: method || (body ? 'POST' : 'GET'), headers: authH(), body: body ? JSON.stringify(body) : undefined})
+        .then(function(r){ return r.json().then(function(j){ if (!r.ok){ var er = new Error(j.error || 'Something went wrong'); er.status = r.status; throw er; } return j; }); });
+    }
+    function fillCoins(){
+      coin.innerHTML = '';
+      if (API){ coins.forEach(function(c){ var o = document.createElement('option'); o.value = c.id; o.textContent = c.name; coin.appendChild(o); }); }
+      else Object.keys(wallets).forEach(function(n){ if (!wallets[n]) return; var o = document.createElement('option'); o.value = o.textContent = n; coin.appendChild(o); });
+      $('fCoin').hidden = coin.options.length < 2 && !!API;
+    }
+    if (API){
+      coins = [{id:'usdt_trc20', name:'USDT (TRC20)'}]; fillCoins();
+      fetch(API + '/api/config').then(function(r){ return r.json(); }).then(function(c){ if (c && c.coins && c.coins.length){ coins = c.coins; fillCoins(); } }).catch(function(){});
+    } else fillCoins();
     function showAddr(){ $('coAddr').textContent = wallets[coin.value] || 'No wallet configured yet'; }
-    coin.addEventListener('change', showAddr);
+    coin.addEventListener('change', function(){ if (!API) showAddr(); });
     function copyBtn(btn, getText, label){
       btn.addEventListener('click', function(){
         var t = getText();
@@ -496,40 +638,34 @@
     copyBtn($('payAddrCopy'), function(){ return $('payAddr').textContent; }, 'Copy');
 
     function stopTimers(){ clearInterval(poll); clearInterval(tick); poll = tick = null; }
-    function resetCheckout(){ stopTimers(); $('coForm').hidden = false; $('coPay').hidden = true; $('coTitle').textContent = 'Checkout'; }
-    $('co').addEventListener('click', function(e){ if (e.target===$('co') || e.target.closest('[data-close]')) stopTimers(); });
-
-    function openCheckout(it, from){
-      if (!it) return;
-      item = it; resetCheckout();
-      $('coSum').innerHTML = esc(it.title) + ' — <b>' + money(it.price) + '</b>';
+    onClose.cartM = stopTimers;
+    function openCart(from){
+      stopTimers(); $('cartStep').hidden = false; $('payView').hidden = true; $('cartTitle').textContent = 'Your cart';
+      renderCart();
+      var man = !API;
+      $('fAddr').hidden = !man; $('manualNote').hidden = !man; $('coGo').textContent = man ? "I've paid — confirm order" : 'Continue to payment';
+      if (man) showAddr();
+      $('fEmail').hidden = !!me; $('signedAs').hidden = !me; if (me) $('signedAs').innerHTML = 'Signed in as <b>' + esc(me.email) + '</b> — this order will be saved to your account.';
+      $('cartSignin').parentNode.hidden = !!me;
       $('coMsg').textContent = ''; $('coMsg').classList.remove('err');
-      var auto = !!API;
-      $('fCoin').hidden = auto; $('fAddr').hidden = auto; $('manualNote').hidden = auto;
-      $('coGo').textContent = auto ? 'Continue to payment' : "I've paid — confirm order";
-      if (!auto) showAddr();
-      openModal($('co'), from);
-      $('coEmail').focus();
+      openModal($('cartM'), from);
     }
-
-    /* automatic mode: show the payment screen and watch the order */
     function leftText(ms){ if (ms <= 0) return 'expired'; var m = Math.floor(ms/60000), s = Math.floor(ms%60000/1000); return m + ':' + (s<10?'0':'') + s + ' left'; }
     function showPay(o){
-      $('coForm').hidden = true; $('coPay').hidden = false;
-      $('coTitle').textContent = 'Pay with USDT';
-      $('coSum').innerHTML = esc(o.title) + ' — <b>' + esc(o.amount) + ' USDT</b>';
+      curOrder = o; stopTimers();
+      $('cartStep').hidden = true; $('payView').hidden = false; $('cartTitle').textContent = 'Pay with ' + o.coinName;
+      $('payTitle').innerHTML = esc(o.title) + ' — <b style="color:var(--accent)">' + money(o.usd) + '</b>';
+      $('payL1').innerHTML = '1. Send exactly this amount of <b>' + esc(o.coinName) + '</b>';
+      $('payL2').innerHTML = '2. To this address — network: <b>' + esc(o.network) + '</b>';
       $('payAmt').textContent = o.amount; $('payAddr').textContent = o.wallet;
-      try { localStorage.setItem('geostore_order', o.id); } catch(e) {}
-      render2(o);
-      stopTimers();
+      renderPay(o);
       if (o.status === 'pending'){
-        poll = setInterval(function(){ refresh(o.id); }, 8000);
-        tick = setInterval(function(){ if (cur2) render2(cur2); }, 1000);
+        poll = setInterval(function(){ refresh(o.id); }, o.coin === 'btc' ? 20000 : 8000);
+        tick = setInterval(function(){ if (curOrder) renderPay(curOrder); }, 1000);
       }
     }
-    var cur2 = null;
-    function render2(o){
-      cur2 = o;
+    function renderPay(o){
+      curOrder = o;
       var st = $('payStatus'), open = $('payOpen');
       st.classList.remove('err');
       if (o.status === 'paid'){
@@ -538,47 +674,111 @@
         st.classList.add('err'); st.textContent = 'This order expired. If you already paid, email us your order ID: ' + o.id; open.hidden = true; stopTimers();
       } else {
         var left = o.expiresAt - Date.now();
-        st.textContent = '⏳ Waiting for your payment… ' + leftText(left) + '. This page updates by itself.'; open.hidden = true;
-        if (left <= 0) { st.classList.add('err'); st.textContent = 'Time is up. If you already sent the payment it may still be detected — keep this page open for a few minutes.'; }
+        st.textContent = '⏳ Waiting for your payment… ' + leftText(left) + (o.coin === 'btc' ? '. Bitcoin needs 1 network confirmation (about 10–30 minutes).' : '. This page updates by itself.'); open.hidden = true;
+        if (left <= 0) { st.classList.add('err'); st.textContent = 'Time is up. If you already sent the payment it may still be detected — keep this window open for a few minutes.'; }
       }
     }
-    function refresh(id){
-      fetch(API + '/api/order/' + id).then(function(r){ return r.json(); }).then(function(o){ if (o && o.status) render2(o); }).catch(function(){});
+    function refresh(id){ apiCall('/api/order/' + id).then(function(o){ if (o && o.status) renderPay(o); }).catch(function(){}); }
+    function rememberOrder(id){ var ids = store('geostore_orders') || []; if (ids.indexOf(id) < 0){ ids.push(id); store('geostore_orders', ids.slice(-20)); } }
+    function resumeOrder(id){
+      return apiCall('/api/order/' + id).then(function(o){ closeModal($('acctM')); openCart(); showPay(o); });
     }
-    // come back to an unfinished or paid order
-    (function resume(){
-      if (!API) return;
-      var id = null;
-      try { id = new URLSearchParams(location.search).get('order') || localStorage.getItem('geostore_order'); } catch(e) {}
-      if (!id || !/^[a-f0-9]{32}$/.test(id)) return;
-      fetch(API + '/api/order/' + id).then(function(r){ return r.ok ? r.json() : null; }).then(function(o){
-        if (!o || (o.status !== 'pending' && o.status !== 'paid')) { try { localStorage.removeItem('geostore_order'); } catch(e) {} return; }
-        item = {title:o.title}; openModal($('co'), null); showPay(o);
-      }).catch(function(){});
-    })();
 
-    $('coForm').addEventListener('submit', function(e){
+    $('cartForm').addEventListener('submit', function(e){
       e.preventDefault();
-      var email = $('coEmail').value.trim(), msg = $('coMsg');
+      var L = lines(); if (!L.length) return;
+      var email = me ? me.email : $('coEmail').value.trim(), msg = $('coMsg');
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ msg.classList.add('err'); msg.textContent = 'Please enter a valid email address.'; return; }
       msg.classList.remove('err');
       if (API){
         msg.textContent = 'Creating your order…';
-        fetch(API + '/api/order', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ item: item.id, email: email }) })
-          .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
-          .then(function(x){
-            if (!x.ok){ msg.classList.add('err'); msg.textContent = x.j.error || 'Something went wrong. Please try again.'; return; }
-            msg.textContent = ''; showPay(x.j);
-          })
-          .catch(function(){ msg.classList.add('err'); msg.textContent = 'Could not reach the payment server. Please try again.'; });
+        apiCall('/api/order', {email: email, coin: coin.value || 'usdt_trc20', items: cart.map(function(i){ return {id:i.id, v:i.v}; })})
+          .then(function(o){ msg.textContent = ''; rememberOrder(o.id); cart = []; saveCart(); showPay(o); })
+          .catch(function(er){ msg.classList.add('err'); msg.textContent = er.message || 'Could not reach the payment server. Please try again.'; });
         return;
       }
-      var body = 'New order\r\nItem: ' + item.title + ' (' + item.id + ')\r\nPrice: ' + money(item.price) + '\r\nCoin: ' + coin.value + '\r\nCustomer email: ' + email;
-      window.location.href = 'mailto:' + (S.email||'') + '?subject=' + encodeURIComponent('Order: ' + item.title) + '&body=' + encodeURIComponent(body);
+      var total = round2(L.reduce(function(a, l){ return a + l.price; }, 0));
+      var body = 'New order\r\n' + L.map(function(l){ return '- ' + l.title + ': ' + money(l.price); }).join('\r\n') + '\r\nTotal: ' + money(total) + '\r\nCoin: ' + coin.value + '\r\nCustomer email: ' + email;
+      window.location.href = 'mailto:' + (S.email||'') + '?subject=' + encodeURIComponent('Order: ' + L[0].title + (L.length > 1 ? ' +' + (L.length - 1) : '')) + '&body=' + encodeURIComponent(body);
       msg.textContent = 'Your email app opened with the order details — press Send to finish.';
     });
+    $('cartSignin').addEventListener('click', function(e){ e.preventDefault(); closeModal($('cartM')); openAccount(); });
 
-
+    /* ---- customer account ---- */
+    var acctTab = 'orders';
+    function setAuth(t, profile){ token = t || ''; me = profile || null; store('geostore_token', token || null); store('geostore_me', me); updateNav(); }
+    function updateNav(){ Array.prototype.forEach.call(document.querySelectorAll('[data-acctlabel]'), function(e){ e.textContent = me ? (me.name ? me.name.split(' ')[0] : 'Account') : 'Sign in'; }); }
+    function dt(ms){ return ms ? new Date(ms).toLocaleString([], {dateStyle:'medium', timeStyle:'short'}) : ''; }
+    function pill(st){ return '<span class="pill2 '+st+'">'+({pending:'Waiting for payment', paid:'Paid', expired:'Expired'}[st]||st)+'</span>'; }
+    function orderCard(o){
+      return '<div class="oc"><div class="oh"><b>'+esc(o.title)+'</b>'+pill(o.status)+'</div><div class="mono">'+dt(o.createdAt)+' · order '+esc(o.id.slice(0,8))+' · '+money(o.usd)+' · '+esc(o.amount)+' '+esc(o.coinName.split(' ')[0])+'</div>' +
+        '<div class="oa">'+(o.status==='paid' ? '<a class="btn btn-primary btn-s" target="_blank" rel="noopener" href="'+esc(o.deliveryUrl)+'">Open my codes</a>' : '')+(o.status==='pending' ? '<button type="button" class="btn btn-primary btn-s" data-pay="'+esc(o.id)+'">Continue payment</button>' : '')+'</div></div>';
+    }
+    function explorer(o){ return !o.txid || o.txid === 'manual' ? 'confirmed by us' : '<a target="_blank" rel="noopener" href="'+(o.coin==='btc' ? 'https://mempool.space/tx/' : 'https://tronscan.org/#/transaction/')+esc(o.txid)+'">'+esc(o.txid.slice(0,10))+'…</a>'; }
+    function openAccount(from){
+      $('acctTitle').textContent = me ? 'My account' : 'Account';
+      openModal($('acctM'), from);
+      me ? renderIn() : renderOut('in');
+    }
+    function renderOut(tab){
+      if (!API){ $('acctBody').innerHTML = '<p class="empty">Accounts are available once your payment server is connected.</p>'; return; }
+      var ids = (store('geostore_orders') || []).slice().reverse();
+      $('acctBody').innerHTML =
+        '<div class="tabs"><button type="button" class="tab '+(tab==='in'?'on':'')+'" data-at="in">Sign in</button><button type="button" class="tab '+(tab==='up'?'on':'')+'" data-at="up">Create account</button></div>' +
+        '<form id="authForm" novalidate>' + (tab==='up' ? '<div class="field"><label>Your name</label><input id="afName" autocomplete="name"></div>' : '') +
+        '<div class="field"><label>Email</label><input id="afEmail" type="email" autocomplete="email"></div><div class="field"><label>Password'+(tab==='up'?' (at least 8 characters)':'')+'</label><input id="afPw" type="password" autocomplete="'+(tab==='up'?'new-password':'current-password')+'"></div>' +
+        '<button class="btn btn-primary btn-block" type="submit">'+(tab==='up'?'Create account':'Sign in')+'</button><p class="msg" id="afMsg"></p></form>' +
+        '<p class="note">With an account you keep every order, code, payment and your details in one place, on any device.</p>' +
+        '<h4 class="sh">Orders placed on this device</h4><div id="devOrders">'+(ids.length?'<p class="note">Loading…</p>':'<p class="note">No orders yet.</p>')+'</div>';
+      $('acctBody').dataset.tab = tab;
+      if (ids.length) Promise.all(ids.slice(0,10).map(function(id){ return apiCall('/api/order/' + id).catch(function(){ return null; }); })).then(function(os){
+        os = os.filter(Boolean); $('devOrders').innerHTML = os.length ? os.map(orderCard).join('') : '<p class="note">No orders yet.</p>';
+      });
+    }
+    function renderIn(){
+      $('acctBody').innerHTML = '<p class="note">Loading your account…</p>';
+      apiCall('/api/account/me').then(function(r){
+        me = r.profile; store('geostore_me', me); updateNav();
+        var paid = r.orders.filter(function(o){ return o.status === 'paid'; });
+        var tabs = [['orders','Orders ('+r.orders.length+')'],['pay','Payment history'],['profile','Profile']];
+        var body = '';
+        if (acctTab === 'orders') body = r.orders.length ? r.orders.map(orderCard).join('') : '<p class="empty">No orders yet. Your purchases will appear here.</p>';
+        if (acctTab === 'pay') body = paid.length ? '<div class="tw"><table class="pt"><thead><tr><th>Date</th><th>Items</th><th>Paid</th><th>Transaction</th></tr></thead><tbody>'+paid.map(function(o){ return '<tr><td>'+dt(o.paidAt||o.createdAt)+'</td><td>'+esc(o.title)+'</td><td>'+money(o.usd)+'<div class="mono">'+esc(o.amount)+' '+esc(o.coinName.split(' ')[0])+'</div></td><td>'+explorer(o)+'</td></tr>'; }).join('')+'</tbody></table></div><p class="note" style="margin-top:12px">Total spent: <b>'+money(r.spent)+'</b></p>' : '<p class="empty">No payments yet.</p>';
+        if (acctTab === 'profile') body =
+          '<div class="stats2"><div><small>Member since</small><b>'+new Date(r.profile.createdAt).toLocaleDateString()+'</b></div><div><small>Orders</small><b>'+r.orders.length+'</b></div><div><small>Total spent</small><b>'+money(r.spent)+'</b></div></div>' +
+          '<form id="profForm"><div class="two"><div class="field"><label>Name</label><input id="pfName" value="'+esc(r.profile.name)+'"></div><div class="field"><label>Email</label><input value="'+esc(r.profile.email)+'" disabled></div><div class="field"><label>Phone</label><input id="pfPhone" value="'+esc(r.profile.phone)+'"></div><div class="field"><label>Country</label><input id="pfCountry" value="'+esc(r.profile.country)+'"></div></div><button class="btn btn-primary" type="submit">Save details</button> <span class="msg" id="pfMsg"></span></form>' +
+          '<h4 class="sh">Change password</h4><form id="pwForm"><div class="two"><div class="field"><label>Current password</label><input id="pwOld" type="password" autocomplete="current-password"></div><div class="field"><label>New password (8+ characters)</label><input id="pwNew" type="password" autocomplete="new-password"></div></div><button class="btn btn-ghost" type="submit">Change password</button> <span class="msg" id="pwMsg"></span></form>' +
+          '<p style="margin-top:22px"><button type="button" class="btn btn-ghost" id="signOut">Sign out</button></p>';
+        $('acctBody').innerHTML = '<p class="note" style="margin-bottom:12px">Signed in as <b>'+esc(r.profile.email)+'</b></p><div class="tabs">'+tabs.map(function(t){ return '<button type="button" class="tab '+(acctTab===t[0]?'on':'')+'" data-at="'+t[0]+'">'+t[1]+'</button>'; }).join('')+'</div>'+body;
+      }).catch(function(er){ if (er.status === 401){ setAuth('', null); renderOut('in'); } else $('acctBody').innerHTML = '<p class="empty">'+esc(er.message)+'</p>'; });
+    }
+    $('acctBody').addEventListener('click', function(e){
+      var t = e.target.closest('[data-at]'), pay = e.target.closest('[data-pay]');
+      if (t){ if (me){ acctTab = t.dataset.at; renderIn(); } else renderOut(t.dataset.at); }
+      if (pay) resumeOrder(pay.dataset.pay).catch(function(er){ toast(er.message); });
+      if (e.target.id === 'signOut'){ setAuth('', null); $('acctTitle').textContent = 'Account'; renderOut('in'); toast('Signed out'); }
+    });
+    $('acctBody').addEventListener('submit', function(e){
+      e.preventDefault();
+      var id = e.target.id;
+      if (id === 'authForm'){
+        var up = $('acctBody').dataset.tab === 'up', msg = $('afMsg'); msg.classList.remove('err'); msg.textContent = 'Please wait…';
+        apiCall(up ? '/api/account/register' : '/api/account/login', {email:$('afEmail').value.trim(), password:$('afPw').value, name: up ? $('afName').value.trim() : undefined})
+          .then(function(r){ setAuth(r.token, r.profile); acctTab = 'orders'; $('acctTitle').textContent = 'My account'; renderIn(); toast(up ? 'Account created' : 'Welcome back'); })
+          .catch(function(er){ msg.classList.add('err'); msg.textContent = er.message; });
+      }
+      if (id === 'profForm'){
+        apiCall('/api/account/update', {name:$('pfName').value, phone:$('pfPhone').value, country:$('pfCountry').value}).then(function(r){ me = r.profile; store('geostore_me', me); updateNav(); $('pfMsg').classList.remove('err'); $('pfMsg').textContent = 'Saved ✓'; }).catch(function(er){ $('pfMsg').classList.add('err'); $('pfMsg').textContent = er.message; });
+      }
+      if (id === 'pwForm'){
+        apiCall('/api/account/password', {oldPassword:$('pwOld').value, newPassword:$('pwNew').value}).then(function(r){ setAuth(r.token, r.profile); $('pwMsg').classList.remove('err'); $('pwMsg').textContent = 'Password changed ✓'; $('pwOld').value = $('pwNew').value = ''; }).catch(function(er){ $('pwMsg').classList.add('err'); $('pwMsg').textContent = er.message; });
+      }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-openacct]'), function(b){ b.addEventListener('click', function(){ openAccount(b); }); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-opencart]'), function(b){ b.addEventListener('click', function(){ openCart(b); }); });
+    $('acctM').addEventListener('click', function(){});
+    updateNav(); saveCart();
+    if (!API){ Array.prototype.forEach.call(document.querySelectorAll('[data-openacct]'), function(b){ b.hidden = true; }); }
 
     /* ---------- FAQ accordion ---------- */
     (function(){
@@ -751,10 +951,11 @@
       $('dgrid').innerHTML = DIGITAL.map(function(p){
         return '<article class="dcard r3d"><div class="dart">'+esc(p.icon || '🎁')+'</div><div class="body"><h3>'+esc(p.title)+'</h3><p>'+esc(p.tagline||'')+'</p><div class="row"><span class="price">'+money(p.price)+'</span><button type="button" class="btn btn-primary" data-dbuy="'+esc(p.id)+'">Buy</button></div></div></article>';
       }).join('');
-      $('dgrid').addEventListener('click', function(e){ var b = e.target.closest('[data-dbuy]'); if (b) openCheckout(byId(b.dataset.dbuy), b); });
+      $('dgrid').addEventListener('click', function(e){ var b = e.target.closest('[data-dbuy]'); if (b){ addToCart(b.dataset.dbuy, 'all'); openCart(); } });
       observe();
     })();
 
+    renderWebs();
     render();
   })();
   </script>

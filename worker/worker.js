@@ -1,29 +1,35 @@
 /**
- * Geostore payment + delivery server — runs free on Cloudflare Workers.
+ * Geostore payment, delivery and customer-account server — runs free on Cloudflare Workers.
  *
  * What it does
- *  1. Creates an order with a UNIQUE USDT (TRC20) amount, e.g. 9.037 for a $9 product.
- *  2. Watches your wallet through the public TronGrid API.
- *  3. When that exact amount arrives, the order becomes "paid" and the customer
- *     gets a private delivery link with the full code.
+ *  1. Creates an order (a cart of products, styles and digital items) with a UNIQUE amount to pay,
+ *     in USDT (TRC20) or Bitcoin, straight to YOUR wallet.
+ *  2. Watches the blockchain through free public APIs (TronGrid, mempool.space).
+ *  3. When the exact amount arrives the order becomes "paid" and the customer gets a private page
+ *     with the full code (and a code from your stock for digital items).
+ *  4. Customers can create an account to see their orders, codes, payment history and profile.
  *
  * Needs (set in the Cloudflare dashboard — see DEPLOY-AUTOMATIC.md):
  *   KV binding   ORDERS          (storage)
- *   Variable     WALLET          (your TRON address that receives USDT, starts with T)
  *   Secret       ADMIN_TOKEN     (a long password only you know)
  *   Variable     ALLOWED_ORIGIN  (your shop address, e.g. https://myshop.pages.dev) — optional but recommended
- *   Variable     TRONGRID_KEY    (optional free key from trongrid.io, for higher limits)
+ *   Wallet addresses are set in your dashboard (Settings) and sent here with "Sync to server".
+ *   Optional fallbacks: WALLET (TRON address), WALLET_BTC (Bitcoin address), TRONGRID_KEY, SESSION_SECRET.
  */
 
 const USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // USDT on TRON (TRC20)
-const ORDER_MINUTES = 60;                 // customer has 60 minutes to pay
-const GRACE_MS = 15 * 60 * 1000;          // keep checking 15 min after expiry
-const THROTTLE_MS = 7000;                 // don't ask TronGrid more often than this per order
+const COINS = {
+  usdt_trc20: { name: 'USDT (TRC20)', network: 'TRON (TRC20)', short: 'USDT', minutes: 60, graceMs: 15 * 60000, throttle: 7000 },
+  btc:        { name: 'Bitcoin (BTC)', network: 'Bitcoin', short: 'BTC',  minutes: 90, graceMs: 180 * 60000, throttle: 20000 }
+};
+const PBKDF2_ITER = 10000;   // kept modest so it fits Cloudflare's free CPU limit; raise to 100000 on the paid plan
 // Cloudflare's FREE plan allows only 1,000 KV writes and 1,000 KV list calls per day,
-// so this server writes ONLY when something really changes (new order, paid, expired)
+// so this server writes ONLY when something really changes (new order, paid, expired, account change)
 // and keeps "when did I last look" in memory instead of in storage.
-const lastLook = new Map();               // orderId -> time of last blockchain check
-const ipHits = new Map();                 // ip -> [timestamps] of recent order requests
+const lastLook = new Map();   // orderId -> time of last blockchain check
+const ipHits = new Map();     // ip -> timestamps of recent order requests
+const authHits = new Map();   // ip|email -> timestamps of recent sign-in attempts
+let rateCache = { t: 0, v: 0 };
 
 /* ---------------- helpers ---------------- */
 // Admin + health routes are protected by the secret token, so any origin may call them
@@ -62,121 +68,302 @@ function isAdmin(req, env) {
   const h = req.headers.get('authorization') || '';
   return h.startsWith('Bearer ') && safeEqual(h.slice(7), env.ADMIN_TOKEN);
 }
-const usd = micro => (micro / 1e6).toFixed(3);
+const round2 = n => Math.round(n * 100) / 100;
+const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) && e.length <= 200;
+const getCatalog = env => env.ORDERS.get('catalog', 'json');
 const saveOrder = (env, o, ttl) => env.ORDERS.put('order:' + o.id, JSON.stringify(o), ttl ? { expirationTtl: ttl } : undefined);
-const publicOrder = (env, o, apiBase) => ({
-  id: o.id, status: o.status, title: o.title, amount: usd(o.amount), wallet: env.WALLET,
-  network: 'TRON (TRC20)', coin: 'USDT', expiresAt: o.expiresAt,
-  deliveryUrl: o.status === 'paid' ? apiBase + '/api/delivery/' + o.id + '?k=' + o.key : null
-});
+const fmtAmount = (coin, a) => coin === 'btc' ? (a / 1e8).toFixed(8) : (a / 1e6).toFixed(3);
+function tooMany(map, key, max, windowMs) {
+  const now = Date.now(), hits = (map.get(key) || []).filter(t => now - t < windowMs);
+  hits.push(now); map.set(key, hits);
+  if (map.size > 800) map.clear();
+  return hits.length > max;
+}
+function walletFor(env, cat, coin) {
+  const w = (cat && cat.wallets && cat.wallets[coin]) || (coin === 'btc' ? env.WALLET_BTC : env.WALLET) || '';
+  return String(w).trim();
+}
+
+/* ---------------- orders: shape helpers ---------------- */
+// Orders made before carts existed have `item` instead of `items`; treat them the same.
+function itemsOf(o) {
+  if (Array.isArray(o.items) && o.items.length) return o.items;
+  return [{ id: o.item, title: o.title, mode: 'all', type: o.item === 'ALL' ? 'all' : 'code' }];
+}
+const orderTitle = o => itemsOf(o).map(i => i.title).join(', ');
+function orderCoin(o) { return o.coin || 'usdt_trc20'; }
+function publicOrder(env, o, apiBase) {
+  const coin = orderCoin(o), c = COINS[coin];
+  return {
+    id: o.id, status: o.status, title: orderTitle(o), items: itemsOf(o).map(i => ({ title: i.title, price: i.price, mode: i.mode, styles: i.styles })),
+    usd: o.usd, coin, coinName: c.name, amount: fmtAmount(coin, o.amount), wallet: o.wallet || env.WALLET || '',
+    network: c.network, expiresAt: o.expiresAt, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null,
+    deliveryUrl: o.status === 'paid' ? apiBase + '/api/delivery/' + o.id + '?k=' + o.key : null
+  };
+}
+
+/* ---------------- pricing (the server decides every price) ---------------- */
+function stylePriceOf(p) { const s = Number(p.stylePrice); return s > 0 ? s : Math.max(1, Math.ceil(Number(p.price) / 2)); }
+function priceCart(cat, raw) {
+  const byProd = {}; let hasAll = false;
+  for (const it of raw.slice(0, 30)) {
+    const id = String((it && it.id) || '');
+    if (id === 'ALL') {
+      if (!cat.allAccess || !cat.allAccess.enabled) return { error: 'All-Access is not available' };
+      hasAll = true; continue;
+    }
+    const p = cat.products && cat.products[id];
+    if (!p || p.published === false) return { error: 'One of the items is not available any more' };
+    const g = byProd[id] || (byProd[id] = { p, all: false, styles: new Set() });
+    if (p.type === 'digital') { g.all = true; continue; }
+    if (it.v === undefined || it.v === null || it.v === 'all') g.all = true;
+    else {
+      const n = Number(it.v);
+      if (!Number.isInteger(n) || n < 0 || n >= p.variants.length) return { error: 'Unknown style' };
+      g.styles.add(n);
+    }
+  }
+  const lines = [];
+  if (hasAll) lines.push({ id: 'ALL', title: cat.allAccess.title || 'All-Access Pass', type: 'all', mode: 'all', price: Number(cat.allAccess.price) });
+  for (const id of Object.keys(byProd)) {
+    const g = byProd[id], p = g.p;
+    if (p.type === 'digital') { lines.push({ id, title: p.title, type: 'digital', mode: 'all', price: Number(p.price) }); continue; }
+    if (hasAll) continue;                                  // already included in All-Access
+    const n = p.variants.length, sp = stylePriceOf(p);
+    if (n < 2 || g.all || g.styles.size >= n || g.styles.size * sp >= p.price) lines.push({ id, title: p.title, type: 'code', mode: 'all', price: Number(p.price) });
+    else {
+      const styles = [...g.styles].sort((a, b) => a - b);
+      lines.push({ id, title: p.title + ' — ' + styles.map(i => p.variants[i].name).join(', '), type: 'code', mode: 'styles', styles, price: round2(styles.length * sp) });
+    }
+  }
+  if (!lines.length) return { error: 'Your cart is empty' };
+  const usd = round2(lines.reduce((a, l) => a + l.price, 0));
+  if (!(usd > 0)) return { error: 'This order has no price' };
+  return { lines, usd };
+}
+
+async function btcRate() {
+  if (Date.now() - rateCache.t < 60000 && rateCache.v) return rateCache.v;
+  const tries = [
+    ['https://mempool.space/api/v1/prices', j => j.USD],
+    ['https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd', j => j.bitcoin && j.bitcoin.usd]
+  ];
+  for (const [u, pick] of tries) {
+    try { const r = await fetch(u); if (r.ok) { const v = Number(pick(await r.json())); if (v > 0) { rateCache = { t: Date.now(), v }; return v; } } } catch (e) { /* try next */ }
+  }
+  return 0;
+}
+
+/* ---------------- customer accounts ---------------- */
+const enc = new TextEncoder();
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+async function pbkdf2(pw, saltHex, iter) {
+  const key = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+  const salt = Uint8Array.from(saltHex.match(/../g), h => parseInt(h, 16));
+  return b64u(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iter }, key, 256));
+}
+async function sign(env, data) {
+  const secret = env.SESSION_SECRET || env.ADMIN_TOKEN;
+  if (!secret) throw new Error('no secret');
+  const key = await crypto.subtle.importKey('raw', enc.encode('geostore-session:' + secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return b64u(await crypto.subtle.sign('HMAC', key, enc.encode(data)));
+}
+async function makeToken(env, acct) {
+  const body = b64u(enc.encode(JSON.stringify({ e: acct.email, exp: Date.now() + 30 * 86400000, v: acct.hash.slice(0, 8) })));
+  return 'c.' + body + '.' + await sign(env, body);
+}
+async function authCustomer(req, env) {
+  const h = req.headers.get('authorization') || '';
+  if (!h.startsWith('Bearer c.')) return null;
+  const [, body, sig] = h.slice(7).split('.');
+  if (!body || !sig || !safeEqual(sig, await sign(env, body))) return null;
+  let p; try { p = JSON.parse(new TextDecoder().decode(unb64u(body))); } catch (e) { return null; }
+  if (!p || p.exp < Date.now()) return null;
+  const acct = await env.ORDERS.get('acct:' + p.e, 'json');
+  return acct && acct.hash.slice(0, 8) === p.v ? acct : null;
+}
+const profileOf = a => ({ email: a.email, name: a.name || '', phone: a.phone || '', country: a.country || '', createdAt: a.createdAt, orders: (a.orders || []).length });
+
+async function accountRoutes(req, env, path, apiBase) {
+  const ip = req.headers.get('cf-connecting-ip') || 'x';
+  const body = req.method === 'POST' ? (await req.json().catch(() => null) || {}) : {};
+  if (path === '/api/account/register' && req.method === 'POST') {
+    if (tooMany(authHits, 'reg|' + ip, 5, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
+    const email = String(body.email || '').trim().toLowerCase(), pw = String(body.password || '');
+    if (!validEmail(email)) return fail(env, 'Please enter a valid email address');
+    if (pw.length < 8 || pw.length > 200) return fail(env, 'Password must be at least 8 characters');
+    if (await env.ORDERS.get('acct:' + email)) return fail(env, 'An account with this email already exists. Please sign in.', 409);
+    const salt = hex(16), acct = { email, name: String(body.name || '').trim().slice(0, 80), phone: '', country: '', salt, iter: PBKDF2_ITER, hash: await pbkdf2(pw, salt, PBKDF2_ITER), createdAt: Date.now(), orders: [] };
+    await env.ORDERS.put('acct:' + email, JSON.stringify(acct));
+    return json(env, { token: await makeToken(env, acct), profile: profileOf(acct) });
+  }
+  if (path === '/api/account/login' && req.method === 'POST') {
+    const email = String(body.email || '').trim().toLowerCase();
+    if (tooMany(authHits, 'log|' + ip + '|' + email, 8, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
+    const acct = validEmail(email) ? await env.ORDERS.get('acct:' + email, 'json') : null;
+    const h = acct ? await pbkdf2(String(body.password || ''), acct.salt, acct.iter || PBKDF2_ITER) : '';
+    if (!acct || !safeEqual(h, acct.hash)) return fail(env, 'Wrong email or password', 401);
+    return json(env, { token: await makeToken(env, acct), profile: profileOf(acct) });
+  }
+  const acct = await authCustomer(req, env);
+  if (!acct) return fail(env, 'Please sign in again', 401);
+  if (path === '/api/account/me' && req.method === 'GET') {
+    const ids = (acct.orders || []).slice(-50).reverse();
+    const orders = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean).map(o => publicOrder(env, o, apiBase));
+    const spent = round2(orders.filter(o => o.status === 'paid').reduce((a, o) => a + (Number(o.usd) || 0), 0));
+    return json(env, { profile: profileOf(acct), orders, spent });
+  }
+  if (path === '/api/account/update' && req.method === 'POST') {
+    acct.name = String(body.name || '').trim().slice(0, 80); acct.phone = String(body.phone || '').trim().slice(0, 40); acct.country = String(body.country || '').trim().slice(0, 60);
+    await env.ORDERS.put('acct:' + acct.email, JSON.stringify(acct));
+    return json(env, { profile: profileOf(acct) });
+  }
+  if (path === '/api/account/password' && req.method === 'POST') {
+    if (tooMany(authHits, 'pw|' + ip, 8, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
+    const np = String(body.newPassword || '');
+    if (!safeEqual(await pbkdf2(String(body.oldPassword || ''), acct.salt, acct.iter || PBKDF2_ITER), acct.hash)) return fail(env, 'Your current password is wrong', 401);
+    if (np.length < 8 || np.length > 200) return fail(env, 'New password must be at least 8 characters');
+    acct.salt = hex(16); acct.iter = PBKDF2_ITER; acct.hash = await pbkdf2(np, acct.salt, PBKDF2_ITER);
+    await env.ORDERS.put('acct:' + acct.email, JSON.stringify(acct));
+    return json(env, { token: await makeToken(env, acct), profile: profileOf(acct) });
+  }
+  return fail(env, 'Not found', 404);
+}
 
 /* ---------------- create order ---------------- */
-function tooMany(req) {
-  const ip = req.headers.get('cf-connecting-ip') || 'x', now = Date.now();
-  const hits = (ipHits.get(ip) || []).filter(t => now - t < 10 * 60000);
-  hits.push(now); ipHits.set(ip, hits);
-  if (ipHits.size > 500) ipHits.clear();
-  return hits.length > 6;                 // at most 6 new orders per IP per 10 minutes
-}
 async function createOrder(req, env, apiBase) {
-  if (!env.WALLET) return fail(env, 'Server wallet is not configured', 503);
-  if (tooMany(req)) return fail(env, 'Too many orders from your connection. Please wait a few minutes.', 429);
+  if (tooMany(ipHits, req.headers.get('cf-connecting-ip') || 'x', 6, 10 * 60000)) return fail(env, 'Too many orders from your connection. Please wait a few minutes.', 429);
   const b = await req.json().catch(() => null) || {};
-  const email = String(b.email || '').trim().slice(0, 200);
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return fail(env, 'Please enter a valid email address');
-  const cat = await env.ORDERS.get('catalog', 'json');
+  const cat = await getCatalog(env);
   if (!cat) return fail(env, 'The store has not been synced yet', 503);
 
-  const itemId = String(b.item || '');
-  let title, price;
-  if (itemId === 'ALL') {
-    if (!cat.allAccess || !cat.allAccess.enabled) return fail(env, 'Not available');
-    title = cat.allAccess.title || 'All-Access Pass'; price = cat.allAccess.price;
-  } else {
-    const p = cat.products && cat.products[itemId];
-    if (!p || p.published === false) return fail(env, 'Unknown product');
-    if (p.type === 'digital') {
-      const used = Number(await env.ORDERS.get('used:' + itemId)) || 0;
-      if (used >= (p.stock || []).length) return fail(env, 'Sorry, this item is out of stock right now.', 409);
-    }
-    title = p.title; price = p.price;
-  }
-  const base = Math.round(Number(price) * 1e6);
-  if (!(base > 0)) return fail(env, 'This item has no price');
+  const acct = await authCustomer(req, env);                  // optional: logged-in customers get the order saved to their account
+  const email = acct ? acct.email : String(b.email || '').trim().toLowerCase();
+  if (!validEmail(email)) return fail(env, 'Please enter a valid email address');
 
-  // unique amount: price + 0.001..0.099 USDT, so every open order is identifiable on-chain
-  let micro = null;
-  for (let i = 0; i < 40 && micro === null; i++) {
-    const cand = base + (1 + randInt(99)) * 1000;
-    if (!(await env.ORDERS.get('amt:' + cand))) micro = cand;
+  const coin = COINS[b.coin] ? b.coin : 'usdt_trc20', C = COINS[coin];
+  const wallet = walletFor(env, cat, coin);
+  if (!wallet) return fail(env, C.name + ' payments are not set up yet. Please choose another coin.', 503);
+
+  const raw = Array.isArray(b.items) ? b.items : (b.item ? [{ id: b.item, v: 'all' }] : []);
+  const priced = priceCart(cat, raw);
+  if (priced.error) return fail(env, priced.error);
+  for (const l of priced.lines) {                              // digital items: refuse when stock is gone
+    if (l.type !== 'digital') continue;
+    const p = cat.products[l.id], used = Number(await env.ORDERS.get('used:' + l.id)) || 0;
+    if (used >= (p.stock || []).length) return fail(env, 'Sorry, "' + p.title + '" is out of stock right now.', 409);
   }
-  if (micro === null) return fail(env, 'Too many open orders, please try again in a minute', 503);
+
+  // amount in the coin's smallest unit, plus a tiny unique offset so every open order is identifiable on-chain
+  let base;
+  if (coin === 'btc') {
+    const rate = await btcRate();
+    if (!rate) return fail(env, 'Could not get the Bitcoin price right now. Please try USDT or try again in a minute.', 503);
+    base = Math.round(priced.usd / rate * 1e8);
+  } else base = Math.round(priced.usd * 1e6);
+  let amount = null, amtKey = null;
+  for (let i = 0; i < 40 && amount === null; i++) {
+    const cand = coin === 'btc' ? base + 1 + randInt(99) : base + (1 + randInt(99)) * 1000, key = 'amt:' + coin + ':' + cand;
+    if (!(await env.ORDERS.get(key))) { amount = cand; amtKey = key; }
+  }
+  if (amount === null) return fail(env, 'Too many open orders, please try again in a minute', 503);
 
   const now = Date.now();
-  const o = { id: hex(16), key: hex(16), email, item: itemId, title, amount: micro, status: 'pending', createdAt: now, expiresAt: now + ORDER_MINUTES * 60000, lastCheck: 0 };
+  const o = { id: hex(16), key: hex(16), email, items: priced.lines, usd: priced.usd, coin, amount, amtKey, wallet, status: 'pending', createdAt: now, expiresAt: now + C.minutes * 60000, account: acct ? acct.email : null };
   await saveOrder(env, o, 7 * 86400);
   // the "amt:" key both reserves the amount AND is the list of open orders the cron job checks
-  await env.ORDERS.put('amt:' + micro, o.id, { expirationTtl: (ORDER_MINUTES + 20) * 60 });
+  await env.ORDERS.put(amtKey, o.id, { expirationTtl: (C.minutes + C.graceMs / 60000 + 5) * 60 });
+  if (acct) { acct.orders = (acct.orders || []).concat(o.id).slice(-200); await env.ORDERS.put('acct:' + acct.email, JSON.stringify(acct)); }
   return json(env, publicOrder(env, o, apiBase));
 }
 
 /* ---------------- check the blockchain ---------------- */
 async function markPaid(env, o, txid) {
   o.status = 'paid'; o.paidAt = Date.now(); o.txid = txid || 'manual';
-  if (o.item !== 'ALL') {
+  const dig = itemsOf(o).filter(i => i.type === 'digital');
+  if (dig.length) {
     // digital items (gift cards, keys...): hand out the next unused code from your stock
-    const cat = await env.ORDERS.get('catalog', 'json');
-    const p = cat && cat.products && cat.products[o.item];
-    if (p && p.type === 'digital') {
-      const used = Number(await env.ORDERS.get('used:' + o.item)) || 0;
-      o.codes = (p.stock || []).slice(used, used + 1);
-      if (o.codes.length) await env.ORDERS.put('used:' + o.item, String(used + 1));
+    const cat = await getCatalog(env); o.codes = {};
+    for (const l of dig) {
+      const p = cat && cat.products && cat.products[l.id]; if (!p) continue;
+      const used = Number(await env.ORDERS.get('used:' + l.id)) || 0, code = (p.stock || [])[used];
+      if (code) { o.codes[l.id] = code; await env.ORDERS.put('used:' + l.id, String(used + 1)); }
     }
   }
   await saveOrder(env, o);
   if (txid) await env.ORDERS.put('tx:' + txid, o.id);
-  await env.ORDERS.delete('amt:' + o.amount);
+  await env.ORDERS.delete(o.amtKey || ('amt:' + o.amount));
+}
+async function findPayment(env, o) {
+  const coin = orderCoin(o), until = o.expiresAt + COINS[coin].graceMs;
+  if (coin === 'btc') {
+    const res = await fetch('https://mempool.space/api/address/' + o.wallet + '/txs');
+    if (!res.ok) return null;
+    for (const t of await res.json()) {
+      if (!t.status || !t.status.confirmed) continue;
+      const bt = t.status.block_time * 1000;
+      if (bt < o.createdAt - 120000 || bt > until) continue;
+      if (t.vout.some(v => v.scriptpubkey_address === o.wallet && v.value === o.amount) && !(await env.ORDERS.get('tx:' + t.txid))) return t.txid;
+    }
+    return null;
+  }
+  const url = 'https://api.trongrid.io/v1/accounts/' + o.wallet + '/transactions/trc20' +
+    '?only_confirmed=true&only_to=true&limit=200&contract_address=' + USDT_CONTRACT + '&min_timestamp=' + o.createdAt;
+  const res = await fetch(url, { headers: env.TRONGRID_KEY ? { 'TRON-PRO-API-KEY': env.TRONGRID_KEY } : {} });
+  if (!res.ok) return null;
+  for (const t of (await res.json()).data || []) {
+    const ok = t.to === o.wallet && t.type === 'Transfer' && t.token_info && t.token_info.address === USDT_CONTRACT &&
+      String(t.value) === String(o.amount) && t.block_timestamp >= o.createdAt && t.block_timestamp <= o.expiresAt;
+    if (ok && !(await env.ORDERS.get('tx:' + t.transaction_id))) return t.transaction_id;
+  }
+  return null;
 }
 async function checkOrder(env, o) {
   if (o.status !== 'pending') return o;
-  const now = Date.now();
-  if (now > o.expiresAt + GRACE_MS) {
+  const coin = orderCoin(o), C = COINS[coin], now = Date.now();
+  if (now > o.expiresAt + C.graceMs) {
     o.status = 'expired'; await saveOrder(env, o);
-    await env.ORDERS.delete('amt:' + o.amount);
+    await env.ORDERS.delete(o.amtKey || ('amt:' + o.amount));
     return o;
   }
-  if (now - (lastLook.get(o.id) || 0) < THROTTLE_MS) return o;   // memory only: no storage write
+  if (now - (lastLook.get(o.id) || 0) < C.throttle) return o;   // memory only: no storage write
   lastLook.set(o.id, now);
   if (lastLook.size > 1000) lastLook.clear();
-  const url = 'https://api.trongrid.io/v1/accounts/' + env.WALLET + '/transactions/trc20' +
-    '?only_confirmed=true&only_to=true&limit=200&contract_address=' + USDT_CONTRACT + '&min_timestamp=' + o.createdAt;
-  let list = null;
-  try {
-    const res = await fetch(url, { headers: env.TRONGRID_KEY ? { 'TRON-PRO-API-KEY': env.TRONGRID_KEY } : {} });
-    if (res.ok) list = (await res.json()).data || [];
-  } catch (e) { /* network hiccup: try again next time */ }
-  if (list) {
-    for (const t of list) {
-      const ok = t.to === env.WALLET && t.type === 'Transfer' && t.token_info && t.token_info.address === USDT_CONTRACT &&
-        String(t.value) === String(o.amount) && t.block_timestamp >= o.createdAt && t.block_timestamp <= o.expiresAt;
-      if (ok && !(await env.ORDERS.get('tx:' + t.transaction_id))) { await markPaid(env, o, t.transaction_id); return o; }
-    }
-  }
-  return o;                                 // still waiting: nothing to save
+  let txid = null;
+  try { txid = await findPayment(env, o); } catch (e) { /* network hiccup: try again next time */ }
+  if (txid) await markPaid(env, o, txid);
+  return o;                                                    // still waiting: nothing to save
 }
 
 /* ---------------- delivery page ---------------- */
-function bundle(o, cat, list) {
+function resolveSections(o, cat) {
+  const out = [], prods = cat.products || {};
+  for (const l of itemsOf(o)) {
+    if (l.id === 'ALL') {
+      Object.keys(prods).forEach(id => { const p = prods[id]; if (p.type !== 'digital' && p.variants && p.variants.length) out.push({ p, variants: p.variants }); });
+      continue;
+    }
+    const p = prods[l.id]; if (!p) continue;
+    if (p.type === 'digital') { const c = o.codes && !Array.isArray(o.codes) ? o.codes[l.id] : (Array.isArray(o.codes) ? o.codes[0] : ''); out.push({ p, code: c || '' }); continue; }
+    const vs = l.mode === 'styles' && Array.isArray(l.styles) ? l.styles.map(i => p.variants[i]).filter(Boolean) : (p.variants || []);
+    if (vs.length) out.push({ p, variants: vs });
+  }
+  return out;
+}
+function bundle(o, cat) {
   let n = 0;
-  const items = list.map(p => {
+  const items = resolveSections(o, cat).map(s => {
+    const p = s.p;
     if (p.type === 'digital') {
-      const codes = o.codes || [];
+      const i = n++;
       return '<section><h2>' + esc(p.title) + '</h2><p class="d">' + esc(p.tagline || '') + '</p>' +
-        (codes.length ? codes.map(c => '<div class="bar"><b>Your code</b><button onclick="cp(' + (n++) + ',this)">Copy</button></div><pre id="c' + (n - 1) + '" style="font-size:1.05rem">' + esc(c) + '</pre>').join('')
-                      : '<p class="d">Your code is being prepared — please contact us with your order ID: ' + esc(o.id) + '</p>') + '</section>';
+        (s.code ? '<div class="bar"><b>Your code</b><button onclick="cp(' + i + ',this)">Copy</button></div><pre id="c' + i + '" style="font-size:1.05rem">' + esc(s.code) + '</pre>'
+                : '<p class="d">Your code is being prepared — please contact us with your order ID: ' + esc(o.id) + '</p>') + '</section>';
     }
     return '<section><h2>' + esc(p.title) + '</h2><p class="d">' + esc(p.tagline || '') + '</p>' +
-      p.variants.map(v => {
+      (p.guide ? '<details class="gd" open><summary>How to use &amp; connect your data</summary><div class="gb">' + p.guide + '</div></details>' : '') +
+      s.variants.map(v => {
         const i = n++;
         return '<h3 style="margin:22px 0 4px;font-size:1.05rem">' + esc(v.name) + '</h3><iframe sandbox="allow-scripts" srcdoc="' + esc(v.full) + '" title="Preview"></iframe>' +
           '<div class="bar"><b>Full code</b><button onclick="cp(' + i + ',this)">Copy code</button></div><pre id="c' + i + '">' + esc(v.full) + '</pre>';
@@ -186,23 +373,21 @@ function bundle(o, cat, list) {
     'body{margin:0;font-family:system-ui,sans-serif;background:#0b0f1a;color:#f8fafc;line-height:1.6}.w{max-width:960px;margin:auto;padding:30px 18px 80px}h1{margin-bottom:4px}.d{color:#94a3b8}' +
     'section{margin-top:36px;padding:22px;border:1px solid #243049;border-radius:16px;background:#111827}iframe{width:100%;height:380px;border:1px solid #243049;border-radius:12px;background:#0b0f1a;margin:10px 0}' +
     '.bar{display:flex;justify-content:space-between;align-items:center;margin:8px 0}button{background:#c5f442;color:#0a1000;border:0;padding:9px 18px;border-radius:10px;font-weight:600;cursor:pointer}' +
-    'pre{max-height:360px;overflow:auto;background:#070a12;border:1px solid #243049;border-radius:12px;padding:14px;font-size:.78rem;color:#c7d2fe}</style></head><body><div class="w">' +
+    'pre{max-height:360px;overflow:auto;background:#070a12;border:1px solid #243049;border-radius:12px;padding:14px;font-size:.78rem;color:#c7d2fe}' +
+    '.gd{margin:14px 0;border:1px solid #2f3b55;border-radius:12px;background:#0d1424}.gd summary{cursor:pointer;padding:12px 16px;font-weight:700;color:#c5f442}.gb{padding:4px 18px 16px;color:#cbd5e1;font-size:.93rem}.gb h4{margin:16px 0 4px;color:#f8fafc}.gb code{background:#1b2640;padding:1px 6px;border-radius:5px;font-size:.85em}.gb ul,.gb ol{margin:6px 0 6px 20px}</style></head><body><div class="w">' +
     '<h1><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="34" height="34" style="vertical-align:middle;margin-right:10px"><rect width="32" height="32" rx="9" fill="#c5f442"/><path d="M16 6.2l8.6 4.9-8.6 4.9-8.6-4.9z" fill="#0a1000"/><path d="M7.4 12.9l8.6 4.9v8.6l-8.6-4.9z" fill="#0a1000" fill-opacity=".72"/><path d="M24.6 12.9l-8.6 4.9v8.6l8.6-4.9z" fill="#0a1000" fill-opacity=".42"/></svg>Thank you! 🎉</h1><p class="d">Order ' + esc(o.id.slice(0, 8)) + ' · ' + esc(o.email) + '. Each code has a live preview and a copy button. Save this page (Ctrl+S) or bookmark this link — it is yours to come back to.</p>' + items +
     '<p class="d" style="margin-top:40px">Licence: use these codes in your own and your clients\' projects. Do not resell or share the code files themselves.</p></div>' +
-    '<script>function cp(i,b){var t=document.getElementById("c"+i).textContent;function d(){b.textContent="Copied!";setTimeout(function(){b.textContent="Copy code"},1500)}if(navigator.clipboard){navigator.clipboard.writeText(t).then(d,d)}else{d()}}<\/script></body></html>';
+    '<script>function cp(i,b){var t=document.getElementById("c"+i).textContent;function d(){b.textContent="Copied!";setTimeout(function(){b.textContent="Copy"},1500)}if(navigator.clipboard){navigator.clipboard.writeText(t).then(d,d)}else{d()}}<\/script></body></html>';
 }
 async function delivery(env, id, url) {
   const o = await env.ORDERS.get('order:' + id, 'json');
   const k = url.searchParams.get('k') || '';
   if (!o || !safeEqual(k, o.key)) return new Response('Not found', { status: 404 });
   if (o.status !== 'paid') return new Response('This order has not been paid yet.', { status: 402 });
-  const cat = await env.ORDERS.get('catalog', 'json') || { products: {} };
-  const all = Object.keys(cat.products).map(i => Object.assign({ id: i }, cat.products[i]))
-    .filter(p => p.type === 'digital' || (p.variants && p.variants.length));
-  const list = o.item === 'ALL' ? all.filter(p => p.type !== 'digital') : all.filter(p => p.id === o.item);
+  const cat = await getCatalog(env) || { products: {} };
   const headers = { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' };
   if (url.searchParams.get('download')) headers['content-disposition'] = 'attachment; filename="codes-' + o.id.slice(0, 8) + '.html"';
-  return new Response(bundle(o, cat, list), { headers });
+  return new Response(bundle(o, cat), { headers });
 }
 
 /* ---------------- admin ---------------- */
@@ -215,15 +400,16 @@ async function adminSync(req, env) {
     const variants = (Array.isArray(p.variants) ? p.variants : (p.full ? [{ name: 'Standard', full: p.full }] : []))
       .map(v => ({ name: String(v.name || ''), full: String(v.full || '') })).filter(v => v.full);
     products[String(p.id)] = {
-      title: String(p.title || ''), tagline: String(p.tagline || ''), price: Number(p.price) || 0,
-      type: p.type === 'digital' ? 'digital' : 'code',
+      title: String(p.title || ''), tagline: String(p.tagline || ''), price: Number(p.price) || 0, stylePrice: Number(p.stylePrice) || 0,
+      type: p.type === 'digital' ? 'digital' : 'code', guide: String(p.guide || '').slice(0, 30000),
       variants, stock: Array.isArray(p.stock) ? p.stock.map(String).filter(Boolean) : [],
       published: p.published !== false
     };
   });
-  const aa = b.allAccess || {};
+  const aa = b.allAccess || {}, w = b.wallets || {};
   await env.ORDERS.put('catalog', JSON.stringify({
     storeName: String(b.storeName || ''), products,
+    wallets: { usdt_trc20: String(w.usdt_trc20 || '').trim().slice(0, 120), btc: String(w.btc || '').trim().slice(0, 120) },
     allAccess: { enabled: !!aa.enabled, title: String(aa.title || 'All-Access Pass'), price: Number(aa.price) || 0 }
   }));
   return json(env, { ok: true, products: Object.keys(products).length });
@@ -232,8 +418,14 @@ async function adminOrders(env) {
   const keys = (await env.ORDERS.list({ prefix: 'order:', limit: 200 })).keys;
   const orders = (await Promise.all(keys.map(k => env.ORDERS.get(k.name, 'json')))).filter(Boolean)
     .sort((a, b) => b.createdAt - a.createdAt)
-    .map(o => ({ id: o.id, email: o.email, title: o.title, item: o.item, amount: usd(o.amount), status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null, key: o.key }));
+    .map(o => ({ id: o.id, email: o.email, title: orderTitle(o), item: o.item || '', amount: fmtAmount(orderCoin(o), o.amount), coin: COINS[orderCoin(o)].short, usd: o.usd || null, status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null, key: o.key, account: o.account || null }));
   return json(env, { orders });
+}
+async function adminCustomers(env) {
+  const keys = (await env.ORDERS.list({ prefix: 'acct:', limit: 500 })).keys;
+  const customers = (await Promise.all(keys.map(k => env.ORDERS.get(k.name, 'json')))).filter(Boolean)
+    .sort((a, b) => b.createdAt - a.createdAt).map(a => ({ email: a.email, name: a.name || '', phone: a.phone || '', country: a.country || '', createdAt: a.createdAt, orders: (a.orders || []).length }));
+  return json(env, { customers });
 }
 
 /* ---------------- router ---------------- */
@@ -241,35 +433,46 @@ async function route(req, env) {
   const url = new URL(req.url);
   const apiBase = url.origin;
   const path = url.pathname.replace(/\/+$/, '');
-    try {
-      if (path === '/api/health') return json(env, { ok: true, wallet: !!env.WALLET, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS });
-      if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
-      if (path === '/api/order' && req.method === 'POST') return await createOrder(req, env, apiBase);
-      let m = path.match(/^\/api\/order\/([a-f0-9]{32})$/);
-      if (m && req.method === 'GET') {
-        let o = await env.ORDERS.get('order:' + m[1], 'json');
-        if (!o) return fail(env, 'Order not found', 404);
-        o = await checkOrder(env, o);
-        return json(env, publicOrder(env, o, apiBase));
-      }
-      m = path.match(/^\/api\/delivery\/([a-f0-9]{32})$/);
-      if (m && req.method === 'GET') return await delivery(env, m[1], url);
-      if (path.startsWith('/api/admin/')) {
-        if (!isAdmin(req, env)) return fail(env, 'Wrong or missing admin token', 401);
-        if (path === '/api/admin/sync' && req.method === 'POST') return await adminSync(req, env);
-        if (path === '/api/admin/orders' && req.method === 'GET') return await adminOrders(env);
-        if (path === '/api/admin/markpaid' && req.method === 'POST') {
-          const b = await req.json().catch(() => ({}));
-          const o = await env.ORDERS.get('order:' + String(b.id || ''), 'json');
-          if (!o) return fail(env, 'Order not found', 404);
-          if (o.status !== 'paid') await markPaid(env, o, null);
-          return json(env, { ok: true });
-        }
-      }
-      return fail(env, 'Not found', 404);
-    } catch (e) {
-      return fail(env, 'Server error', 500);
+  try {
+    if (path === '/api/health') {
+      let wallet = !!(env.WALLET || env.WALLET_BTC);
+      if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, version: 3 });
     }
+    if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
+    if (path === '/api/config' && req.method === 'GET') {
+      const cat = await getCatalog(env);
+      return json(env, { storeName: cat ? cat.storeName : '', accounts: !!(env.ADMIN_TOKEN || env.SESSION_SECRET),
+        coins: Object.keys(COINS).filter(c => walletFor(env, cat, c)).map(c => ({ id: c, name: COINS[c].name, network: COINS[c].network })) });
+    }
+    if (path === '/api/order' && req.method === 'POST') return await createOrder(req, env, apiBase);
+    let m = path.match(/^\/api\/order\/([a-f0-9]{32})$/);
+    if (m && req.method === 'GET') {
+      let o = await env.ORDERS.get('order:' + m[1], 'json');
+      if (!o) return fail(env, 'Order not found', 404);
+      o = await checkOrder(env, o);
+      return json(env, publicOrder(env, o, apiBase));
+    }
+    m = path.match(/^\/api\/delivery\/([a-f0-9]{32})$/);
+    if (m && req.method === 'GET') return await delivery(env, m[1], url);
+    if (path.startsWith('/api/account/')) return await accountRoutes(req, env, path, apiBase);
+    if (path.startsWith('/api/admin/')) {
+      if (!isAdmin(req, env)) return fail(env, 'Wrong or missing admin token', 401);
+      if (path === '/api/admin/sync' && req.method === 'POST') return await adminSync(req, env);
+      if (path === '/api/admin/orders' && req.method === 'GET') return await adminOrders(env);
+      if (path === '/api/admin/customers' && req.method === 'GET') return await adminCustomers(env);
+      if (path === '/api/admin/markpaid' && req.method === 'POST') {
+        const b = await req.json().catch(() => ({}));
+        const o = await env.ORDERS.get('order:' + String(b.id || ''), 'json');
+        if (!o) return fail(env, 'Order not found', 404);
+        if (o.status !== 'paid') await markPaid(env, o, null);
+        return json(env, { ok: true });
+      }
+    }
+    return fail(env, 'Not found', 404);
+  } catch (e) {
+    return fail(env, 'Server error', 500);
+  }
 }
 
 export default {
@@ -284,7 +487,7 @@ export default {
   },
   // runs every 5 minutes (Cron Trigger) so payments are detected even if the customer closed the page
   async scheduled(event, env, ctx) {
-    if (!env.ORDERS || !env.WALLET) return;
+    if (!env.ORDERS) return;
     const keys = (await env.ORDERS.list({ prefix: 'amt:', limit: 50 })).keys;
     for (const k of keys) {
       const id = await env.ORDERS.get(k.name);

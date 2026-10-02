@@ -1,5 +1,7 @@
 # Automatic Payments — Setup Guide (no coding, all free)
 
+> **Version 3 — what changed:** wallets (USDT *and* Bitcoin) are now set in your **dashboard → Settings** and sent to the server with **Sync to server** — you no longer need a `WALLET` variable in Cloudflare. Customers can build a **cart**, buy **one style** or all styles, pay in **USDT or Bitcoin**, and keep their orders in a **customer account**. After updating, paste the new `worker/worker.js` into Cloudflare, then open the dashboard → Settings → fill both wallets → Publish → **Sync to server**.
+
 **How it works.** Your shop (the `site` folder) talks to a tiny free server (`worker/worker.js`) on **Cloudflare**.
 1. A customer clicks **Buy** → the server makes an order with a *unique* amount, e.g. `12.037` USDT.
 2. The customer sends exactly that amount to your wallet (USDT on the **TRON / TRC20** network).
@@ -30,7 +32,6 @@ You need a normal **TRON address** (starts with `T`, 34 characters) that can rec
 3. Worker → **Settings** → **Variables and Secrets** → add:
    | Name | Type | Value |
    |---|---|---|
-   | `WALLET` | Text | your TRON address (starts with T) |
    | `ADMIN_TOKEN` | **Secret** | a long password you invent (20+ random characters). Write it down! |
    | `ALLOWED_ORIGIN` | Text | your shop address, e.g. `https://myshop.pages.dev` (add after Part E; no slash at the end) |
    | `TRONGRID_KEY` | Secret (optional) | free key from https://www.trongrid.io — only needed if you get many sales |
@@ -82,3 +83,15 @@ Whenever you change products or prices later: Download `data.js` again → repla
 ## If Cloudflare says "KV requests are temporarily blocked"
 That means the free daily storage limit (1,000 writes) was used up. The limit resets every day at 00:00 UTC, and everything works again after that, with no action needed. (Or upgrade to Workers Paid for $5/month.)
 The current `worker.js` is built to stay far below the limit: it writes to storage only when an order is created, paid or expired, and the cron check runs every 5 minutes. If you ever see this message again, make sure you pasted the latest `worker.js` and that the Cron Trigger is `*/5 * * * *`.
+
+## Paying with Bitcoin as well as USDT
+- Put your Bitcoin address in **dashboard → Settings → Bitcoin wallet**, press Save, then **Sync to server**. The checkout then offers *Bitcoin (BTC)* next to *USDT (TRC20)*. (If you leave a wallet empty, that coin is simply not offered.)
+- The server converts the price to BTC at the live rate when the order is created (rate from mempool.space, backup CoinGecko) and gives the customer an exact amount with a few extra satoshis to identify the order. The customer has 90 minutes to send it.
+- Bitcoin needs **1 network confirmation** (usually 10–30 minutes) before the order turns green. The server checks mempool.space automatically.
+- The customer must send the amount **exactly** (the wallet's network fee is paid on top by most wallets; from an exchange, add the withdrawal fee). If a payment arrives with a slightly different amount, check your wallet and use **Orders → Mark paid**.
+
+## Customer accounts
+Customers can create an account on your shop (name, email, password). They see all their orders, can reopen their codes, see their **payment history** with a link to the transaction, and edit their details. You see all accounts in **dashboard → Orders → Customer accounts**.
+- Guests can still buy without an account; their orders stay in **Account → Orders placed on this device**.
+- Accounts are stored in the same free Cloudflare storage (one write per sign-up and per order). Passwords are salted and hashed; sessions last 30 days.
+- No email verification yet (it needs an email service). If a customer forgets a password, create a new account with another email or contact support.

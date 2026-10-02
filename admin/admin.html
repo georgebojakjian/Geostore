@@ -91,10 +91,14 @@
           <div><label for="fPrice">Price (USD)</label><input id="fPrice" type="number" min="0" step="0.5" required></div>
           <div><label class="chk" style="margin-top:28px"><input type="checkbox" id="fPub"> Show on the website</label></div>
           <div class="full"><label for="fTag">One-line description</label><input id="fTag"></div>
+          <div><label for="fStyleP">Price for ONE style only (leave empty = half of the product price)</label><input id="fStyleP" type="number" min="0" step="0.5" placeholder="e.g. 9"></div>
+          <div><label for="fGroup">Shown in</label><select id="fGroup"><option value="">Code snippets section</option><option value="website">Complete websites section</option></select></div>
           <div><label for="fType">Type</label><select id="fType"><option value="code">Code product (HTML / CSS / JS)</option><option value="digital">Digital item (gift card, licence key…)</option></select></div>
           <div class="full" id="codeFields">
             <label>Styles — each style has its own free sample and private full code. Customers who buy get ALL styles.</label>
             <div class="bar" style="margin:0 0 12px"><div id="vRow" style="display:flex;gap:8px;flex-wrap:wrap"></div><span style="display:flex;gap:8px"><button type="button" class="btn btn-g btn-s" id="vAdd">+ Add style</button><button type="button" class="btn btn-d btn-s" id="vDel">Remove this style</button></span></div>
+            <label for="fGuide">How-to-use guide for the customer (HTML allowed). Shown on the product page and on their delivery page. Explain how to edit the file and connect their own data.</label>
+            <textarea id="fGuide" spellcheck="false" style="min-height:130px;white-space:pre-wrap;margin-bottom:14px"></textarea>
             <label for="vName">Style name</label><input id="vName" style="margin-bottom:12px">
             <label for="fSample">FREE sample code (shown publicly — a basic complete HTML page)</label><textarea id="fSample" spellcheck="false"></textarea>
             <label for="fFull" style="margin-top:12px">FULL code (private — sent to the customer after payment)</label><textarea id="fFull" spellcheck="false"></textarea>
@@ -117,7 +121,10 @@
       <h1>Orders</h1><p class="lead">Automatic orders come from your payment server. Manual orders (if you do not use a server) are recorded below.</p>
       <div class="panel"><div class="bar"><h2 style="margin:0">Automatic orders (server)</h2><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></div>
         <p class="help" id="srvMsg">Press Refresh to load orders from your server.</p>
-        <div class="tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Item</th><th>USDT</th><th>Status</th><th></th></tr></thead><tbody id="srvBody"></tbody></table></div></div>
+        <div class="tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Items</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="srvBody"></tbody></table></div></div>
+      <div class="panel"><div class="bar"><h2 style="margin:0">Customer accounts (server)</h2><button class="btn btn-g btn-s" id="custRefresh">↻ Refresh</button></div>
+        <p class="help" id="custMsg">Press Refresh to load the customers who created an account.</p>
+        <div class="tw"><table><thead><tr><th>Joined</th><th>Name</th><th>Email</th><th>Phone</th><th>Country</th><th>Orders</th></tr></thead><tbody id="custBody"></tbody></table></div></div>
       <h2 style="font-size:1.1rem;margin:26px 0 12px">Manual orders</h2>
       <form class="panel form" id="of">
         <div><label for="oEmail">Customer email</label><input id="oEmail" type="email" required></div>
@@ -138,7 +145,9 @@
         <div class="full"><label for="sTag">Tagline</label><input id="sTag"></div>
         <div class="full"><label for="sApi">Payment server URL (public — from Cloudflare, e.g. https://geostore-api.yourname.workers.dev). Leave empty for manual mode.</label><input id="sApi" placeholder="https://geostore-api.yourname.workers.dev"></div>
         <div class="full"><label for="sTok">Server admin token (private — saved only in this browser, never published)</label><input id="sTok" type="password" autocomplete="off" placeholder="the ADMIN_TOKEN you chose in Cloudflare"></div>
-        <div class="full"><label for="sWal">Manual-mode wallets (only used when no server URL is set) — one per line, format: <code>Coin name | address</code></label><textarea id="sWal" style="min-height:110px;white-space:pre-wrap" placeholder="USDT (TRC20 network) | TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></textarea></div>
+        <div class="full"><label for="sWalU">USDT wallet — TRON network (TRC20), starts with T. Customers pay this automatically.</label><input id="sWalU" placeholder="T..." autocomplete="off"></div>
+        <div class="full"><label for="sWalB">Bitcoin wallet address (starts with bc1, 1 or 3). Customers pay this automatically.</label><input id="sWalB" placeholder="bc1..." autocomplete="off"></div>
+        <div class="full"><label for="sWal">Other coins (manual mode only — used when no payment server is connected) — one per line, format: <code>Coin name | address</code></label><textarea id="sWal" style="min-height:110px;white-space:pre-wrap" placeholder="USDT (TRC20 network) | TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></textarea></div>
         <div class="full"><label class="chk"><input type="checkbox" id="sDig"> Show the “Digital items” section on the home page (shows “coming soon” until you add items)</label></div>
         <div class="full"><label class="chk"><input type="checkbox" id="aaOn"> Sell an All-Access pass (one payment → every code)</label></div>
         <div><label for="aaTitle">Pass name</label><input id="aaTitle"></div>
@@ -171,6 +180,8 @@
 <script src="private.js"></script>
 <script src="../site/pack-1.js"></script>
 <script src="private-pack-1.js"></script>
+<script src="../site/pack-2.js"></script>
+<script src="private-pack-2.js"></script>
 <script>
 (function(){
   'use strict';
@@ -183,6 +194,7 @@
 
   /* ---------- state ---------- */
   function clone(x){ return JSON.parse(JSON.stringify(x)); }
+  var WAL = {usdt_trc20:/^T[1-9A-HJ-NP-Za-km-z]{33}$/, btc:/^(bc1[a-z0-9]{25,87}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})$/};
   // add products from the shipped packs that this state does not have (never re-adds ones you deleted)
   function addPacks(d){
     var have = {}; d.products.forEach(function(p){ have[p.id] = 1; });
@@ -200,6 +212,11 @@
     d.settings = d.settings || {}; d.settings.wallets = d.settings.wallets || {};
     d.settings.allAccess = d.settings.allAccess || {enabled:false,title:'All-Access Pass',price:49,description:''};
     if (d.settings.digitalSection === undefined) d.settings.digitalSection = true;
+    if (!d.settings.autoWallets){                       // pick up addresses typed into the old wallet list
+      d.settings.autoWallets = {usdt_trc20:'', btc:''};
+      Object.keys(d.settings.wallets).forEach(function(k){ var v = String(d.settings.wallets[k] || '').trim();
+        if (WAL.usdt_trc20.test(v)) d.settings.autoWallets.usdt_trc20 = v; else if (WAL.btc.test(v)) d.settings.autoWallets.btc = v; });
+    }
     addPacks(d);
     d.products.forEach(function(p){
       if (!p.variants || !p.variants.length) p.variants = [{name:'Standard', sample:p.sample || '', full:p.full || ''}];
@@ -273,6 +290,7 @@
   function toggleType(){
     var dg = draft.type === 'digital';
     $('codeFields').hidden = dg; $('digFields').hidden = !dg; $('fType').value = draft.type;
+    $('fStyleP').parentNode.hidden = dg; $('fGroup').parentNode.hidden = dg;
     if (dg){ $('fIcon').value = draft.icon || ''; $('fStock').value = (draft.stock || []).join('\n'); stockCount(); }
     else renderVariants();
   }
@@ -281,6 +299,7 @@
     $('peTitle').textContent = p._new ? 'New product' : 'Edit: ' + p.title;
     $('fTitle').value = p.title||''; $('fCat').value = p.category||''; $('fPrice').value = p.price==null?'':p.price;
     $('fPub').checked = p.published!==false; $('fTag').value = p.tagline||'';
+    $('fStyleP').value = p.stylePrice||''; $('fGroup').value = p.group||''; $('fGuide').value = p.guide||'';
     $('delP').style.display = p._new ? 'none' : '';
     toggleType();
     window.scrollTo(0,0);
@@ -308,6 +327,7 @@
     var title = $('fTitle').value.trim(); if (!title){ toast('Please enter a title'); return; }
     draft.title = title; draft.category = $('fCat').value.trim(); draft.price = +$('fPrice').value || 0;
     draft.published = $('fPub').checked; draft.tagline = $('fTag').value.trim();
+    draft.stylePrice = +$('fStyleP').value || 0; draft.group = $('fGroup').value; draft.guide = $('fGuide').value;
     if (draft.type === 'digital'){
       draft.icon = $('fIcon').value.trim();
       draft.stock = $('fStock').value.split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
@@ -400,7 +420,7 @@
   /* ---------- settings ---------- */
   function renderSettings(){
     var s = state.settings, aa = s.allAccess;
-    $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
+    $('sWalU').value = (s.autoWallets||{}).usdt_trc20||''; $('sWalB').value = (s.autoWallets||{}).btc||''; $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
     $('sWal').value = Object.keys(s.wallets||{}).map(function(k){ return k + ' | ' + s.wallets[k]; }).join('\n');
     $('sDig').checked = s.digitalSection !== false; $('aaOn').checked = !!aa.enabled; $('aaTitle').value = aa.title||''; $('aaPrice').value = aa.price==null?'':aa.price; $('aaDesc').value = aa.description||'';
   }
@@ -410,6 +430,10 @@
     s.apiUrl = $('sApi').value.trim().replace(/\/+$/,''); try { localStorage.setItem('geostore_admin_token', $('sTok').value.trim()); } catch(e) {} s.storeName = $('sName').value.trim(); s.email = $('sEmail').value.trim(); s.tagline = $('sTag').value.trim();
     var w = {}; $('sWal').value.split('\n').forEach(function(line){ var i = line.indexOf('|'); if (i>0){ var k = line.slice(0,i).trim(), v = line.slice(i+1).trim(); if (k && v) w[k]=v; } });
     s.wallets = w;
+    var wu = $('sWalU').value.trim(), wb = $('sWalB').value.trim();
+    if (wu && !WAL.usdt_trc20.test(wu)){ toast('The USDT address does not look right (TRON addresses start with T and have 34 characters)'); return; }
+    if (wb && !WAL.btc.test(wb)){ toast('The Bitcoin address does not look right'); return; }
+    s.autoWallets = {usdt_trc20: wu, btc: wb};
     s.digitalSection = $('sDig').checked;
     s.allAccess = {enabled:$('aaOn').checked, title:$('aaTitle').value.trim()||'All-Access Pass', price:+$('aaPrice').value||0, description:$('aaDesc').value.trim()};
     save(); toast('Settings saved — now go to Publish');
@@ -432,9 +456,9 @@
     if (!base()) return srvStatus('Enter your Payment server URL in Settings first.', true);
     if (!/^https:\/\/[^\s]+$/.test(base())) return srvStatus('The Payment server URL must start with https:// — check it in Settings.', true);
     fetch(base() + '/api/health').then(function(r){ return r.json(); }, function(){ throw new Error(NOREACH); }).then(function(h){
-      var miss = []; if (!h.kv) miss.push('storage (KV binding ORDERS)'); if (!h.wallet) miss.push('WALLET'); if (!h.admin) miss.push('ADMIN_TOKEN');
+      var miss = []; if (!h.kv) miss.push('storage (KV binding ORDERS)'); if (!h.admin) miss.push('ADMIN_TOKEN');
       if (miss.length) return srvStatus('Server reachable, but missing: ' + miss.join(', '), true);
-      return api('/api/admin/orders').then(function(){ srvStatus('✅ Everything is connected and your admin token works.'); });
+      return api('/api/admin/orders').then(function(){ srvStatus('✅ Everything is connected and your admin token works.' + (h.wallet ? '' : ' (No wallet yet — add it in Settings, then press Sync.)')); });
     }).catch(function(e){ srvStatus('❌ ' + e.message, true); });
   });
   $('srvSync').addEventListener('click', function(){
@@ -442,7 +466,8 @@
     var aa = state.settings.allAccess || {};
     api('/api/admin/sync', {method:'POST', body: JSON.stringify({
       storeName: state.settings.storeName,
-      products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, type:p.type, published:p.published!==false, variants:p.type==='code' ? p.variants.map(function(v){ return {name:v.name, full:v.full}; }) : [], stock:p.type==='digital' ? p.stock : []}; }),
+      wallets: state.settings.autoWallets || {},
+      products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, guide:p.guide||'', type:p.type, published:p.published!==false, variants:p.type==='code' ? p.variants.map(function(v){ return {name:v.name, full:v.full}; }) : [], stock:p.type==='digital' ? p.stock : []}; }),
       allAccess: {enabled: !!aa.enabled, title: aa.title, price: aa.price}
     })}).then(function(r){ srvStatus('✅ Synced ' + r.products + ' product(s) to your server.'); }).catch(function(e){ srvStatus('❌ ' + e.message, true); });
   });
@@ -452,13 +477,20 @@
       $('srvMsg').textContent = r.orders.length ? r.orders.length + ' order(s)' : 'No automatic orders yet.';
       $('srvBody').innerHTML = r.orders.map(function(o){
         var link = base() + '/api/delivery/' + o.id + '?k=' + o.key;
-        return '<tr><td>' + esc(new Date(o.createdAt).toISOString().slice(0,16).replace('T',' ')) + '</td><td>' + esc(o.email) + '</td><td>' + esc(o.title) + '</td><td>' + esc(o.amount) + '</td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span></td><td><div class="acts">' +
+        return '<tr><td>' + esc(new Date(o.createdAt).toISOString().slice(0,16).replace('T',' ')) + '</td><td>' + esc(o.email) + '</td><td>' + esc(o.title) + '</td><td>' + (o.usd ? '$' + esc(o.usd) + '<div class="help">' : '<div class="help">') + esc(o.amount) + ' ' + esc(o.coin || 'USDT') + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span></td><td><div class="acts">' +
           (o.status==='paid' ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(link) + '">Open codes</a>' : '') +
           (o.status!=='paid' ? '<button class="btn btn-g btn-s" data-mp="' + esc(o.id) + '">Mark paid</button>' : '') + '</div></td></tr>';
       }).join('');
     }).catch(function(e){ $('srvMsg').textContent = '❌ ' + e.message; $('srvBody').innerHTML = ''; });
   }
   $('srvRefresh').addEventListener('click', loadServerOrders);
+  $('custRefresh').addEventListener('click', function(){
+    $('custMsg').textContent = 'Loading…';
+    api('/api/admin/customers').then(function(r){
+      $('custMsg').textContent = r.customers.length + ' customer(s)';
+      $('custBody').innerHTML = r.customers.map(function(c){ return '<tr><td>'+esc(new Date(c.createdAt).toISOString().slice(0,10))+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+esc(c.phone)+'</td><td>'+esc(c.country)+'</td><td>'+c.orders+'</td></tr>'; }).join('');
+    }).catch(function(e){ $('custMsg').textContent = '❌ ' + e.message; });
+  });
   $('srvBody').addEventListener('click', function(e){
     var b = e.target.closest('[data-mp]'); if (!b) return;
     if (!confirm('Mark this order as paid? Only do this after you saw the money in your wallet.')) return;
@@ -468,7 +500,7 @@
   /* ---------- publish / backup ---------- */
   $('dlData').addEventListener('click', function(){
     var pub = {settings: state.settings, products: state.products.map(function(p){
-      var q = {id:p.id, title:p.title, category:p.category, price:p.price, tagline:p.tagline, type:p.type, published:p.published!==false};
+      var q = {id:p.id, title:p.title, category:p.category, price:p.price, stylePrice:p.stylePrice||0, group:p.group||'', guide:p.guide||'', tagline:p.tagline, type:p.type, published:p.published!==false};
       if (p.type === 'digital') q.icon = p.icon || '';
       else q.variants = p.variants.map(function(v){ return {name:v.name, sample:v.sample}; });
       return q;

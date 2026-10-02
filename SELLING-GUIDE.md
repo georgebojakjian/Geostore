@@ -11,10 +11,12 @@ Customers see a live preview and a FREE sample. After they pay, you send the FUL
 |---|---|---|
 | `site/index.html` | Your home page and shop (all products) | YES |
 | `site/data.js` | Your product list + free samples | YES |
+| `site/pack-2.js` | 10 complete 3D websites (free previews + how-to guides) | YES |
 | `site/pack-1.js` | 20 extra products, free samples only (3 styles each) | YES |
 | `site/logo.svg` | Your logo (used on the site, the browser tab and the dashboard) | YES |
 | `admin/admin.html` | Your private dashboard | **NEVER** |
 | `admin/private.js` | The paid FULL code of the first 6 products | **NEVER** |
+| `admin/private-pack-2.js` | The paid FULL code of the 10 complete websites | **NEVER** |
 | `admin/private-pack-1.js` | The paid FULL code of the 20 extra products | **NEVER** |
 
 ## Step 1 — Open your dashboard
@@ -97,3 +99,28 @@ The logo is one file: `site/logo.svg`. The website, the browser-tab icon and the
 4. Cloudflare → your Worker → Edit code → paste the new `worker/worker.js` → Deploy.
 5. Dashboard → Publish → **Sync to server** (this uploads the full code of all products).
 6. Copy the new `site/index.html`, `site/pack-1.js` and `site/logo.svg` into your `site` folder. Keep your own `data.js`. Upload the `site` folder to Netlify (Deploys tab).
+
+## New in version 3
+
+### Cart, and buying a single style
+- Customers can **Add to cart** (several products at once) or **Buy now**. In every product window they choose **all styles** (the product price) or **only the style they are looking at** (the "one style" price).
+- You set the one-style price per product in the dashboard (Products → "Price for ONE style only"). Empty = half of the product price. If someone adds every style one by one, they are never charged more than the all-styles price.
+- A customer who buys one style receives **only that style** on their private page.
+
+### Complete websites (10 included)
+E-commerce, restaurant, pharmacy, clothing store, grocery, medical clinic, hotel, real estate, car dealership and gym — each in **3 colour styles**, all with 3D effects, a cart / booking / enquiry system, filters, search, reviews and a contact area.
+- Each website has a **"How to use & connect your data"** guide: it is shown on the product page (so buyers know what they get) and again on their delivery page. It explains editing the file, adding products, **connecting a Google Sheet or JSON/API**, receiving orders by WhatsApp / email / form service, adding a payment link, and publishing for free.
+- You can edit any website or its guide in the dashboard (Products). To make your own, create a product and choose **Shown in: Complete websites section**.
+
+### Payments: USDT and Bitcoin
+Set both wallets in dashboard → Settings. See `DEPLOY-AUTOMATIC.md` for details.
+
+### Customer accounts
+See `DEPLOY-AUTOMATIC.md`. The payment window no longer pops up when a page is refreshed — customers find unfinished orders under **Account → Continue payment**.
+
+### Update steps for version 3 (in this order)
+1. Dashboard (old) → Publish → **Backup everything**.
+2. Download the latest project; open the new `admin/admin.html` → Publish → **Restore backup**. The 10 websites are added automatically.
+3. Cloudflare → your Worker → paste the new `worker/worker.js` → Deploy.
+4. Dashboard → Settings → check your **USDT and Bitcoin** wallets → Save → Publish → **Sync to server**.
+5. Copy the new `site/index.html`, `site/pack-1.js`, `site/pack-2.js`, `site/logo.svg` into your `site` folder (keep your own `data.js`) and upload to Netlify (Deploys tab).
