@@ -21,9 +21,13 @@ const GRACE_MS = 15 * 60 * 1000;          // keep checking 15 min after expiry
 const THROTTLE_MS = 7000;                 // don't ask TronGrid more often than this per order
 
 /* ---------------- helpers ---------------- */
-function corsHeaders(env) {
+// Admin + health routes are protected by the secret token, so any origin may call them
+// (your dashboard runs from a file on your computer, whose origin is "null").
+// Customer routes are limited to ALLOWED_ORIGIN when you set it.
+function corsHeaders(env, path) {
+  const open = !env.ALLOWED_ORIGIN || path.startsWith('/api/admin/') || path === '/api/health';
   return {
-    'access-control-allow-origin': env.ALLOWED_ORIGIN || '*',
+    'access-control-allow-origin': open ? '*' : env.ALLOWED_ORIGIN,
     'access-control-allow-headers': 'content-type,authorization',
     'access-control-allow-methods': 'GET,POST,OPTIONS',
     'vary': 'origin'
@@ -32,7 +36,7 @@ function corsHeaders(env) {
 function json(env, data, status) {
   return new Response(JSON.stringify(data), {
     status: status || 200,
-    headers: Object.assign({ 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }, corsHeaders(env))
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }
   });
 }
 const fail = (env, msg, status) => json(env, { error: msg }, status || 400);
@@ -184,12 +188,10 @@ async function adminOrders(env) {
 }
 
 /* ---------------- router ---------------- */
-export default {
-  async fetch(req, env) {
-    const url = new URL(req.url);
-    const apiBase = url.origin;
-    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(env) });
-    const path = url.pathname.replace(/\/+$/, '');
+async function route(req, env) {
+  const url = new URL(req.url);
+  const apiBase = url.origin;
+  const path = url.pathname.replace(/\/+$/, '');
     try {
       if (path === '/api/health') return json(env, { ok: true, wallet: !!env.WALLET, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS });
       if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
@@ -219,6 +221,17 @@ export default {
     } catch (e) {
       return fail(env, 'Server error', 500);
     }
+}
+
+export default {
+  async fetch(req, env) {
+    const path = new URL(req.url).pathname.replace(/\/+$/, '');
+    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(env, path) });
+    const res = await route(req, env);
+    const h = new Headers(res.headers);
+    const c = corsHeaders(env, path);
+    Object.keys(c).forEach(k => h.set(k, c[k]));
+    return new Response(res.body, { status: res.status, headers: h });
   },
   // runs every minute (Cron Trigger) so payments are detected even if the customer closed the page
   async scheduled(event, env, ctx) {

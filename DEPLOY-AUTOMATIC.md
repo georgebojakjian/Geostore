@@ -43,11 +43,15 @@ You need a normal **TRON address** (starts with `T`, 34 characters) that can rec
 4. **Publish** → **Sync to server**. (Repeat after every change to products, prices or the All-Access pass.)
 
 ## Part E — Put the shop online (free)
-1. Dashboard → **Publish** → **Download data.js** → put it in the `site` folder (replace the old one).
-2. Cloudflare → **Workers & Pages** → **Create** → **Pages** → **Upload assets** → drag the **`site`** folder → Deploy.
-   (You can also use https://app.netlify.com/drop.)
-3. Open `https://YOUR-SITE/shop.html`. Then put that site address into `ALLOWED_ORIGIN` (Part C) so only your shop can use your server.
-4. **Never upload the `admin` folder.**
+1. In the dashboard, check **Settings** has your **Payment server URL** saved. Then **Publish** → **Download data.js**.
+2. On your computer, copy that downloaded `data.js` into the `site` folder, replacing the old `data.js`. The `site` folder must now contain: `index.html`, `shop.html`, `data.js`.
+3. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** tab → **Upload assets** (Direct Upload).
+4. Project name: for example `myshop` → **Create project**.
+5. Drag the **`site` folder** (the folder itself, with the 3 files inside) onto the upload area → **Deploy site**.
+6. Cloudflare gives you an address like `https://myshop.pages.dev`. Open `https://myshop.pages.dev/shop.html` — your shop should appear with the 6 products.
+7. Go back to your Worker → **Settings** → **Variables and Secrets** → add `ALLOWED_ORIGIN` = `https://myshop.pages.dev` (no slash at the end, no `/shop.html`) → Deploy.
+8. **Never upload the `admin` folder.**
+Whenever you change products or prices later: Download `data.js` again → replace it in `site` → in Pages open your project → **Create deployment** → upload the `site` folder again. (Also press **Sync to server**.)
 
 ## Part F — Test it before you announce anything
 1. Set one product price to `1` in the dashboard → Sync (and Download data.js + re-upload).
@@ -65,3 +69,12 @@ You need a normal **TRON address** (starts with `T`, 34 characters) that can rec
 - **Prices are decided by the server**, not the website, so nobody can change a price in their browser.
 - **Free limits.** Cloudflare's free plan allows plenty for a new store; check their current limits.
 - **Cloudflare screens change names sometimes.** If a button is not where this guide says, send me a screenshot.
+
+## If "Test connection" says ❌ Failed to fetch
+1. Open your server address followed by `/api/health` in a new browser tab, e.g. `https://geostore-api.YOURNAME.workers.dev/api/health`.
+   - You should see `{"ok":true,"wallet":true,"admin":true,"kv":true}`.
+   - Nothing loads / error page → the address is wrong, or the Worker is not deployed. Copy the address again from Cloudflare (Workers & Pages → your worker → the link at the top).
+   - If it loads but a value is `false` → that setting is missing (see Part C): `wallet` = WALLET, `admin` = ADMIN_TOKEN, `kv` = the KV binding named exactly `ORDERS`.
+2. If `/api/health` works but the dashboard still fails, you are running an old `worker.js`. Open `worker/worker.js` from the latest project, copy everything, paste it into Cloudflare (Edit code), and press **Deploy**.
+3. The URL in dashboard Settings must start with `https://` and have no space or `/api` at the end.
+4. Still stuck? Send me a screenshot of the `/api/health` tab and of your Settings page (hide the token).
