@@ -11,6 +11,7 @@ Customers see a live preview and a FREE sample. After they pay, you send the FUL
 |---|---|---|
 | `site/index.html` | Your home page and shop (all products) | YES |
 | `site/data.js` | Your product list + free samples | YES |
+| `site/logo.svg` | Your logo (used on the site, the browser tab and the dashboard) | YES |
 | `admin/admin.html` | Your private dashboard | **NEVER** |
 | `admin/private.js` | The paid FULL code | **NEVER** |
 
@@ -69,3 +70,6 @@ Do **not** copy paid templates from other people: it is illegal, gets you banned
 
 ## Legal basics
 Add Privacy and Terms pages, keep sales records, and follow your local laws.
+
+## Your logo
+The logo is one file: `site/logo.svg`. The website, the browser-tab icon and the dashboard all use it. To use a different logo, replace that file with your own `logo.svg` (keep the same name), then upload the `site` folder again.
