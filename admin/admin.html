@@ -56,6 +56,7 @@
     <button class="navb on" data-v="dash">📊 Dashboard</button>
     <button class="navb" data-v="products">📦 Products</button>
     <button class="navb" data-v="orders">🧾 Orders</button>
+    <button class="navb" data-v="customers">👥 Customers</button>
     <button class="navb" data-v="settings">⚙️ Settings</button>
     <button class="navb" data-v="publish">🚀 Publish</button>
     <div class="lock">🔒 Private. Keep this <b>admin</b> folder on your computer — never upload it.</div>
@@ -122,9 +123,7 @@
       <div class="panel"><div class="bar"><h2 style="margin:0">Automatic orders (server)</h2><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></div>
         <p class="help" id="srvMsg">Press Refresh to load orders from your server.</p>
         <div class="tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Items</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="srvBody"></tbody></table></div></div>
-      <div class="panel"><div class="bar"><h2 style="margin:0">Customer accounts (server)</h2><button class="btn btn-g btn-s" id="custRefresh">↻ Refresh</button></div>
-        <p class="help" id="custMsg">Press Refresh to load the customers who created an account.</p>
-        <div class="tw"><table><thead><tr><th>Joined</th><th>Name</th><th>Email</th><th>Phone</th><th>Country</th><th>Orders</th></tr></thead><tbody id="custBody"></tbody></table></div></div>
+      <p class="help" style="margin:4px 0 18px">Customer accounts moved to the <b>👥 Customers</b> tab.</p>
       <h2 style="font-size:1.1rem;margin:26px 0 12px">Manual orders</h2>
       <form class="panel form" id="of">
         <div><label for="oEmail">Customer email</label><input id="oEmail" type="email" required></div>
@@ -134,6 +133,20 @@
         <div class="full"><button class="btn btn-p" type="submit">+ Add order</button></div>
       </form>
       <div class="panel tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Item</th><th>USD</th><th>Status</th><th></th></tr></thead><tbody id="otbody"></tbody></table></div>
+    </section>
+
+    <!-- CUSTOMERS -->
+    <section class="view" id="v-customers">
+      <h1>Customers</h1><p class="lead">Everyone who created an account on your shop. Search, open a customer to see their orders, edit their details, disable or delete the account, or set a new password.</p>
+      <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat"><small>Customers</small><b id="cTotal">–</b></div>
+        <div class="stat"><small>With orders (loaded)</small><b id="cOrd">–</b></div>
+        <div class="stat"><small>Disabled (loaded)</small><b id="cDis">–</b></div>
+      </div>
+      <div class="bar"><input id="cSearch" placeholder="Search name, email, phone, country…" style="max-width:360px"><span style="display:flex;gap:8px"><button class="btn btn-g btn-s" id="cRefresh">↻ Refresh</button><button class="btn btn-g btn-s" id="cCsv">⬇ Export CSV</button></span></div>
+      <div class="panel tw"><table><thead><tr><th>Joined</th><th>Name</th><th>Email</th><th>Phone</th><th>Country</th><th>Orders</th><th>Status</th><th></th></tr></thead><tbody id="cBody"></tbody></table>
+        <p class="help" id="cMsg">Press Refresh to load your customers.</p><p><button class="btn btn-g btn-s" id="cMore" hidden>Load more</button></p></div>
+      <div class="panel" id="cDetail" hidden></div>
     </section>
 
     <!-- SETTINGS -->
@@ -243,7 +256,7 @@
   function show(v){
     Array.prototype.forEach.call(document.querySelectorAll('.view'), function(s){ s.classList.toggle('on', s.id==='v-'+v); });
     Array.prototype.forEach.call(document.querySelectorAll('.navb'), function(b){ b.classList.toggle('on', b.dataset.v===v); });
-    if (v==='dash') renderDash(); if (v==='products') { backToList(); } if (v==='orders') { renderOrders(); if (base()) loadServerOrders(); } if (v==='settings') renderSettings();
+    if (v==='dash') renderDash(); if (v==='products') { backToList(); } if (v==='orders') { renderOrders(); if (base()) loadServerOrders(); } if (v==='settings') renderSettings(); if (v==='customers' && base() && !custs.length) loadCustomers(false);
     window.scrollTo(0,0);
   }
   Array.prototype.forEach.call(document.querySelectorAll('.navb'), function(b){ b.addEventListener('click', function(){ show(b.dataset.v); }); });
@@ -534,13 +547,52 @@
     }).catch(function(e){ $('srvMsg').textContent = '❌ ' + e.message; $('srvBody').innerHTML = ''; });
   }
   $('srvRefresh').addEventListener('click', loadServerOrders);
-  $('custRefresh').addEventListener('click', function(){
-    $('custMsg').textContent = 'Loading…';
-    api('/api/admin/customers').then(function(r){
-      $('custMsg').textContent = r.customers.length + ' customer(s)';
-      $('custBody').innerHTML = r.customers.map(function(c){ return '<tr><td>'+esc(new Date(c.createdAt).toISOString().slice(0,10))+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+esc(c.phone)+'</td><td>'+esc(c.country)+'</td><td>'+c.orders+'</td></tr>'; }).join('');
-    }).catch(function(e){ $('custMsg').textContent = '❌ ' + e.message; });
+  /* ---------- customers (accounts stored on your server) ---------- */
+  var custs = [], custNext = null, custTotal = 0;
+  function dstr(ms){ return ms ? new Date(ms).toISOString().slice(0,10) : ''; }
+  function loadCustomers(more){
+    $('cMsg').textContent = 'Loading…';
+    api('/api/admin/customers' + (more && custNext ? '?offset=' + custNext : '')).then(function(r){
+      custs = more ? custs.concat(r.customers) : r.customers; custNext = r.next; custTotal = r.total; renderCustomers();
+    }).catch(function(e){ $('cMsg').textContent = '❌ ' + e.message; });
+  }
+  function renderCustomers(){
+    var q = $('cSearch').value.trim().toLowerCase();
+    var list = custs.filter(function(c){ return !q || (c.name + ' ' + c.email + ' ' + c.phone + ' ' + c.country).toLowerCase().indexOf(q) > -1; });
+    $('cTotal').textContent = custTotal; $('cOrd').textContent = custs.filter(function(c){ return c.orders > 0; }).length; $('cDis').textContent = custs.filter(function(c){ return c.disabled; }).length;
+    $('cBody').innerHTML = list.map(function(c){
+      return '<tr><td>'+esc(dstr(c.createdAt))+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+esc(c.phone)+'</td><td>'+esc(c.country)+'</td><td>'+c.orders+'</td><td><span class="pill '+(c.disabled?'pending':'paid')+'">'+(c.disabled?'Disabled':'Active')+'</span></td><td><button class="btn btn-g btn-s" data-cv="'+esc(c.email)+'">Open</button></td></tr>';
+    }).join('') || '<tr><td colspan="8" class="empty">No customers found.</td></tr>';
+    $('cMsg').textContent = custs.length + ' of ' + custTotal + ' customer(s) loaded' + (q ? ' · ' + list.length + ' match your search' : '');
+    $('cMore').hidden = custNext == null;
+  }
+  $('cRefresh').addEventListener('click', function(){ $('cDetail').hidden = true; loadCustomers(false); });
+  $('cMore').addEventListener('click', function(){ loadCustomers(true); });
+  $('cSearch').addEventListener('input', renderCustomers);
+  $('cCsv').addEventListener('click', function(){
+    if (!custs.length){ toast('Load your customers first (Refresh)'); return; }
+    function cell(v){ v = String(v == null ? '' : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }
+    var rows = [['Joined','Name','Email','Phone','Country','Orders','Status']].concat(custs.map(function(c){ return [dstr(c.createdAt), c.name, c.email, c.phone, c.country, c.orders, c.disabled ? 'Disabled' : 'Active']; }));
+    download('customers-' + new Date().toISOString().slice(0,10) + '.csv', '﻿' + rows.map(function(r){ return r.map(cell).join(','); }).join('\r\n'), 'text/csv');
   });
+  function openCustomer(email){
+    var box = $('cDetail'); box.hidden = false; box.innerHTML = '<p class="help">Loading…</p>'; box.scrollIntoView({behavior:'smooth'});
+    api('/api/admin/customer?email=' + encodeURIComponent(email)).then(function(r){
+      var p = r.profile;
+      box.innerHTML = '<div class="bar"><h2 style="margin:0">' + esc(p.name || p.email) + ' <span class="pill ' + (p.disabled ? 'pending' : 'paid') + '">' + (p.disabled ? 'Disabled' : 'Active') + '</span></h2><button class="btn btn-g btn-s" id="cdClose">Close</button></div>' +
+        '<p class="help">' + esc(p.email) + ' · member since ' + esc(dstr(p.createdAt)) + ' · ' + r.orders.length + ' order(s) · total paid <b>$' + esc(r.spent) + '</b></p>' +
+        '<form class="form" id="cdForm" style="margin:14px 0"><div><label>Name</label><input id="cdName" value="' + esc(p.name) + '"></div><div><label>Phone</label><input id="cdPhone" value="' + esc(p.phone) + '"></div><div><label>Country</label><input id="cdCountry" value="' + esc(p.country) + '"></div><div><label>Private note (only you can see it)</label><input id="cdNote" value="' + esc(p.note) + '"></div><div class="full" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p btn-s" type="submit">Save details</button><button class="btn btn-g btn-s" type="button" id="cdToggle">' + (p.disabled ? 'Enable account' : 'Disable account') + '</button><button class="btn btn-g btn-s" type="button" id="cdPw">Set a new password…</button><button class="btn btn-d btn-s" type="button" id="cdDel">Delete account</button></div></form>' +
+        '<h2 style="font-size:1rem">Orders</h2><div class="tw"><table><thead><tr><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>' +
+        (r.orders.map(function(o){ return '<tr><td>' + esc(dstr(o.createdAt)) + '</td><td>' + esc(o.title) + '</td><td>$' + esc(o.usd) + '<div class="help">' + esc(o.amount) + ' ' + esc(o.coinName.split(' ')[0]) + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span></td><td>' + (o.deliveryUrl ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(o.deliveryUrl) + '">Open codes</a>' : '') + '</td></tr>'; }).join('') || '<tr><td colspan="5" class="empty">No orders yet.</td></tr>') + '</tbody></table></div>';
+      function act(body, ok, reload){ body.email = email; return api('/api/admin/customer', {method:'POST', body: JSON.stringify(body)}).then(function(){ toast(ok); reload(); }).catch(function(e){ toast(e.message); }); }
+      $('cdClose').onclick = function(){ box.hidden = true; };
+      $('cdForm').onsubmit = function(e){ e.preventDefault(); act({action:'profile', name:$('cdName').value, phone:$('cdPhone').value, country:$('cdCountry').value, note:$('cdNote').value}, 'Saved', function(){ loadCustomers(false); openCustomer(email); }); };
+      $('cdToggle').onclick = function(){ act({action: p.disabled ? 'enable' : 'disable'}, p.disabled ? 'Account enabled' : 'Account disabled', function(){ loadCustomers(false); openCustomer(email); }); };
+      $('cdPw').onclick = function(){ var pw = prompt('New password for ' + email + ' (at least 8 characters).\nTell the customer; they can change it later in their profile:'); if (pw) act({action:'setpassword', password:pw}, 'Password changed — the old one no longer works', function(){}); };
+      $('cdDel').onclick = function(){ if (confirm('Delete the account of ' + email + '? Their order records stay, but they can no longer sign in. This cannot be undone.')) act({action:'delete'}, 'Account deleted', function(){ box.hidden = true; loadCustomers(false); }); };
+    }).catch(function(e){ box.innerHTML = '<p class="help">❌ ' + esc(e.message) + '</p>'; });
+  }
+  $('cBody').addEventListener('click', function(e){ var b = e.target.closest('[data-cv]'); if (b) openCustomer(b.dataset.cv); });
   $('srvBody').addEventListener('click', function(e){
     var b = e.target.closest('[data-mp]'); if (!b) return;
     if (!confirm('Mark this order as paid? Only do this after you saw the money in your wallet.')) return;

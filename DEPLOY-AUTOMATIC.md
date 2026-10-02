@@ -93,10 +93,10 @@ The current `worker.js` is built to stay far below the limit: it writes to stora
 - The customer must send the amount **exactly** (the wallet's network fee is paid on top by most wallets; from an exchange, add the withdrawal fee). If a payment arrives with a slightly different amount, check your wallet and use **Orders → Mark paid**.
 
 ## Customer accounts
-Customers can create an account on your shop (name, email, password). They see all their orders, can reopen their codes, see their **payment history** with a link to the transaction, and edit their details. You see all accounts in **dashboard → Orders → Customer accounts**.
+Customers can create an account on your shop (name, email, password). They see all their orders, can reopen their codes, see their **payment history** with a link to the transaction, and edit their details. You manage all accounts in **dashboard → 👥 Customers**: search, open a customer to see their orders and total paid, edit their details, add a private note, **Disable/Enable** (a disabled customer cannot sign in), **set a temporary password** (use it when someone forgets theirs), **Delete**, and **Export CSV**. The account data lives in your Cloudflare KV, so export the CSV from time to time as a backup, and keep your customers' data private.
 - Guests can still buy without an account; their orders stay in **Account → Orders placed on this device**.
 - Accounts are stored in the same free Cloudflare storage (one write per sign-up and per order). Passwords are salted and hashed; sessions last 30 days.
-- No email verification yet (it needs an email service). If a customer forgets a password, create a new account with another email or contact support.
+- No email verification yet (it needs an email service). If a customer forgets a password, open them in dashboard → Customers → **Set new password** and send them the temporary password.
 
 ## Sync, version 4 (fixes "server error")
 "Sync to server" now uploads each product in its own small request and then one small index — instead of one huge request. Cloudflare's free plan gives each request only a few milliseconds of processing time, which a single 2 MB upload could exceed. Unchanged products are skipped, so later syncs are fast. If a sync fails, the message after the ❌ is the real reason from the server. A full first sync uses ~37 KV writes of the 1,000 free per day.

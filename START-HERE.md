@@ -75,7 +75,7 @@ The dashboard talks to the server. The server talks to the shop. Customers only 
 
 **Customer:** clicks **Add** → opens the cart → enters email → chooses USDT or Bitcoin → sends the exact amount shown → the window turns green → **Open my codes**. They can also create an account to see all orders and payments.
 
-**You:** nothing. The server notices the payment and unlocks the code by itself. You can watch everything in the dashboard → **Orders**. If a customer paid a slightly wrong amount, check your wallet and press **Mark paid** on that order.
+**You:** nothing. (Customer accounts are in the dashboard → **👥 Customers**: search, orders, disable, set a temporary password if someone forgot theirs, export CSV.) The server notices the payment and unlocks the code by itself. You can watch everything in the dashboard → **Orders**. If a customer paid a slightly wrong amount, check your wallet and press **Mark paid** on that order.
 
 ---
 

@@ -191,7 +191,7 @@ async function authCustomer(req, env) {
   let p; try { p = JSON.parse(new TextDecoder().decode(unb64u(body))); } catch (e) { return null; }
   if (!p || p.exp < Date.now()) return null;
   const acct = await env.ORDERS.get('acct:' + p.e, 'json');
-  return acct && acct.hash.slice(0, 8) === p.v ? acct : null;
+  return acct && !acct.disabled && acct.hash.slice(0, 8) === p.v ? acct : null;
 }
 const profileOf = a => ({ email: a.email, name: a.name || '', phone: a.phone || '', country: a.country || '', createdAt: a.createdAt, orders: (a.orders || []).length });
 
@@ -215,6 +215,7 @@ async function accountRoutes(req, env, path, apiBase) {
     const acct = validEmail(email) ? await env.ORDERS.get('acct:' + email, 'json') : null;
     const h = acct ? await pbkdf2(String(body.password || ''), acct.salt, acct.iter || PBKDF2_ITER) : '';
     if (!acct || !safeEqual(h, acct.hash)) return fail(env, 'Wrong email or password', 401);
+    if (acct.disabled) return fail(env, 'This account has been disabled. Please contact us.', 403);
     return json(env, { token: await makeToken(env, acct), profile: profileOf(acct) });
   }
   const acct = await authCustomer(req, env);
@@ -474,11 +475,45 @@ async function adminOrders(env) {
   const orders = list.map(o => ({ id: o.id, email: o.email, title: orderTitle(o), item: o.item || '', amount: fmtAmount(orderCoin(o), o.amount), coin: COINS[orderCoin(o)].short, usd: o.usd || null, status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null, key: o.key, account: o.account || null }));
   return json(env, { orders });
 }
-async function adminCustomers(env) {
-  const emails = ((await env.ORDERS.get('cidx', 'json')) || []).slice(-300).reverse();
-  const customers = (await Promise.all(emails.map(e => env.ORDERS.get('acct:' + e, 'json')))).filter(Boolean)
-    .map(a => ({ email: a.email, name: a.name || '', phone: a.phone || '', country: a.country || '', createdAt: a.createdAt, orders: (a.orders || []).length }));
-  return json(env, { customers });
+async function adminCustomers(env, url) {
+  const all = ((await env.ORDERS.get('cidx', 'json')) || []).slice().reverse();
+  const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0);
+  const customers = (await Promise.all(all.slice(offset, offset + 100).map(e => env.ORDERS.get('acct:' + e, 'json')))).filter(Boolean)
+    .map(a => ({ email: a.email, name: a.name || '', phone: a.phone || '', country: a.country || '', createdAt: a.createdAt, orders: (a.orders || []).length, disabled: !!a.disabled }));
+  return json(env, { customers, total: all.length, next: offset + 100 < all.length ? offset + 100 : null });
+}
+async function adminCustomer(req, env, url, apiBase) {
+  const email = String(url.searchParams.get('email') || '').trim().toLowerCase();
+  const acct = email && await env.ORDERS.get('acct:' + email, 'json');
+  if (!acct) return fail(env, 'Customer not found', 404);
+  let found = (await Promise.all((acct.orders || []).slice(-100).reverse().map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
+  found = await Promise.all(found.map((o, i) => o.status === 'pending' && i < 5 ? checkOrder(env, o) : o));
+  const orders = found.map(o => publicOrder(env, o, apiBase));
+  return json(env, { profile: Object.assign(profileOf(acct), { disabled: !!acct.disabled, note: acct.note || '' }), orders, spent: round2(orders.filter(o => o.status === 'paid').reduce((a, o) => a + (Number(o.usd) || 0), 0)) });
+}
+// one endpoint for everything you can do to a customer account
+async function adminCustomerAct(req, env) {
+  const b = await req.json().catch(() => ({}));
+  const email = String(b.email || '').trim().toLowerCase(), key = 'acct:' + email;
+  const acct = email && await env.ORDERS.get(key, 'json');
+  if (!acct) return fail(env, 'Customer not found', 404);
+  const act = String(b.action || '');
+  if (act === 'disable' || act === 'enable') { acct.disabled = act === 'disable'; await env.ORDERS.put(key, J(acct)); }
+  else if (act === 'profile') {
+    acct.name = String(b.name || '').trim().slice(0, 80); acct.phone = String(b.phone || '').trim().slice(0, 40);
+    acct.country = String(b.country || '').trim().slice(0, 60); acct.note = String(b.note || '').slice(0, 1000);
+    await env.ORDERS.put(key, J(acct));
+  } else if (act === 'setpassword') {
+    const pw = String(b.password || '');
+    if (pw.length < 8 || pw.length > 200) return fail(env, 'Password must be at least 8 characters');
+    acct.salt = hex(16); acct.iter = PBKDF2_ITER; acct.hash = await pbkdf2(pw, acct.salt, PBKDF2_ITER);   // old sessions stop working
+    await env.ORDERS.put(key, J(acct));
+  } else if (act === 'delete') {
+    await env.ORDERS.delete(key);
+    const idx = ((await env.ORDERS.get('cidx', 'json')) || []).filter(e => e !== email);
+    await env.ORDERS.put('cidx', J(idx));
+  } else return fail(env, 'Unknown action');
+  return json(env, { ok: true });
 }
 
 /* ---------------- router ---------------- */
@@ -515,7 +550,9 @@ async function route(req, env) {
       if (path === '/api/admin/index' && req.method === 'POST') return await adminIndex(req, env);
       if (path === '/api/admin/ping') return json(env, { ok: true });
       if (path === '/api/admin/orders' && req.method === 'GET') return await adminOrders(env);
-      if (path === '/api/admin/customers' && req.method === 'GET') return await adminCustomers(env);
+      if (path === '/api/admin/customers' && req.method === 'GET') return await adminCustomers(env, url);
+      if (path === '/api/admin/customer' && req.method === 'GET') return await adminCustomer(req, env, url, apiBase);
+      if (path === '/api/admin/customer' && req.method === 'POST') return await adminCustomerAct(req, env);
       if (path === '/api/admin/markpaid' && req.method === 'POST') {
         const b = await req.json().catch(() => ({}));
         const o = await env.ORDERS.get('order:' + String(b.id || ''), 'json');

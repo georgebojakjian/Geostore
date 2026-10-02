@@ -23,7 +23,7 @@ Customers see a live preview and a FREE sample. After they pay, you send the FUL
 
 ## Step 1 — Open your dashboard
 Double-click `admin/admin.html`. It opens in your browser (works offline, free).
-Tabs: **Dashboard · Products · Orders · Settings · Publish**.
+Tabs: **Dashboard · Products · Orders · Customers · Settings · Publish**.
 Your data is saved inside that browser on that computer — use **Publish → Backup** regularly.
 
 ## Step 2 — Fill Settings
