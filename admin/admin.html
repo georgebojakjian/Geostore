@@ -91,10 +91,22 @@
           <div><label for="fPrice">Price (USD)</label><input id="fPrice" type="number" min="0" step="0.5" required></div>
           <div><label class="chk" style="margin-top:28px"><input type="checkbox" id="fPub"> Show on the website</label></div>
           <div class="full"><label for="fTag">One-line description</label><input id="fTag"></div>
-          <div class="full"><label for="fSample">FREE sample code (shown publicly — a basic complete HTML page)</label><textarea id="fSample" spellcheck="false"></textarea></div>
-          <div class="full"><label for="fFull">FULL code (private — sent to the customer after payment)</label><textarea id="fFull" spellcheck="false"></textarea></div>
-          <div class="full"><div class="bar" style="margin:0"><span class="help">Preview what you typed:</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-g btn-s" id="pvS">Preview free sample</button><button type="button" class="btn btn-g btn-s" id="pvF">Preview full code</button></span></div>
-            <iframe class="pv" id="pvFrame" sandbox="allow-scripts" title="Preview" style="margin-top:12px"></iframe></div>
+          <div><label for="fType">Type</label><select id="fType"><option value="code">Code product (HTML / CSS / JS)</option><option value="digital">Digital item (gift card, licence key…)</option></select></div>
+          <div class="full" id="codeFields">
+            <label>Styles — each style has its own free sample and private full code. Customers who buy get ALL styles.</label>
+            <div class="bar" style="margin:0 0 12px"><div id="vRow" style="display:flex;gap:8px;flex-wrap:wrap"></div><span style="display:flex;gap:8px"><button type="button" class="btn btn-g btn-s" id="vAdd">+ Add style</button><button type="button" class="btn btn-d btn-s" id="vDel">Remove this style</button></span></div>
+            <label for="vName">Style name</label><input id="vName" style="margin-bottom:12px">
+            <label for="fSample">FREE sample code (shown publicly — a basic complete HTML page)</label><textarea id="fSample" spellcheck="false"></textarea>
+            <label for="fFull" style="margin-top:12px">FULL code (private — sent to the customer after payment)</label><textarea id="fFull" spellcheck="false"></textarea>
+            <div class="bar" style="margin:14px 0 0"><span class="help">Preview what you typed:</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-g btn-s" id="pvS">Preview free sample</button><button type="button" class="btn btn-g btn-s" id="pvF">Preview full code</button></span></div>
+            <iframe class="pv" id="pvFrame" sandbox="allow-scripts" title="Preview" style="margin-top:12px"></iframe>
+          </div>
+          <div class="full" id="digFields" hidden>
+            <div class="form"><div><label for="fIcon">Card icon (one emoji)</label><input id="fIcon" placeholder="🎁"></div><div><label>In stock</label><div class="help" id="stockCount" style="padding-top:10px"></div></div></div>
+            <label for="fStock" style="margin-top:12px">Stock — one code per line (private; each paid order gets the next unused code)</label>
+            <textarea id="fStock" spellcheck="false" style="min-height:170px"></textarea>
+            <p class="help" style="margin-top:8px">Only add codes you obtained legitimately and are allowed to resell. After editing stock, press <b>Sync to server</b> on the Publish tab so automatic delivery can use it. <b>Always add new codes at the END of the list and never delete or reorder lines that were already sold.</b></p>
+          </div>
           <div class="full" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" type="submit">Save product</button><button type="button" class="btn btn-d" id="delP">Delete</button></div>
         </form>
       </div>
@@ -127,6 +139,7 @@
         <div class="full"><label for="sApi">Payment server URL (public — from Cloudflare, e.g. https://geostore-api.yourname.workers.dev). Leave empty for manual mode.</label><input id="sApi" placeholder="https://geostore-api.yourname.workers.dev"></div>
         <div class="full"><label for="sTok">Server admin token (private — saved only in this browser, never published)</label><input id="sTok" type="password" autocomplete="off" placeholder="the ADMIN_TOKEN you chose in Cloudflare"></div>
         <div class="full"><label for="sWal">Manual-mode wallets (only used when no server URL is set) — one per line, format: <code>Coin name | address</code></label><textarea id="sWal" style="min-height:110px;white-space:pre-wrap" placeholder="USDT (TRC20 network) | TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></textarea></div>
+        <div class="full"><label class="chk"><input type="checkbox" id="sDig"> Show the “Digital items” section on the home page (shows “coming soon” until you add items)</label></div>
         <div class="full"><label class="chk"><input type="checkbox" id="aaOn"> Sell an All-Access pass (one payment → every code)</label></div>
         <div><label for="aaTitle">Pass name</label><input id="aaTitle"></div>
         <div><label for="aaPrice">Pass price (USD) — you choose</label><input id="aaPrice" type="number" min="0" step="1"></div>
@@ -156,6 +169,8 @@
 
 <script src="../site/data.js"></script>
 <script src="private.js"></script>
+<script src="../site/pack-1.js"></script>
+<script src="private-pack-1.js"></script>
 <script>
 (function(){
   'use strict';
@@ -167,19 +182,45 @@
   function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(function(){t.classList.remove('show');},2400); }
 
   /* ---------- state ---------- */
-  function seed(){
-    var d = JSON.parse(JSON.stringify(window.GEOSTORE_DATA || {settings:{},products:[]}));
-    var pv = window.GEOSTORE_PRIVATE || {};
-    d.products.forEach(function(p){ p.full = pv[p.id] || ''; });
+  function clone(x){ return JSON.parse(JSON.stringify(x)); }
+  // add products from the shipped packs that this state does not have (never re-adds ones you deleted)
+  function addPacks(d){
+    var have = {}; d.products.forEach(function(p){ have[p.id] = 1; });
+    (d.removed || []).forEach(function(id){ have[id] = 1; });
+    var pv2 = window.GEOSTORE_PRIVATE_V2 || {};
+    (window.GEOSTORE_PACKS || []).forEach(function(pk){ (pk.products || []).forEach(function(src){
+      if (have[src.id]) return; have[src.id] = 1;
+      var p = clone(src), f = pv2[p.id] || [];
+      p.variants.forEach(function(v, i){ v.full = (f[i] && f[i].full) || ''; });
+      d.products.push(p);
+    }); });
+  }
+  function migrate(d){
+    d.removed = d.removed || []; d.orders = d.orders || [];
     d.settings = d.settings || {}; d.settings.wallets = d.settings.wallets || {};
     d.settings.allAccess = d.settings.allAccess || {enabled:false,title:'All-Access Pass',price:49,description:''};
-    d.orders = [];
+    if (d.settings.digitalSection === undefined) d.settings.digitalSection = true;
+    addPacks(d);
+    d.products.forEach(function(p){
+      if (!p.variants || !p.variants.length) p.variants = [{name:'Standard', sample:p.sample || '', full:p.full || ''}];
+      delete p.sample; delete p.full;
+      p.type = p.type === 'digital' ? 'digital' : 'code';
+      p.stock = p.stock || []; p.used = p.used || 0;
+    });
     return d;
+  }
+  function seed(){
+    var d = clone(window.GEOSTORE_DATA || {settings:{},products:[]});
+    var pv = window.GEOSTORE_PRIVATE || {};
+    d.products.forEach(function(p){ if (!p.variants) p.full = pv[p.id] || ''; });
+    return migrate(d);
   }
   var state;
   try { state = JSON.parse(localStorage.getItem(KEY)); } catch(e) { state = null; }
-  if (!state || !state.products) state = seed();
+  state = (state && state.products) ? migrate(state) : seed();
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) { toast('Browser storage is blocked — use Backup on the Publish tab'); } }
+
+  save();
 
   /* ---------- navigation ---------- */
   function show(v){
@@ -209,31 +250,53 @@
   function renderProducts(){
     $('pcount').textContent = state.products.length + ' product(s)';
     $('ptbody').innerHTML = state.products.length ? state.products.map(function(p){
-      return '<tr><td><b>'+esc(p.title)+'</b><div class="help">'+esc(p.tagline||'')+'</div></td><td>'+esc(p.category||'')+'</td><td>'+money(p.price)+'</td><td><span class="pill '+(p.published!==false?'paid':'off')+'">'+(p.published!==false?'Live':'Hidden')+'</span></td>' +
+      var extra = p.type==='digital' ? ' <span class="pill">digital · '+(p.stock.length-p.used)+' left</span>' : (p.variants.length>1 ? ' <span class="pill">'+p.variants.length+' styles</span>' : '');
+      return '<tr><td><b>'+esc(p.title)+'</b>'+extra+'<div class="help">'+esc(p.tagline||'')+'</div></td><td>'+esc(p.category||'')+'</td><td>'+money(p.price)+'</td><td><span class="pill '+(p.published!==false?'paid':'off')+'">'+(p.published!==false?'Live':'Hidden')+'</span></td>' +
         '<td><div class="acts"><button class="btn btn-g btn-s" data-edit="'+esc(p.id)+'">Edit</button><button class="btn btn-g btn-s" data-dup="'+esc(p.id)+'">Duplicate</button></div></td></tr>';
     }).join('') : '<tr><td colspan="5" class="empty">No products yet. Click "New product".</td></tr>';
     var cats = {}; state.products.forEach(function(p){ if (p.category) cats[p.category]=1; });
     $('cats').innerHTML = Object.keys(cats).map(function(c){ return '<option value="'+esc(c)+'">'; }).join('');
   }
   function backToList(){ editing=null; $('pedit').hidden=true; $('plist').hidden=false; renderProducts(); }
+  var draft = null, vi = 0;
+  var TPL = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>New code</title>\n<style>\n body{font-family:system-ui,sans-serif;background:#0b0f1a;color:#fff;margin:0}\n</style>\n</head>\n<body>\n<!-- your code here -->\n</body>\n</html>\n';
+  function saveVariantFields(){
+    if (!draft || draft.type !== 'code') return;
+    var v = draft.variants[vi]; v.name = $('vName').value.trim() || ('Style ' + (vi + 1)); v.sample = $('fSample').value; v.full = $('fFull').value;
+  }
+  function renderVariants(){
+    $('vRow').innerHTML = draft.variants.map(function(v, i){ return '<button type="button" class="btn btn-s ' + (i===vi ? 'btn-p' : 'btn-g') + '" data-vi="' + i + '">' + esc(v.name || ('Style ' + (i+1))) + '</button>'; }).join('');
+    var v = draft.variants[vi]; $('vName').value = v.name || ''; $('fSample').value = v.sample || ''; $('fFull').value = v.full || '';
+    $('pvFrame').srcdoc = v.sample || ''; $('vDel').hidden = draft.variants.length < 2;
+  }
+  function stockCount(){ var n = $('fStock').value.split('\n').filter(function(x){ return x.trim(); }).length; $('stockCount').textContent = n + ' code(s) listed' + (draft && draft.used ? ' · ' + draft.used + ' already used (manual delivery)' : ''); }
+  function toggleType(){
+    var dg = draft.type === 'digital';
+    $('codeFields').hidden = dg; $('digFields').hidden = !dg; $('fType').value = draft.type;
+    if (dg){ $('fIcon').value = draft.icon || ''; $('fStock').value = (draft.stock || []).join('\n'); stockCount(); }
+    else renderVariants();
+  }
   function openEditor(p){
-    editing = p; $('plist').hidden = true; $('pedit').hidden = false;
+    editing = p; draft = clone(p); vi = 0; $('plist').hidden = true; $('pedit').hidden = false;
     $('peTitle').textContent = p._new ? 'New product' : 'Edit: ' + p.title;
     $('fTitle').value = p.title||''; $('fCat').value = p.category||''; $('fPrice').value = p.price==null?'':p.price;
     $('fPub').checked = p.published!==false; $('fTag').value = p.tagline||'';
-    $('fSample').value = p.sample||''; $('fFull').value = p.full||'';
     $('delP').style.display = p._new ? 'none' : '';
-    $('pvFrame').srcdoc = p.sample || '';
+    toggleType();
     window.scrollTo(0,0);
   }
+  $('vRow').addEventListener('click', function(e){ var b = e.target.closest('[data-vi]'); if (!b) return; saveVariantFields(); vi = +b.dataset.vi; renderVariants(); });
+  $('vAdd').addEventListener('click', function(){ saveVariantFields(); draft.variants.push({name:'Style ' + (draft.variants.length + 1), sample:TPL, full:TPL}); vi = draft.variants.length - 1; renderVariants(); });
+  $('vDel').addEventListener('click', function(){ if (draft.variants.length < 2 || !confirm('Remove this style?')) return; draft.variants.splice(vi, 1); vi = Math.min(vi, draft.variants.length - 1); renderVariants(); });
+  $('fType').addEventListener('change', function(){ saveVariantFields(); draft.type = this.value; toggleType(); });
+  $('fStock').addEventListener('input', stockCount);
   $('newP').addEventListener('click', function(){
-    var tpl = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>New code</title>\n<style>\n body{font-family:system-ui,sans-serif;background:#0b0f1a;color:#fff;margin:0}\n</style>\n</head>\n<body>\n<!-- your code here -->\n</body>\n</html>\n';
-    openEditor({_new:true, id:uid(), title:'', category:'', price:9, tagline:'', sample:tpl, full:tpl, published:true});
+    openEditor({_new:true, id:uid(), title:'', category:'', price:9, tagline:'', type:'code', variants:[{name:'Standard', sample:TPL, full:TPL}], stock:[], used:0, published:true});
   });
   $('ptbody').addEventListener('click', function(e){
     var ed = e.target.closest('[data-edit]'), du = e.target.closest('[data-dup]');
     if (ed) openEditor(state.products.filter(function(p){return p.id===ed.dataset.edit;})[0]);
-    if (du){ var src = state.products.filter(function(p){return p.id===du.dataset.dup;})[0]; var c = JSON.parse(JSON.stringify(src)); c.id = uid(); c.title += ' (copy)'; state.products.push(c); save(); renderProducts(); toast('Duplicated'); }
+    if (du){ var src = state.products.filter(function(p){return p.id===du.dataset.dup;})[0]; var c = clone(src); c.id = uid(); c.title += ' (copy)'; c.used = 0; state.products.push(c); save(); renderProducts(); toast('Duplicated'); }
   });
   $('peBack').addEventListener('click', backToList);
   $('pvS').addEventListener('click', function(){ $('pvFrame').srcdoc = $('fSample').value; });
@@ -241,15 +304,24 @@
   $('pf').addEventListener('submit', function(e){
     e.preventDefault();
     var p = editing; if (!p) return;
-    p.title = $('fTitle').value.trim(); p.category = $('fCat').value.trim(); p.price = +$('fPrice').value || 0;
-    p.published = $('fPub').checked; p.tagline = $('fTag').value.trim(); p.sample = $('fSample').value; p.full = $('fFull').value;
-    if (!p.title){ toast('Please enter a title'); return; }
-    if (p._new){ delete p._new; state.products.push(p); }
+    saveVariantFields();
+    var title = $('fTitle').value.trim(); if (!title){ toast('Please enter a title'); return; }
+    draft.title = title; draft.category = $('fCat').value.trim(); draft.price = +$('fPrice').value || 0;
+    draft.published = $('fPub').checked; draft.tagline = $('fTag').value.trim();
+    if (draft.type === 'digital'){
+      draft.icon = $('fIcon').value.trim();
+      draft.stock = $('fStock').value.split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
+      if (draft.used > draft.stock.length) draft.used = draft.stock.length;
+    }
+    var isNew = p._new; delete draft._new;
+    if (isNew) state.products.push(draft);
+    else { var i = state.products.indexOf(p); state.products[i] = draft; }
     save(); toast('Product saved'); backToList();
   });
   $('delP').addEventListener('click', function(){
     if (!editing || editing._new) return;
     if (!confirm('Delete "' + editing.title + '"? This cannot be undone (make a backup first).')) return;
+    state.removed.push(editing.id);
     state.products = state.products.filter(function(p){ return p.id !== editing.id; });
     save(); toast('Deleted'); backToList();
   });
@@ -282,10 +354,12 @@
   $('otbody').addEventListener('click', function(e){
     var d=e.target.closest('[data-del]'), m=e.target.closest('[data-mail]'), r=e.target.closest('[data-rm]');
     if (d){
-      var o = order(d.dataset.del), list = o.item==='ALL' ? state.products : state.products.filter(function(p){return p.id===o.item;});
+      var o = order(d.dataset.del), list = o.item==='ALL' ? state.products.filter(function(p){ return p.type==='code'; }) : state.products.filter(function(p){return p.id===o.item;});
       if (!list.length){ toast('That product no longer exists'); return; }
-      var missing = list.filter(function(p){ return !p.full; }); if (missing.length && !confirm('Some products have no FULL code yet. Deliver anyway?')) return;
-      download(safeName(o.email) + '-codes.html', bundle(list, o)); o.status = 'delivered'; save(); renderOrders();
+      var missing = list.filter(function(p){ return p.type==='code' && p.variants.some(function(v){ return !v.full; }); }); if (missing.length && !confirm('Some styles have no FULL code yet. Deliver anyway?')) return;
+      var codes = {};
+      for (var k = 0; k < list.length; k++){ var pp = list[k]; if (pp.type==='digital'){ var c = pp.stock[pp.used || 0]; if (!c){ toast('"' + pp.title + '" is out of stock — add more codes in Products'); return; } codes[pp.id] = c; pp.used = (pp.used || 0) + 1; } }
+      download(safeName(o.email) + '-codes.html', bundle(list, o, codes)); o.status = 'delivered'; save(); renderOrders();
       toast('Downloaded — now attach this file to an email to the customer');
     }
     if (m){
@@ -301,10 +375,17 @@
     a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 1500);
   }
   /* The delivery file the customer receives: one page, live preview + copy button for each code */
-  function bundle(list, o){
-    var items = list.map(function(p, i){
-      return '<section><h2>'+esc(p.title)+'</h2><p class="d">'+esc(p.tagline||'')+'</p><iframe sandbox="allow-scripts" srcdoc="'+esc(p.full)+'" title="Preview"></iframe>' +
-        '<div class="bar"><b>Full code</b><button onclick="cp('+i+',this)">Copy code</button></div><pre id="c'+i+'">'+esc(p.full)+'</pre></section>';
+  function bundle(list, o, codes){
+    var n = 0; codes = codes || {};
+    var items = list.map(function(p){
+      if (p.type === 'digital'){
+        var i = n++;
+        return '<section><h2>'+esc(p.title)+'</h2><p class="d">'+esc(p.tagline||'')+'</p><div class="bar"><b>Your code</b><button onclick="cp('+i+',this)">Copy</button></div><pre id="c'+i+'" style="font-size:1.05rem">'+esc(codes[p.id]||'')+'</pre></section>';
+      }
+      return '<section><h2>'+esc(p.title)+'</h2><p class="d">'+esc(p.tagline||'')+'</p>' + p.variants.map(function(v){
+        var i = n++;
+        return '<h3 style="margin:22px 0 4px;font-size:1.05rem">'+esc(v.name)+'</h3><iframe sandbox="allow-scripts" srcdoc="'+esc(v.full)+'" title="Preview"></iframe><div class="bar"><b>Full code</b><button onclick="cp('+i+',this)">Copy code</button></div><pre id="c'+i+'">'+esc(v.full)+'</pre>';
+      }).join('') + '</section>';
     }).join('');
     return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your codes — '+esc(state.settings.storeName||'')+'</title><style>' +
       'body{margin:0;font-family:system-ui,sans-serif;background:#0b0f1a;color:#f8fafc;line-height:1.6}.w{max-width:960px;margin:auto;padding:30px 18px 80px}h1{margin-bottom:4px}.d{color:#94a3b8}' +
@@ -321,7 +402,7 @@
     var s = state.settings, aa = s.allAccess;
     $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
     $('sWal').value = Object.keys(s.wallets||{}).map(function(k){ return k + ' | ' + s.wallets[k]; }).join('\n');
-    $('aaOn').checked = !!aa.enabled; $('aaTitle').value = aa.title||''; $('aaPrice').value = aa.price==null?'':aa.price; $('aaDesc').value = aa.description||'';
+    $('sDig').checked = s.digitalSection !== false; $('aaOn').checked = !!aa.enabled; $('aaTitle').value = aa.title||''; $('aaPrice').value = aa.price==null?'':aa.price; $('aaDesc').value = aa.description||'';
   }
   $('sf').addEventListener('submit', function(e){
     e.preventDefault();
@@ -329,6 +410,7 @@
     s.apiUrl = $('sApi').value.trim().replace(/\/+$/,''); try { localStorage.setItem('geostore_admin_token', $('sTok').value.trim()); } catch(e) {} s.storeName = $('sName').value.trim(); s.email = $('sEmail').value.trim(); s.tagline = $('sTag').value.trim();
     var w = {}; $('sWal').value.split('\n').forEach(function(line){ var i = line.indexOf('|'); if (i>0){ var k = line.slice(0,i).trim(), v = line.slice(i+1).trim(); if (k && v) w[k]=v; } });
     s.wallets = w;
+    s.digitalSection = $('sDig').checked;
     s.allAccess = {enabled:$('aaOn').checked, title:$('aaTitle').value.trim()||'All-Access Pass', price:+$('aaPrice').value||0, description:$('aaDesc').value.trim()};
     save(); toast('Settings saved — now go to Publish');
   });
@@ -360,7 +442,7 @@
     var aa = state.settings.allAccess || {};
     api('/api/admin/sync', {method:'POST', body: JSON.stringify({
       storeName: state.settings.storeName,
-      products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, full:p.full, published:p.published!==false}; }),
+      products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, type:p.type, published:p.published!==false, variants:p.type==='code' ? p.variants.map(function(v){ return {name:v.name, full:v.full}; }) : [], stock:p.type==='digital' ? p.stock : []}; }),
       allAccess: {enabled: !!aa.enabled, title: aa.title, price: aa.price}
     })}).then(function(r){ srvStatus('✅ Synced ' + r.products + ' product(s) to your server.'); }).catch(function(e){ srvStatus('❌ ' + e.message, true); });
   });
@@ -386,7 +468,10 @@
   /* ---------- publish / backup ---------- */
   $('dlData').addEventListener('click', function(){
     var pub = {settings: state.settings, products: state.products.map(function(p){
-      return {id:p.id, title:p.title, category:p.category, price:p.price, tagline:p.tagline, sample:p.sample, published:p.published!==false};
+      var q = {id:p.id, title:p.title, category:p.category, price:p.price, tagline:p.tagline, type:p.type, published:p.published!==false};
+      if (p.type === 'digital') q.icon = p.icon || '';
+      else q.variants = p.variants.map(function(v){ return {name:v.name, sample:v.sample}; });
+      return q;
     })};
     download('data.js', '/* Geostore public data — generated by the admin dashboard. Upload this file with your site. */\nwindow.GEOSTORE_DATA = ' + JSON.stringify(pub, null, 1) + ';\n', 'text/javascript');
     toast('data.js downloaded — put it in your site folder');
@@ -394,7 +479,7 @@
   $('dlBackup').addEventListener('click', function(){ download('geostore-backup-' + new Date().toISOString().slice(0,10) + '.json', JSON.stringify(state), 'application/json'); });
   $('restore').addEventListener('change', function(){
     var f = this.files[0]; if (!f) return; var r = new FileReader();
-    r.onload = function(){ try { var d = JSON.parse(r.result); if (!d.products || !d.settings) throw 0; state = d; save(); toast('Backup restored'); show('dash'); } catch(e){ toast('That file is not a valid backup'); } };
+    r.onload = function(){ try { var d = JSON.parse(r.result); if (!d.products || !d.settings) throw 0; state = migrate(d); save(); toast('Backup restored'); show('dash'); } catch(e){ toast('That file is not a valid backup'); } };
     r.readAsText(f); this.value = '';
   });
   $('resetAll').addEventListener('click', function(){

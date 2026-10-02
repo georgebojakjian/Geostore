@@ -146,6 +146,15 @@
     .note{font-size:.8rem;color:var(--muted);margin:12px 0 18px}.msg{font-size:.85rem;min-height:22px;margin-top:10px;color:var(--accent)}.msg.err{color:#ff8a8a}
     .sum b{color:var(--accent)}
 
+    .vtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.vt{border:1px solid var(--border);border-radius:10px;padding:7px 14px;font-size:.82rem;color:var(--muted);background:rgba(255,255,255,.03);transition:all .3s}.vt:hover{color:var(--text);border-color:rgba(197,244,66,.5)}.vt.on{border-color:var(--accent);color:var(--accent);background:rgba(197,244,66,.08)}
+    .dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+    .dcard{display:flex;flex-direction:column;overflow:hidden;border-radius:var(--radius);border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.015));transition:border-color .4s,box-shadow .4s}
+    .dcard:hover{border-color:rgba(197,244,66,.45);box-shadow:0 30px 70px -34px var(--glow)}
+    .dart{height:120px;display:grid;place-items:center;font-size:3rem;background:radial-gradient(circle at 30% 20%,rgba(197,244,66,.22),transparent 60%),#07100a;border-bottom:1px solid var(--border)}
+    .dcard .body{padding:16px 18px 18px}.dcard .price{font-size:1.3rem}
+    .soon{border:1px dashed rgba(197,244,66,.4);border-radius:26px;padding:clamp(30px,5vw,56px);text-align:center;background:radial-gradient(500px circle at 50% 0%,rgba(197,244,66,.08),transparent 60%)}
+    .soon h3{font-size:1.5rem;letter-spacing:-.02em;margin:10px 0 6px}.soon p{color:var(--muted);max-width:520px;margin:0 auto}.soon .ico{font-size:2.4rem}
+    @media(max-width:1000px){.dgrid{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.dgrid{grid-template-columns:1fr}}
     @media(max-width:1000px){.hero .container{grid-template-columns:1fr}.win{max-width:560px}.head{grid-template-columns:1fr}.head p{justify-self:start}.values{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}.pass{grid-template-columns:1fr}.pass .big,.pass .side{text-align:left}}
     @media(max-width:640px){.grid,.steps{grid-template-columns:1fr}.box{padding:22px 18px}.tools{flex-direction:column;align-items:stretch}.search{max-width:none}.cta-row .btn{width:100%}.badge-float.b{left:8px}}
     @media(hover:none){.cursor{display:none}}
@@ -162,7 +171,7 @@
   <header id="hdr">
     <nav class="nav" aria-label="Main">
       <a href="#top" class="logo"><img src="logo.svg" alt="" width="30" height="30"><span data-brand>Geostore Codes</span></a>
-      <div class="nav-mid"><a href="#about">What we do</a><a href="#products">Products</a><a href="#how">How it works</a><a href="#faq">FAQ</a></div>
+      <div class="nav-mid"><a href="#about">What we do</a><a href="#products">Products</a><a href="#digital" id="navDig">Digital items</a><a href="#how">How it works</a><a href="#faq">FAQ</a></div>
       <div class="nav-right"><span class="status"><i></i><span id="statusTxt">store open</span></span><a href="#products" class="btn btn-primary">Browse codes</a></div>
     </nav>
   </header>
@@ -185,7 +194,7 @@
             <span class="badge-float a" id="winPrice">$0</span>
             <span class="badge-float b">free sample included</span>
             <div class="win-top"><b id="winTitle">preview</b><span id="winCat">live</span></div>
-            <div class="screen" id="screen"><iframe sandbox="" tabindex="-1" title="" id="winFrame"></iframe></div>
+            <div class="screen" id="screen"><iframe sandbox="allow-scripts" tabindex="-1" title="" id="winFrame"></iframe></div>
             <div class="win-bot"><span>live preview</span><div class="dotsnav" id="winDots"></div></div>
           </div>
         </div>
@@ -221,10 +230,19 @@
           <input class="search" id="search" type="search" placeholder="Search codes…" aria-label="Search codes">
         </div>
         <div class="grid" id="grid"></div>
+        <div style="text-align:center;margin-top:26px"><button type="button" class="btn btn-ghost btn-lg" id="more" hidden>Show more</button></div>
         <div class="pass r3d" id="pass" hidden>
           <div><span class="eyebrow">best value</span><h2 id="passTitle"></h2><p id="passDesc"></p></div>
           <div class="side"><div class="big" id="passPrice"></div><button class="btn btn-primary btn-lg" id="passBuy" type="button">Get All-Access</button></div>
         </div>
+      </div>
+    </section>
+
+    <section class="section" id="digital" hidden style="padding-top:20px">
+      <div class="container scene">
+        <div class="head r3d"><h2>Digital <span class="s">items.</span></h2><p>Instant digital goods, delivered to your private page the moment your payment is confirmed.</p></div>
+        <div class="dgrid" id="dgrid"></div>
+        <div class="soon r3d" id="soon" hidden><div class="ico">🎁</div><h3>Coming soon</h3><p>Gift cards and other digital items are on the way. Check back shortly.</p></div>
       </div>
     </section>
 
@@ -282,11 +300,12 @@
       <button class="x" type="button" data-close aria-label="Close">&times;</button>
       <h3 id="pmTitle"></h3>
       <p class="sub" id="pmSub"></p>
+      <div class="vtabs" id="pmVars" hidden></div>
       <div class="tabs"><button type="button" class="tab on" data-tab="demo">Live demo</button><button type="button" class="tab" data-tab="code">Free sample code</button></div>
       <iframe class="demo" id="pmDemo" sandbox="allow-scripts" title="Live demo"></iframe>
       <pre id="pmCode" hidden></pre>
       <div class="actions">
-        <span class="hint">The free sample is a basic version. The full version adds animations, mobile menu / interactivity and polished styling.</span>
+        <span class="hint" id="pmHint"></span>
         <span style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-ghost" id="pmCopy">Copy free sample</button><button type="button" class="btn btn-primary" id="pmBuy"></button></span>
       </div>
     </div>
@@ -319,13 +338,24 @@
   </div>
 
   <script src="data.js"></script>
+  <script src="pack-1.js"></script>
   <script>
   (function(){
     'use strict';
-    'use strict';
     var D = window.GEOSTORE_DATA || {settings:{},products:[]};
     var S = D.settings || {};
-    var ALL = (D.products || []).filter(function(p){ return p.published !== false; });
+    // your own list (data.js) plus any product packs; a pack never overrides a product you already have
+    var every = (D.products || []).slice(), seen = {};
+    every.forEach(function(p){ seen[p.id] = 1; });
+    (window.GEOSTORE_PACKS || []).forEach(function(pk){ (pk.products || []).forEach(function(p){ if (!seen[p.id]){ seen[p.id] = 1; every.push(p); } }); });
+    every.forEach(function(p){
+      p.type = p.type === 'digital' ? 'digital' : 'code';
+      if (!p.variants || !p.variants.length) p.variants = [{name:'Standard', sample:p.sample || ''}];
+      p.sample = p.variants[0].sample;
+    });
+    var live = every.filter(function(p){ return p.published !== false; });
+    var ALL = live.filter(function(p){ return p.type === 'code'; });
+    var DIGITAL = live.filter(function(p){ return p.type === 'digital'; });
     var $ = function(id){ return document.getElementById(id); };
     function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     function money(n){ return '$' + (Math.round(n*100)/100).toString(); }
@@ -349,13 +379,18 @@
     });
     $('search').addEventListener('input', function(){ q = this.value.trim().toLowerCase(); render(); });
 
-    function render(){
-      var list = ALL.filter(function(p){
+    var shown = 9;
+    function render(reset){
+      if (reset !== false) shown = 9;
+      var all = ALL.filter(function(p){
         return (cat==='All' || p.category===cat) && (!q || (p.title+' '+p.tagline+' '+p.category).toLowerCase().indexOf(q) > -1);
       });
+      var list = all.slice(0, shown);
+      $('more').hidden = all.length <= shown;
+      $('more').textContent = 'Show more (' + (all.length - shown) + ' more)';
       $('grid').innerHTML = list.length ? list.map(function(p){
-        return '<article class="card r3d"><div class="prev" data-id="'+esc(p.id)+'"><span class="tag">'+esc(p.category||'Code')+'</span>' +
-          '<iframe sandbox="" tabindex="-1" aria-hidden="true" loading="lazy" title="Preview of '+esc(p.title)+'" srcdoc="'+esc(p.sample)+'"></iframe></div>' +
+        return '<article class="card r3d"><div class="prev" data-id="'+esc(p.id)+'"><span class="tag">'+esc(p.category||'Code')+'</span>'+(p.variants.length>1?'<span class="tag" style="left:auto;right:12px">'+p.variants.length+' styles</span>':'')+
+          '<iframe sandbox="allow-scripts" tabindex="-1" aria-hidden="true" loading="lazy" title="Preview of '+esc(p.title)+'" srcdoc="'+esc(p.sample)+'"></iframe></div>' +
           '<div class="body"><h3>'+esc(p.title)+'</h3><p>'+esc(p.tagline||'')+'</p>' +
           '<div class="row"><span class="price">'+money(p.price)+'</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-ghost" data-view="'+esc(p.id)+'">Preview</button><button type="button" class="btn btn-primary" data-buy="'+esc(p.id)+'">Buy</button></span></div></div></article>';
       }).join('') : '<p class="empty">No codes found. Try another category or search.</p>';
@@ -370,6 +405,7 @@
       });
     }
     window.addEventListener('resize', scalePreviews);
+    $('more').addEventListener('click', function(){ shown += 9; render(false); });
 
     var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function(es){
       es.forEach(function(e){ if (e.isIntersecting){ var t = e.target; t.classList.add('in'); io.unobserve(t); setTimeout(function(){ t.classList.add('live'); }, 1000); } });
@@ -400,17 +436,28 @@
     });
 
     var cur = null;
-    function byId(id){ return ALL.filter(function(p){ return p.id===id; })[0]; }
+    function byId(id){ return live.filter(function(p){ return p.id===id; })[0]; }
+    var curV = 0;
+    function showVariant(i){
+      curV = i; var v = cur.variants[i];
+      $('pmDemo').srcdoc = v.sample; $('pmCode').textContent = v.sample;
+      Array.prototype.forEach.call($('pmVars').children, function(b,k){ b.classList.toggle('on', k===i); });
+    }
     function openProduct(p, from){
       cur = p;
       $('pmTitle').textContent = p.title;
       $('pmSub').textContent = (p.category ? p.category + ' · ' : '') + (p.tagline || '');
-      $('pmDemo').srcdoc = p.sample;
-      $('pmCode').textContent = p.sample;
-      $('pmBuy').textContent = 'Buy full version — ' + money(p.price);
-      showTab('demo');
+      var n = p.variants.length;
+      $('pmVars').hidden = n < 2;
+      $('pmVars').innerHTML = p.variants.map(function(v,k){ return '<button type="button" class="vt'+(k===0?' on':'')+'" data-v="'+k+'">'+esc(v.name)+'</button>'; }).join('');
+      $('pmBuy').textContent = 'Buy full version' + (n > 1 ? ' (all ' + n + ' styles)' : '') + ' — ' + money(p.price);
+      $('pmHint').textContent = n > 1
+        ? 'This is the free, basic sample of each style. Buying unlocks the full code of all ' + n + ' styles — with animations, JavaScript, mobile layout and extra sections.'
+        : 'The free sample is a basic version. The full version adds animations, interactivity and polished styling.';
+      showVariant(0); showTab('demo');
       openModal($('pm'), from);
     }
+    $('pmVars').addEventListener('click', function(e){ var b = e.target.closest('.vt'); if (b) showVariant(+b.dataset.v); });
     function showTab(t){
       Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){ b.classList.toggle('on', b.dataset.tab===t); });
       $('pmDemo').hidden = t!=='demo'; $('pmCode').hidden = t!=='code';
@@ -419,7 +466,8 @@
     $('pmCopy').addEventListener('click', function(){
       var b = this; if (!cur) return;
       function done(){ b.textContent = 'Copied!'; setTimeout(function(){ b.textContent = 'Copy free sample'; }, 1600); }
-      if (navigator.clipboard) navigator.clipboard.writeText(cur.sample).then(done, done); else done();
+      var t = cur.variants[curV].sample;
+      if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, done); else done();
     });
     $('pmBuy').addEventListener('click', function(){ var p = cur; closeModal($('pm')); openCheckout(p); });
 
@@ -572,8 +620,9 @@
 
     /* ---------- hero: featured product window ---------- */
     (function(){
-      var feat = ['hero','product-grid','pricing','navbar'].map(byId).filter(Boolean);
+      var feat = ['bento-portfolio','saas-pricing-toggle','glass-login-signup','link-in-bio','hero','product-grid','pricing','navbar'].map(byId).filter(Boolean);
       ALL.forEach(function(p){ if (feat.length < 4 && feat.indexOf(p) < 0) feat.push(p); });
+      feat = feat.slice(0, 4);
       var win = $('win');
       if (!feat.length){ win.style.display = 'none'; return; }
       var frame = $('winFrame'), idx = 0, timer = null;
@@ -691,6 +740,19 @@
       document.addEventListener('visibilitychange', function(){ running = !document.hidden; if (running) requestAnimationFrame(draw); });
       requestAnimationFrame(draw);
       if (reduce) window.addEventListener('scroll', function(){ requestAnimationFrame(draw); }, {passive:true});
+    })();
+
+    /* ---------- digital items section (hidden until you add items, or shows "coming soon") ---------- */
+    (function(){
+      var show = DIGITAL.length > 0 || S.digitalSection !== false;
+      $('digital').hidden = !show; $('navDig').hidden = !show;
+      if (!show) return;
+      if (!DIGITAL.length){ $('soon').hidden = false; $('dgrid').hidden = true; return; }
+      $('dgrid').innerHTML = DIGITAL.map(function(p){
+        return '<article class="dcard r3d"><div class="dart">'+esc(p.icon || '🎁')+'</div><div class="body"><h3>'+esc(p.title)+'</h3><p>'+esc(p.tagline||'')+'</p><div class="row"><span class="price">'+money(p.price)+'</span><button type="button" class="btn btn-primary" data-dbuy="'+esc(p.id)+'">Buy</button></div></div></article>';
+      }).join('');
+      $('dgrid').addEventListener('click', function(e){ var b = e.target.closest('[data-dbuy]'); if (b) openCheckout(byId(b.dataset.dbuy), b); });
+      observe();
     })();
 
     render();

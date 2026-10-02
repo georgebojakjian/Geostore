@@ -95,6 +95,10 @@ async function createOrder(req, env, apiBase) {
   } else {
     const p = cat.products && cat.products[itemId];
     if (!p || p.published === false) return fail(env, 'Unknown product');
+    if (p.type === 'digital') {
+      const used = Number(await env.ORDERS.get('used:' + itemId)) || 0;
+      if (used >= (p.stock || []).length) return fail(env, 'Sorry, this item is out of stock right now.', 409);
+    }
     title = p.title; price = p.price;
   }
   const base = Math.round(Number(price) * 1e6);
@@ -119,6 +123,16 @@ async function createOrder(req, env, apiBase) {
 /* ---------------- check the blockchain ---------------- */
 async function markPaid(env, o, txid) {
   o.status = 'paid'; o.paidAt = Date.now(); o.txid = txid || 'manual';
+  if (o.item !== 'ALL') {
+    // digital items (gift cards, keys...): hand out the next unused code from your stock
+    const cat = await env.ORDERS.get('catalog', 'json');
+    const p = cat && cat.products && cat.products[o.item];
+    if (p && p.type === 'digital') {
+      const used = Number(await env.ORDERS.get('used:' + o.item)) || 0;
+      o.codes = (p.stock || []).slice(used, used + 1);
+      if (o.codes.length) await env.ORDERS.put('used:' + o.item, String(used + 1));
+    }
+  }
   await saveOrder(env, o);
   if (txid) await env.ORDERS.put('tx:' + txid, o.id);
   await env.ORDERS.delete('amt:' + o.amount);
@@ -153,9 +167,21 @@ async function checkOrder(env, o) {
 
 /* ---------------- delivery page ---------------- */
 function bundle(o, cat, list) {
-  const items = list.map((p, i) =>
-    '<section><h2>' + esc(p.title) + '</h2><p class="d">' + esc(p.tagline || '') + '</p><iframe sandbox="allow-scripts" srcdoc="' + esc(p.full) + '" title="Preview"></iframe>' +
-    '<div class="bar"><b>Full code</b><button onclick="cp(' + i + ',this)">Copy code</button></div><pre id="c' + i + '">' + esc(p.full) + '</pre></section>').join('');
+  let n = 0;
+  const items = list.map(p => {
+    if (p.type === 'digital') {
+      const codes = o.codes || [];
+      return '<section><h2>' + esc(p.title) + '</h2><p class="d">' + esc(p.tagline || '') + '</p>' +
+        (codes.length ? codes.map(c => '<div class="bar"><b>Your code</b><button onclick="cp(' + (n++) + ',this)">Copy</button></div><pre id="c' + (n - 1) + '" style="font-size:1.05rem">' + esc(c) + '</pre>').join('')
+                      : '<p class="d">Your code is being prepared — please contact us with your order ID: ' + esc(o.id) + '</p>') + '</section>';
+    }
+    return '<section><h2>' + esc(p.title) + '</h2><p class="d">' + esc(p.tagline || '') + '</p>' +
+      p.variants.map(v => {
+        const i = n++;
+        return '<h3 style="margin:22px 0 4px;font-size:1.05rem">' + esc(v.name) + '</h3><iframe sandbox="allow-scripts" srcdoc="' + esc(v.full) + '" title="Preview"></iframe>' +
+          '<div class="bar"><b>Full code</b><button onclick="cp(' + i + ',this)">Copy code</button></div><pre id="c' + i + '">' + esc(v.full) + '</pre>';
+      }).join('') + '</section>';
+  }).join('');
   return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your codes — ' + esc(cat.storeName || '') + '</title><style>' +
     'body{margin:0;font-family:system-ui,sans-serif;background:#0b0f1a;color:#f8fafc;line-height:1.6}.w{max-width:960px;margin:auto;padding:30px 18px 80px}h1{margin-bottom:4px}.d{color:#94a3b8}' +
     'section{margin-top:36px;padding:22px;border:1px solid #243049;border-radius:16px;background:#111827}iframe{width:100%;height:380px;border:1px solid #243049;border-radius:12px;background:#0b0f1a;margin:10px 0}' +
@@ -171,8 +197,9 @@ async function delivery(env, id, url) {
   if (!o || !safeEqual(k, o.key)) return new Response('Not found', { status: 404 });
   if (o.status !== 'paid') return new Response('This order has not been paid yet.', { status: 402 });
   const cat = await env.ORDERS.get('catalog', 'json') || { products: {} };
-  const all = Object.keys(cat.products).map(i => Object.assign({ id: i }, cat.products[i])).filter(p => p.full);
-  const list = o.item === 'ALL' ? all : all.filter(p => p.id === o.item);
+  const all = Object.keys(cat.products).map(i => Object.assign({ id: i }, cat.products[i]))
+    .filter(p => p.type === 'digital' || (p.variants && p.variants.length));
+  const list = o.item === 'ALL' ? all.filter(p => p.type !== 'digital') : all.filter(p => p.id === o.item);
   const headers = { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' };
   if (url.searchParams.get('download')) headers['content-disposition'] = 'attachment; filename="codes-' + o.id.slice(0, 8) + '.html"';
   return new Response(bundle(o, cat, list), { headers });
@@ -183,7 +210,17 @@ async function adminSync(req, env) {
   const b = await req.json().catch(() => null);
   if (!b || !Array.isArray(b.products)) return fail(env, 'Bad data');
   const products = {};
-  b.products.forEach(p => { if (p && p.id) products[String(p.id)] = { title: String(p.title || ''), tagline: String(p.tagline || ''), price: Number(p.price) || 0, full: String(p.full || ''), published: p.published !== false }; });
+  b.products.forEach(p => {
+    if (!p || !p.id) return;
+    const variants = (Array.isArray(p.variants) ? p.variants : (p.full ? [{ name: 'Standard', full: p.full }] : []))
+      .map(v => ({ name: String(v.name || ''), full: String(v.full || '') })).filter(v => v.full);
+    products[String(p.id)] = {
+      title: String(p.title || ''), tagline: String(p.tagline || ''), price: Number(p.price) || 0,
+      type: p.type === 'digital' ? 'digital' : 'code',
+      variants, stock: Array.isArray(p.stock) ? p.stock.map(String).filter(Boolean) : [],
+      published: p.published !== false
+    };
+  });
   const aa = b.allAccess || {};
   await env.ORDERS.put('catalog', JSON.stringify({
     storeName: String(b.storeName || ''), products,

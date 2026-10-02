@@ -11,9 +11,11 @@ Customers see a live preview and a FREE sample. After they pay, you send the FUL
 |---|---|---|
 | `site/index.html` | Your home page and shop (all products) | YES |
 | `site/data.js` | Your product list + free samples | YES |
+| `site/pack-1.js` | 20 extra products, free samples only (3 styles each) | YES |
 | `site/logo.svg` | Your logo (used on the site, the browser tab and the dashboard) | YES |
 | `admin/admin.html` | Your private dashboard | **NEVER** |
-| `admin/private.js` | The paid FULL code | **NEVER** |
+| `admin/private.js` | The paid FULL code of the first 6 products | **NEVER** |
+| `admin/private-pack-1.js` | The paid FULL code of the 20 extra products | **NEVER** |
 
 ## Step 1 — Open your dashboard
 Double-click `admin/admin.html`. It opens in your browser (works offline, free).
@@ -73,3 +75,25 @@ Add Privacy and Terms pages, keep sales records, and follow your local laws.
 
 ## Your logo
 The logo is one file: `site/logo.svg`. The website, the browser-tab icon and the dashboard all use it. To use a different logo, replace that file with your own `logo.svg` (keep the same name), then upload the `site` folder again.
+
+## Product packs: 20 products with 3 styles each
+`site/pack-1.js` adds 20 products (portfolio bento grid, SaaS pricing, email template, glass login, 404 page, dashboard sidebar, countdown page, floating action button, mega menu, SVG hero backgrounds, link-in-bio, crypto ticker, restaurant site, checkout wizard, dark/light toggle, agency site, testimonial slider, course accordion, real-estate listings, cookie banner).
+- **One price per product; the buyer gets all 3 styles.** Customers can preview every style and copy a free basic sample of each.
+- The **full** versions (animations, JavaScript, mobile layout, extra sections) stay private in `admin/private-pack-1.js` and are only delivered after payment.
+- A pack never overwrites a product you already have, so your own edits and prices are safe. Change prices and names in the dashboard → Products.
+- Crypto ticker note: the live prices use CoinGecko's free public API, which has rate limits. Tell customers to add their own API key for heavy traffic.
+
+## Digital items (gift cards, licence keys...) — prepared, switched off
+- On the home page there is a **Digital items** section. While you have none, it shows a "Coming soon" card. You can hide the whole section: dashboard → Settings → untick "Show the Digital items section".
+- To add one: dashboard → Products → New product → Type: **Digital item**. Set the title, price, an emoji icon, and paste your **stock, one code per line**.
+- When a customer pays, the server gives them the **next unused code** on their private page. When stock runs out, the item shows "out of stock" and cannot be ordered.
+- After you add or change stock: Publish → **Sync to server**. Always add new codes at the **end** of the list, and never delete or reorder codes that were already sold.
+- Only sell codes you obtained legitimately and are allowed to resell. Gift cards are a favourite target for fraud and chargebacks, so be careful where your stock comes from.
+
+## How to update an existing setup (do this in order)
+1. **Backup first:** in your OLD dashboard open Publish → **Backup everything**. Keep that file.
+2. Download the latest project from GitHub (branch `claude/geostore-website-template-bwou47`).
+3. Open the NEW `admin/admin.html` → Publish → **Restore backup** and pick your backup file. Your products, prices, orders and settings return, and the 20 new products are added.
+4. Cloudflare → your Worker → Edit code → paste the new `worker/worker.js` → Deploy.
+5. Dashboard → Publish → **Sync to server** (this uploads the full code of all products).
+6. Copy the new `site/index.html`, `site/pack-1.js` and `site/logo.svg` into your `site` folder. Keep your own `data.js`. Upload the `site` folder to Netlify (Deploys tab).
