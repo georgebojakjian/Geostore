@@ -55,6 +55,7 @@
     <div class="brand"><img src="../site/logo.svg" alt="" width="30" height="30" style="border-radius:9px">Admin</div>
     <button class="navb on" data-v="dash">📊 Dashboard</button>
     <button class="navb" data-v="products">📦 Products</button>
+    <button class="navb" data-v="supplier">🎁 Supplier</button>
     <button class="navb" data-v="orders">🧾 Orders</button>
     <button class="navb" data-v="customers">👥 Customers</button>
     <button class="navb" data-v="settings">⚙️ Settings</button>
@@ -107,10 +108,11 @@
             <iframe class="pv" id="pvFrame" sandbox="allow-scripts allow-forms" title="Preview" style="margin-top:12px"></iframe>
           </div>
           <div class="full" id="digFields" hidden>
+            <p class="help" id="supNote" hidden></p>
             <div class="form"><div><label for="fIcon">Card icon (one emoji)</label><input id="fIcon" placeholder="🎁"></div><div><label>In stock</label><div class="help" id="stockCount" style="padding-top:10px"></div></div></div>
-            <label for="fStock" style="margin-top:12px">Stock — one code per line (private; each paid order gets the next unused code)</label>
+            <div id="stockBox"><label for="fStock" style="margin-top:12px">Stock — one code per line (private; each paid order gets the next unused code)</label>
             <textarea id="fStock" spellcheck="false" style="min-height:170px"></textarea>
-            <p class="help" style="margin-top:8px">Only add codes you obtained legitimately and are allowed to resell. After editing stock, press <b>Sync to server</b> on the Publish tab so automatic delivery can use it. <b>Always add new codes at the END of the list and never delete or reorder lines that were already sold.</b></p>
+            <p class="help" style="margin-top:8px">Only add codes you obtained legitimately and are allowed to resell. After editing stock, press <b>Sync to server</b> on the Publish tab so automatic delivery can use it. <b>Always add new codes at the END of the list and never delete or reorder lines that were already sold.</b></p></div>
           </div>
           <div class="full" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" type="submit">Save product</button><button type="button" class="btn btn-d" id="delP">Delete</button></div>
         </form>
@@ -118,6 +120,22 @@
     </section>
 
     <!-- ORDERS -->
+    <section class="view" id="v-supplier">
+      <h1>Supplier — FazerCards</h1><p class="lead">Sell gift cards without holding any stock. Pick a product from FazerCards, set your own price, and when a customer pays you the server buys the code from FazerCards and delivers it. Your profit is your price minus their cost.</p>
+      <div class="panel"><div class="bar"><h2 style="margin:0">Connection</h2><button class="btn btn-g btn-s" id="supCheck">Check connection &amp; balance</button></div>
+        <p class="help" id="supStatus">Add your FazerCards API key to Cloudflare first (see the steps in START-HERE.md → "Selling gift cards"), then press the button.</p>
+        <p class="help">Every sale is paid from your FazerCards balance. Keep it topped up — if it runs low the shop automatically stops offering those items so nobody pays for something you cannot deliver.</p></div>
+      <div class="panel"><h2>Browse the catalog</h2>
+        <div class="bar" style="margin:0 0 10px"><input id="supSearch" placeholder="Search: steam, itunes, roblox, google play…" style="max-width:340px"><span style="display:flex;gap:8px"><button class="btn btn-p btn-s" id="supLoad">Load catalog</button></span></div>
+        <p class="help" id="supCatMsg">Press "Load catalog" (one request), then search.</p>
+        <div class="tw"><table><tbody id="supCats"></tbody></table></div></div>
+      <div class="panel" id="supOffers" hidden></div>
+      <div class="panel"><div class="bar"><h2 style="margin:0">My supplier products</h2><span style="display:flex;gap:8px;align-items:center"><span class="help">My margin %</span><input id="supMargin" type="number" min="1" max="500" style="width:80px"><button class="btn btn-g btn-s" id="supRefresh">↻ Refresh costs</button><button class="btn btn-g btn-s" id="supApply">Apply margin to all prices</button></span></div>
+        <div class="tw"><table><thead><tr><th>Product</th><th>Cost now</th><th>My price</th><th>Profit</th><th>Stock</th><th></th></tr></thead><tbody id="supMine"></tbody></table></div>
+        <p class="help" id="supMineMsg"></p>
+        <p class="help">After changing prices press <b>Publish → Sync to server</b>. Costs change at FazerCards; if the cost rises above your price the shop stops selling that item until you reprice it.</p></div>
+    </section>
+
     <section class="view" id="v-orders">
       <h1>Orders</h1><p class="lead">Automatic orders come from your payment server. Manual orders (if you do not use a server) are recorded below.</p>
       <div class="panel"><div class="bar"><h2 style="margin:0">Automatic orders (server)</h2><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></div>
@@ -256,7 +274,7 @@
   function show(v){
     Array.prototype.forEach.call(document.querySelectorAll('.view'), function(s){ s.classList.toggle('on', s.id==='v-'+v); });
     Array.prototype.forEach.call(document.querySelectorAll('.navb'), function(b){ b.classList.toggle('on', b.dataset.v===v); });
-    if (v==='dash') renderDash(); if (v==='products') { backToList(); } if (v==='orders') { renderOrders(); if (base()) loadServerOrders(); } if (v==='settings') renderSettings(); if (v==='customers' && base() && !custs.length) loadCustomers(false);
+    if (v==='dash') renderDash(); if (v==='products') { backToList(); } if (v==='orders') { renderOrders(); if (base()) loadServerOrders(); } if (v==='settings') renderSettings(); if (v==='supplier') renderSupMine(); if (v==='customers' && base() && !custs.length) loadCustomers(false);
     window.scrollTo(0,0);
   }
   Array.prototype.forEach.call(document.querySelectorAll('.navb'), function(b){ b.addEventListener('click', function(){ show(b.dataset.v); }); });
@@ -280,7 +298,7 @@
   function renderProducts(){
     $('pcount').textContent = state.products.length + ' product(s)';
     $('ptbody').innerHTML = state.products.length ? state.products.map(function(p){
-      var extra = p.type==='digital' ? ' <span class="pill">digital · '+(p.stock.length-p.used)+' left</span>' : (p.variants.length>1 ? ' <span class="pill">'+p.variants.length+' styles</span>' : '');
+      var extra = p.supplier ? ' <span class="pill">supplier · cost $'+(Math.round(p.supplier.cost*100)/100)+'</span>' : p.type==='digital' ? ' <span class="pill">digital · '+(p.stock.length-p.used)+' left</span>' : (p.variants.length>1 ? ' <span class="pill">'+p.variants.length+' styles</span>' : '');
       return '<tr><td><b>'+esc(p.title)+'</b>'+extra+'<div class="help">'+esc(p.tagline||'')+'</div></td><td>'+esc(p.category||'')+'</td><td>'+money(p.price)+'</td><td><span class="pill '+(p.published!==false?'paid':'off')+'">'+(p.published!==false?'Live':'Hidden')+'</span></td>' +
         '<td><div class="acts"><button class="btn btn-g btn-s" data-edit="'+esc(p.id)+'">Edit</button><button class="btn btn-g btn-s" data-dup="'+esc(p.id)+'">Duplicate</button></div></td></tr>';
     }).join('') : '<tr><td colspan="5" class="empty">No products yet. Click "New product".</td></tr>';
@@ -326,6 +344,8 @@
     $('codeFields').hidden = dg; $('digFields').hidden = !dg; $('fType').value = draft.type;
     $('fStyleP').parentNode.hidden = dg; $('fGroup').parentNode.hidden = dg;
     if (dg){ $('fIcon').value = draft.icon || ''; $('fStock').value = (draft.stock || []).join('\n'); stockCount(); }
+    var sup = !!draft.supplier; $('supNote').hidden = !sup; $('stockBox').hidden = sup; $('fType').disabled = sup;
+    if (sup) $('supNote').innerHTML = '🎁 <b>Supplied automatically by FazerCards.</b> Cost now: <b>$' + (Math.round(draft.supplier.cost*100)/100) + '</b>. Change <b>My price</b> above; there is no stock to manage — the code is bought the moment a customer pays.';
     else renderVariants();
   }
   function openEditor(p){
@@ -364,7 +384,7 @@
     draft.stylePrice = +$('fStyleP').value || 0; draft.group = $('fGroup').value; draft.guide = $('fGuide').value;
     if (draft.type === 'digital'){
       draft.icon = $('fIcon').value.trim();
-      draft.stock = $('fStock').value.split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
+      if (!draft.supplier) draft.stock = $('fStock').value.split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
       if (draft.used > draft.stock.length) draft.used = draft.stock.length;
     }
     var isNew = p._new; delete draft._new;
@@ -526,7 +546,7 @@
       api('/api/admin/index', {method:'POST', body: JSON.stringify({
         storeName: state.settings.storeName, wallets: state.settings.autoWallets || {}, remove: removed,
         allAccess: {enabled: !!aa.enabled, title: aa.title, price: aa.price},
-        products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, type:p.type, published:p.published!==false, variants:p.type==='code' ? p.variants.map(function(v){ return v.name; }) : [], stockN:p.type==='digital' ? p.stock.length : 0}; })
+        products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, type:p.type, published:p.published!==false, supplier:p.supplier ? {cat:p.supplier.cat, card:p.supplier.card} : undefined, variants:p.type==='code' ? p.variants.map(function(v){ return v.name; }) : [], stockN:p.type==='digital' ? p.stock.length : 0}; })
       })}).then(function(r){ removed.forEach(function(id){ state.sync['gone:' + id] = 1; }); save(); finish('✅ Synced: ' + total + ' product(s) uploaded, ' + (r.products - total) + ' unchanged. Everything is up to date.'); })
         .catch(function(e){ finish('❌ ' + e.message, true); });
     }
@@ -541,6 +561,7 @@
       $('srvBody').innerHTML = r.orders.map(function(o){
         var link = base() + '/api/delivery/' + o.id + '?k=' + o.key;
         return '<tr><td>' + esc(new Date(o.createdAt).toISOString().slice(0,16).replace('T',' ')) + '</td><td>' + esc(o.email) + '</td><td>' + esc(o.title) + '</td><td>' + (o.usd ? '$' + esc(o.usd) + '<div class="help">' : '<div class="help">') + esc(o.amount) + ' ' + esc(o.coin || 'USDT') + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span></td><td><div class="acts">' +
+          (o.fulfil ? '<div class="help" style="width:100%">' + (o.fulfil==='ok' ? '🎁 supplier code delivered · cost $' + esc(o.cost) + ' · profit $' + esc(Math.round((o.usd - o.cost)*100)/100) : o.fulfil==='wait' ? '⏳ buying from supplier… ' + esc(o.fulfilErr) : '⚠ NEEDS YOU: ' + esc(o.fulfilErr || 'supplier problem')) + '</div>' + (o.fulfil!=='ok' && o.status==='paid' ? '<button class="btn btn-p btn-s" data-retry="' + esc(o.id) + '">Retry supplier purchase</button>' : '') : '') +
           (o.status==='paid' ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(link) + '">Open codes</a>' : '') +
           (o.status!=='paid' ? '<button class="btn btn-g btn-s" data-mp="' + esc(o.id) + '">Mark paid</button>' : '') + '</div></td></tr>';
       }).join('');
@@ -594,9 +615,97 @@
   }
   $('cBody').addEventListener('click', function(e){ var b = e.target.closest('[data-cv]'); if (b) openCustomer(b.dataset.cv); });
   $('srvBody').addEventListener('click', function(e){
+    var rb = e.target.closest('[data-retry]');
+    if (rb){ rb.disabled = true; api('/api/admin/retry', {method:'POST', body: JSON.stringify({id: rb.dataset.retry})}).then(function(r){ toast(r.fulfil === 'ok' ? 'Delivered ✅' : 'Still not delivered: ' + (r.error || 'supplier problem')); loadServerOrders(); }).catch(function(er){ toast(er.message); rb.disabled = false; }); return; }
     var b = e.target.closest('[data-mp]'); if (!b) return;
     if (!confirm('Mark this order as paid? Only do this after you saw the money in your wallet.')) return;
     api('/api/admin/markpaid', {method:'POST', body: JSON.stringify({id:b.dataset.mp})}).then(function(){ toast('Marked as paid'); loadServerOrders(); }).catch(function(e){ toast(e.message); });
+  });
+
+  /* ---------- supplier (FazerCards) ---------- */
+  var supCats = [], supOpen = null;
+  function supMargin(){ var m = +$('supMargin').value; return m > 0 ? m : 15; }
+  function suggest(cost){ return Math.ceil(cost * (1 + supMargin()/100) * 100) / 100; }
+  function supProducts(){ return state.products.filter(function(p){ return p.supplier; }); }
+  function renderCats(){
+    var q = $('supSearch').value.trim().toLowerCase();
+    var list = supCats.filter(function(c){ return !q || (c.name||'').toLowerCase().indexOf(q) > -1; });
+    $('supCatMsg').textContent = supCats.length ? (list.length + ' of ' + supCats.length + ' categories' + (list.length > 80 ? ' (showing the first 80 — type to narrow down)' : '')) : $('supCatMsg').textContent;
+    $('supCats').innerHTML = list.slice(0, 80).map(function(c){ return '<tr><td><b>' + esc(c.name) + '</b>' + (c.note ? '<div class="help">' + esc(c.note) + '</div>' : '') + '</td><td style="text-align:right"><button class="btn btn-g btn-s" data-sc="' + esc(c.category_id) + '">View offers</button></td></tr>'; }).join('');
+  }
+  $('supCheck').addEventListener('click', function(){
+    $('supStatus').textContent = 'Checking…';
+    api('/api/admin/supplier/status').then(function(r){ $('supStatus').innerHTML = '✅ Connected' + (r.email ? ' as <b>' + esc(r.email) + '</b>' : '') + (r.plan ? ' · plan <b>' + esc(r.plan) + '</b>' : '') + ' · balance <b>$' + esc(r.balance) + '</b>'; })
+      .catch(function(e){ $('supStatus').textContent = '❌ ' + e.message; });
+  });
+  $('supLoad').addEventListener('click', function(){
+    supCats = []; $('supCatMsg').textContent = 'Loading…';
+    (function page(cur, n){
+      api('/api/admin/supplier/categories' + (cur ? '?cursor=' + encodeURIComponent(cur) : '')).then(function(r){
+        supCats = supCats.concat(r.items || []);
+        if (r.meta && r.meta.has_more && r.meta.next_cursor && n < 12) return page(r.meta.next_cursor, n + 1);
+        $('supCatMsg').textContent = supCats.length + ' categories loaded.'; renderCats();
+      }).catch(function(e){ $('supCatMsg').textContent = '❌ ' + e.message; });
+    })(null, 0);
+  });
+  $('supSearch').addEventListener('input', renderCats);
+  $('supCats').addEventListener('click', function(e){
+    var b = e.target.closest('[data-sc]'); if (!b) return;
+    var box = $('supOffers'); box.hidden = false; box.innerHTML = '<p class="help">Loading offers…</p>';
+    api('/api/admin/supplier/offers?category_id=' + encodeURIComponent(b.dataset.sc)).then(function(r){
+      supOpen = {cat: b.dataset.sc, name: r.name || b.dataset.sc, offers: r.offers || []};
+      renderOffers();
+    }).catch(function(er){ box.innerHTML = '<p class="help">❌ ' + esc(er.message) + '</p>'; });
+    box.scrollIntoView({behavior:'smooth'});
+  });
+  function renderOffers(){
+    if (!supOpen) return;
+    var rows = supOpen.offers.map(function(o, i){
+      var cost = +o.price_usd, have = state.products.some(function(p){ return p.supplier && p.supplier.cat === supOpen.cat && String(p.supplier.card) === String(o.card_id); });
+      var bad = +o.min_order_quantity > 1;
+      return '<tr><td>' + esc(o.name) + '</td><td>$' + esc(cost) + '</td><td>' + (o.stock == null ? '–' : esc(o.stock)) + '</td>' +
+        '<td>' + (have ? '✓ already in my shop' : bad ? '<span class="help">needs quantity ≥ ' + esc(o.min_order_quantity) + ' — not supported</span>' : '$ <input type="number" step="0.01" min="0.01" style="width:90px" data-op="' + i + '" value="' + suggest(cost) + '">') + '</td>' +
+        '<td>' + (have || bad ? '' : '<button class="btn btn-p btn-s" data-add="' + i + '">Add to my shop</button>') + '</td></tr>';
+    }).join('');
+    $('supOffers').innerHTML = '<div class="bar"><h2 style="margin:0">' + esc(supOpen.name) + '</h2><button class="btn btn-g btn-s" id="supClose">Close</button></div><p class="help">Prices below are suggestions using your margin (' + supMargin() + '%). Change any price before adding.</p>' +
+      '<div class="tw"><table><thead><tr><th>Offer</th><th>Your cost</th><th>In stock</th><th>Your price</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+  $('supOffers').addEventListener('click', function(e){
+    if (e.target.id === 'supClose'){ $('supOffers').hidden = true; return; }
+    var b = e.target.closest('[data-add]'); if (!b || !supOpen) return;
+    var o = supOpen.offers[+b.dataset.add], price = +($('supOffers').querySelector('[data-op="' + b.dataset.add + '"]').value);
+    if (!(price > +o.price_usd)){ toast('Your price must be higher than your cost ($' + o.price_usd + ')'); return; }
+    state.products.push({id: uid(), title: supOpen.name + ' — ' + o.name, category: 'Gift cards', price: Math.round(price*100)/100, tagline: 'Instant delivery by code', type: 'digital', icon: '🎁', variants: [{name:'Standard', sample:'', full:''}], stock: [], used: 0, published: true,
+      supplier: {kind:'giftcard', cat: supOpen.cat, card: String(o.card_id), cost: +o.price_usd}});
+    save(); toast('Added — press Sync to server on the Publish tab'); renderOffers(); renderSupMine();
+  });
+  function renderSupMine(){
+    $('supMargin').value = state.settings.supMargin || 15;
+    var list = supProducts();
+    $('supMine').innerHTML = list.length ? list.map(function(p){
+      var c = +p.supplier.cost, pr = +p.price, prof = pr - c, bad = !(prof > 0);
+      return '<tr><td><b>' + esc(p.title) + '</b></td><td>$' + esc(Math.round(c*100)/100) + '</td><td>' + money(pr) + '</td><td>' + (bad ? '<span class="pill pending">loss / none</span>' : '$' + (Math.round(prof*100)/100) + ' <span class="help">(' + Math.round(prof / c * 100) + '%)</span>') + '</td><td>' + (p.supplier.stock == null ? '–' : esc(p.supplier.stock)) + '</td><td><button class="btn btn-g btn-s" data-se="' + esc(p.id) + '">Edit</button></td></tr>';
+    }).join('') : '<tr><td colspan="6" class="empty">Nothing yet — browse the catalog above and add products.</td></tr>';
+  }
+  $('supMargin').addEventListener('change', function(){ state.settings.supMargin = supMargin(); save(); renderOffers(); });
+  $('supMine').addEventListener('click', function(e){ var b = e.target.closest('[data-se]'); if (!b) return; show('products'); openEditor(state.products.filter(function(p){ return p.id === b.dataset.se; })[0]); });
+  $('supRefresh').addEventListener('click', function(){
+    var list = supProducts(); if (!list.length){ toast('No supplier products yet'); return; }
+    $('supMineMsg').textContent = 'Checking current costs…'; var chunks = [], i = 0, n = 0;
+    for (; i < list.length; i += 50) chunks.push(list.slice(i, i + 50));
+    (function next(){
+      if (!chunks.length){ save(); renderSupMine(); $('supMineMsg').textContent = '✅ Costs updated for ' + n + ' product(s).' + (list.some(function(p){ return !(p.price > p.supplier.cost); }) ? ' ⚠ Some items now cost more than you charge — reprice them.' : ''); return; }
+      var ch = chunks.shift();
+      api('/api/admin/supplier/costs', {method:'POST', body: JSON.stringify({items: ch.map(function(p){ return {cat:p.supplier.cat, card:p.supplier.card}; })})}).then(function(r){
+        ch.forEach(function(p){ var c = r.costs[p.supplier.cat + '|' + p.supplier.card]; if (c){ p.supplier.cost = c.cost; p.supplier.stock = c.stock; n++; } else p.supplier.stock = 0; });
+        next();
+      }).catch(function(e){ $('supMineMsg').textContent = '❌ ' + e.message; });
+    })();
+  });
+  $('supApply').addEventListener('click', function(){
+    var list = supProducts(); if (!list.length) return;
+    if (!confirm('Set every supplier product price to its latest cost + ' + supMargin() + '%? (Press "Refresh costs" first so costs are current.)')) return;
+    list.forEach(function(p){ p.price = suggest(+p.supplier.cost); }); save(); renderSupMine(); toast('Prices updated — press Sync to server');
   });
 
   /* ---------- publish / backup ---------- */

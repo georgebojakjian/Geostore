@@ -318,7 +318,9 @@
     <section class="section" id="digital" hidden style="padding-top:20px">
       <div class="container scene">
         <div class="head r3d"><h2>Digital <span class="s">items.</span></h2><p>Instant digital goods, delivered to your private page the moment your payment is confirmed.</p></div>
+        <div class="tools" id="dTools" hidden style="margin-bottom:16px"><input class="search" id="dSearch" type="search" placeholder="Search gift cards and digital items…" aria-label="Search digital items"></div>
         <div class="dgrid" id="dgrid"></div>
+        <p style="text-align:center;margin-top:20px"><button type="button" class="btn btn-ghost" id="dMore" hidden>Show more</button></p>
         <div class="soon r3d" id="soon" hidden><div class="ico">🎁</div><h3>Coming soon</h3><p>Gift cards and other digital items are on the way. Check back shortly.</p></div>
       </div>
     </section>
@@ -770,7 +772,10 @@
       var st = $('payStatus'), open = $('payOpen');
       st.classList.remove('err');
       if (o.status === 'paid'){
-        st.textContent = '✅ Payment received — thank you!'; open.hidden = false; $('payKeep').hidden = false; open.href = o.deliveryUrl; stopTimers();
+        open.hidden = false; $('payKeep').hidden = false; open.href = o.deliveryUrl;
+        if (o.fulfil === 'wait'){ st.textContent = '✅ Payment received — your code is being prepared, this takes a few seconds…'; }
+        else if (o.fulfil === 'stuck'){ st.classList.add('err'); st.textContent = '✅ Payment received. Your code needs a quick manual check — we will deliver it very soon. Order ID: ' + o.id; stopTimers(); }
+        else { st.textContent = '✅ Payment received — thank you!'; stopTimers(); }
       } else if (o.status === 'expired'){
         st.classList.add('err'); st.textContent = 'This order expired. If you already paid, email us your order ID: ' + o.id; open.hidden = true; stopTimers();
       } else {
@@ -1052,15 +1057,23 @@
     })();
 
     /* ---------- digital items section (hidden until you add items, or shows "coming soon") ---------- */
+    var dshown = 8;
     function renderDigital(first){
       var show = DIGITAL.length > 0 || S.digitalSection !== false;
       $('digital').hidden = !show; $('navDig').hidden = !show;
       if (!show) return;
       if (!DIGITAL.length){ $('soon').hidden = false; $('dgrid').hidden = true; return; }
-      $('dgrid').innerHTML = DIGITAL.map(function(p){
+      var dq = ($('dSearch').value || '').trim().toLowerCase(), list = DIGITAL.filter(function(p){ return !dq || (p.title + ' ' + (p.tagline || '')).toLowerCase().indexOf(dq) > -1; });
+      $('dTools').hidden = DIGITAL.length < 9; $('dMore').hidden = list.length <= dshown;
+      $('dMore').textContent = 'Show more (' + (list.length - dshown) + ' more)';
+      $('dgrid').innerHTML = !list.length ? '<p class="empty">No items match your search.</p>' : list.slice(0, dshown).map(function(p){
         return '<article class="dcard r3d"><div class="dart">'+esc(p.icon || '🎁')+'</div><div class="body"><h3>'+esc(p.title)+'</h3><p>'+esc(p.tagline||'')+'</p><div class="row"><span class="price">'+money(p.price)+'</span><button type="button" class="btn btn-primary" data-dbuy="'+esc(p.id)+'">Buy</button></div></div></article>';
       }).join('');
-      if (first) $('dgrid').addEventListener('click', function(e){ var b = e.target.closest('[data-dbuy]'); if (b){ addToCart(b.dataset.dbuy, 'all'); openCart(); } });
+      if (first){
+        $('dgrid').addEventListener('click', function(e){ var b = e.target.closest('[data-dbuy]'); if (b){ addToCart(b.dataset.dbuy, 'all'); openCart(); } });
+        $('dSearch').addEventListener('input', function(){ dshown = 8; renderDigital(false); });
+        $('dMore').addEventListener('click', function(){ dshown += 8; renderDigital(false); });
+      }
       observe();
     }
     renderDigital(true);
