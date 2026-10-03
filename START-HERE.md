@@ -104,3 +104,7 @@ So roughly **150–200 orders per day** fit inside the free plan. The errors you
 
 ## Do I have to Sync / upload again if I changed nothing?
 **No.** Sync sends your products to the server and it remembers them. You only Sync when you change a product, price, code, wallet or the All-Access pass — and the dashboard skips everything that did not change. (After the very first update to this version you need **one** Sync, because the server stores things in a new layout.)
+
+
+## Changing a price
+Change it in the dashboard, then **Publish → Sync to server**. That is all — the shop reads prices live from your server, so the new price shows (refresh the page) and is charged. You only need to **Download data.js and upload the `site` folder** when you add/remove products, change names, images, designs or text.

@@ -723,7 +723,7 @@
     }
     if (API){
       coins = [{id:'usdt_trc20', name:'USDT (TRC20)'}]; fillCoins();
-      fetch(API + '/api/config').then(function(r){ return r.json(); }).then(function(c){ if (c && c.coins && c.coins.length){ coins = c.coins; fillCoins(); } }).catch(function(){});
+      fetch(API + '/api/config').then(function(r){ return r.json(); }).then(function(c){ if (c && c.coins && c.coins.length){ coins = c.coins; fillCoins(); } if (typeof livePrices === 'function') livePrices(c); }).catch(function(){});
     } else fillCoins();
     function showAddr(){ $('coAddr').textContent = wallets[coin.value] || 'No wallet configured yet'; }
     coin.addEventListener('change', function(){ if (!API) showAddr(); });
@@ -1052,7 +1052,7 @@
     })();
 
     /* ---------- digital items section (hidden until you add items, or shows "coming soon") ---------- */
-    (function(){
+    function renderDigital(first){
       var show = DIGITAL.length > 0 || S.digitalSection !== false;
       $('digital').hidden = !show; $('navDig').hidden = !show;
       if (!show) return;
@@ -1060,9 +1060,23 @@
       $('dgrid').innerHTML = DIGITAL.map(function(p){
         return '<article class="dcard r3d"><div class="dart">'+esc(p.icon || '🎁')+'</div><div class="body"><h3>'+esc(p.title)+'</h3><p>'+esc(p.tagline||'')+'</p><div class="row"><span class="price">'+money(p.price)+'</span><button type="button" class="btn btn-primary" data-dbuy="'+esc(p.id)+'">Buy</button></div></div></article>';
       }).join('');
-      $('dgrid').addEventListener('click', function(e){ var b = e.target.closest('[data-dbuy]'); if (b){ addToCart(b.dataset.dbuy, 'all'); openCart(); } });
+      if (first) $('dgrid').addEventListener('click', function(e){ var b = e.target.closest('[data-dbuy]'); if (b){ addToCart(b.dataset.dbuy, 'all'); openCart(); } });
       observe();
-    })();
+    }
+    renderDigital(true);
+
+    /* ---- prices come live from your server, so "Sync to server" alone updates them ---- */
+    function livePrices(c){
+      if (!c || !c.prices) return;
+      var changed = false;
+      every.forEach(function(p){
+        var q = c.prices[p.id]; if (!q) return;
+        if (+q.price > 0 && +q.price !== +p.price){ p.price = +q.price; changed = true; }
+        if (+q.stylePrice !== +(p.stylePrice || 0)){ p.stylePrice = +q.stylePrice || 0; changed = true; }
+      });
+      if (c.allAccess && AA && +c.allAccess.price > 0 && +c.allAccess.price !== +AA.price){ AA.price = +c.allAccess.price; $('passPrice').textContent = money(AA.price); changed = true; }
+      if (changed){ render(false); renderWebs(); renderDigital(false); if (typeof renderCart === 'function') renderCart(); }
+    }
 
     renderWebs();
     render();
