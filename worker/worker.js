@@ -37,9 +37,10 @@ let rateCache = { t: 0, v: 0 };
 // (your dashboard runs from a file on your computer, whose origin is "null").
 // Customer routes are limited to ALLOWED_ORIGIN when you set it.
 function corsHeaders(env, path) {
-  const open = !env.ALLOWED_ORIGIN || path.startsWith('/api/admin/') || path === '/api/health';
+  // Always '*': customers sign in with a token header (no cookies), so a wrong ALLOWED_ORIGIN value
+  // could only break sign-up ("Failed to fetch") without adding real protection.
   return {
-    'access-control-allow-origin': open ? '*' : env.ALLOWED_ORIGIN,
+    'access-control-allow-origin': '*',
     'access-control-allow-headers': 'content-type,authorization',
     'access-control-allow-methods': 'GET,POST,OPTIONS',
     'vary': 'origin'
@@ -356,6 +357,23 @@ async function checkOrder(env, o) {
 // The server sends a tiny page plus the data as JSON; the customer's browser draws the previews and code.
 // (This keeps the server fast even when someone buys every product.)
 const J = JSON.stringify;
+// Full-version preview (view only). The shop shows it inside a locked-down frame; the code is scrambled in transit.
+// This is a deterrent, not a vault: anything a browser can display can in theory be extracted, so previews are
+// rate-limited per visitor and never include the download/copy tools.
+const prevHits = new Map();
+async function fullPreview(req, env, id, vi) {
+  const ip = req.headers.get('cf-connecting-ip') || 'x';
+  if (tooMany(prevHits, ip, 40, 10 * 60000)) return fail(env, 'Too many previews. Please wait a few minutes.', 429);
+  const cat = await getCatalog(env), p = cat && cat.products && cat.products[id];
+  if (!p || p.type === 'digital' || p.hidden) return fail(env, 'Not found', 404);
+  const txt = await env.ORDERS.get('prod:' + id, 'text'); if (!txt) return fail(env, 'Not found', 404);
+  const v = (JSON.parse(txt).variants || [])[vi]; if (!v || !v.full) return fail(env, 'Not found', 404);
+  const key = hex(16), kb = new TextEncoder().encode(key), data = new TextEncoder().encode(String(v.full));
+  for (let i = 0; i < data.length; i++) data[i] ^= kb[i % kb.length];
+  let bin = ''; for (let i = 0; i < data.length; i += 8192) bin += String.fromCharCode.apply(null, data.subarray(i, i + 8192));
+  return json(env, { k: key, d: btoa(bin) });
+}
+
 async function deliveryData(env, o, cat) {
   const prods = cat.products || {}, parts = [], jobs = [];
   const head = (id, p) => '{"id":' + J(id) + ',"title":' + J(p.title) + ',"tagline":' + J(p.tagline || '') + ',';
@@ -533,6 +551,8 @@ async function route(req, env) {
       return json(env, { storeName: cat ? cat.storeName : '', accounts: !!(env.ADMIN_TOKEN || env.SESSION_SECRET),
         coins: Object.keys(COINS).filter(c => walletFor(env, cat, c)).map(c => ({ id: c, name: COINS[c].name, network: COINS[c].network })) });
     }
+    let pm = path.match(/^\/api\/preview\/([A-Za-z0-9_-]{1,64})\/(\d{1,2})$/);
+    if (pm && req.method === 'GET') return await fullPreview(req, env, pm[1], +pm[2]);
     if (path === '/api/order' && req.method === 'POST') return await createOrder(req, env, apiBase);
     let m = path.match(/^\/api\/order\/([a-f0-9]{32})$/);
     if (m && req.method === 'GET') {

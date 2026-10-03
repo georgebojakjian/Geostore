@@ -103,3 +103,10 @@ Customers can create an account on your shop (name, email, password). They see a
 
 ## Version 5: no more list() calls
 The server never uses Cloudflare's `list()` operation any more (free limit: 1,000 per day). Orders and customers are kept in two tiny index lists, and payments are detected when the customer's page, their account, or your Orders screen looks at the order. A full first Sync costs ~37 writes, an order ~3 writes plus 2 when paid.
+
+
+## Full view-only previews and the light/dark theme
+- In each product window customers now see the **complete, paid version** running live (view-only: right-click, copy, save, print and developer shortcuts are blocked inside the preview, and a faint GEOSTORE PREVIEW watermark covers it). The code itself is only ever downloaded after payment. This needs the new `worker/worker.js` and a **Sync to server** (the server serves the preview from your private code).
+- Honest limit: anything a browser can display can in theory be extracted by an expert, so this deters casual copying; it is not a vault. Previews are also rate-limited per visitor.
+- The free sample code tab is gone from the product window. Customers can switch between light and dark with the button in the top bar (their choice is remembered).
+- `ALLOWED_ORIGIN` is no longer needed: customer requests are accepted from any address (sign-in uses a token, not cookies). This also fixes the "Failed to fetch" error on sign-up when that variable did not exactly match the shop address.

@@ -6,6 +6,7 @@
   <title>Geostore Codes — Ready-made Website Code for Navbars, Heroes, Product Grids &amp; More</title>
   <meta name="description" content="Copy-paste website code built for freelancers, shop owners and anyone building a site. Live previews, free samples, pay with USDT and get your code automatically.">
   <meta name="theme-color" content="#040605">
+  <script>try{var _t=localStorage.getItem("geostore_theme");if(_t==="light"||_t==="dark")document.documentElement.setAttribute("data-theme",_t)}catch(e){}</script>
   <link rel="icon" type="image/svg+xml" href="logo.svg">
   <style>
     :root{--bg:#040605;--bg-soft:#0a0e0b;--surface:rgba(255,255,255,.035);--surface-2:rgba(255,255,255,.06);--border:rgba(255,255,255,.09);--text:#f2f5ee;--muted:#8d968a;--accent:#c5f442;--accent-2:#c5f442;--on-accent:#0a1000;--glow:rgba(197,244,66,.35);--radius:20px;--ease:cubic-bezier(.22,.61,.36,1);
@@ -185,6 +186,46 @@
     @media(max-width:1000px){.wgrid{grid-template-columns:1fr}}
     @media(max-width:1000px){.hero .container{grid-template-columns:1fr}.win{max-width:560px}.head{grid-template-columns:1fr}.head p{justify-self:start}.values{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}.pass{grid-template-columns:1fr}.pass .big,.pass .side{text-align:left}}
     @media(max-width:640px){.grid,.steps{grid-template-columns:1fr}.box{padding:22px 18px}.tools{flex-direction:column;align-items:stretch}.search{max-width:none}.cta-row .btn{width:100%}.badge-float.b{left:8px}}
+
+    /* preview window + phones/tablets */
+    .demowrap{position:relative}.demowrap .demo{display:block}
+    .dload{position:absolute;inset:0;display:grid;place-items:center;border-radius:14px;background:var(--bg-soft);color:var(--muted);font-size:.9rem}
+    .fsbtn{position:absolute;right:10px;bottom:10px;z-index:3;padding:6px 12px;border-radius:999px;font-size:.78rem;background:rgba(10,14,11,.82);color:#f2f5ee;border:1px solid rgba(255,255,255,.2)}
+    .demowrap.fs{position:fixed;inset:0;z-index:700;background:var(--bg)}.demowrap.fs .demo{width:100%;height:100%;border-radius:0;border:0}.demowrap.fs .fsbtn{bottom:auto;top:max(10px,env(safe-area-inset-top));right:10px}
+    @media(max-width:900px){.box{padding:22px 20px}.demo,.demo.tall{height:min(520px,62vh)}}
+    @media(max-width:640px){
+      .modal{padding:0;align-items:end}
+      .box{width:100%;max-height:96vh;max-height:96dvh;border-radius:22px 22px 0 0;padding:20px 14px calc(18px + env(safe-area-inset-bottom))}
+      .box.small{width:100%}
+      .box h3{font-size:1.15rem}.box .sub{margin-bottom:10px;font-size:.88rem}
+      .demo,.demo.tall{height:min(58vh,540px);height:58dvh;border-radius:12px}
+      .tab,.vt{padding:7px 12px;font-size:.82rem}
+      .actions{flex-direction:column;align-items:stretch}.actions>span{display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important}.actions .btn{width:100%;justify-content:center}.hint{min-width:0}
+      #demoNote{font-size:.78rem}
+    }
+    @media(max-width:700px){.cartfab{display:none!important}}
+    @media(max-width:520px){.logo span{display:none}.nav-right{gap:6px}.navbtn{padding:8px 10px}[data-acctlabel]{max-width:64px;overflow:hidden;text-overflow:ellipsis}}
+    /* light theme */
+    [data-theme=light]{color-scheme:light;--bg:#f5f7ef;--bg-soft:#ebf0e1;--surface:rgba(0,0,0,.035);--surface-2:rgba(0,0,0,.06);--border:rgba(30,45,10,.14);--text:#141a0e;--muted:#566250;--accent:#4a7a0c;--accent-2:#4a7a0c;--on-accent:#ffffff;--glow:rgba(74,122,12,.25)}
+    [data-theme=light] .glow{background:radial-gradient(700px 520px at var(--gx,75%) var(--gy,20%),rgba(140,200,40,.20),transparent 65%),radial-gradient(800px 600px at calc(100% - var(--gx,75%)) calc(100% - var(--gy,20%)),rgba(60,160,120,.12),transparent 65%),var(--bg)}
+    [data-theme=light] .dots{background-image:radial-gradient(rgba(0,0,0,.16) 1px,transparent 1px)}
+    [data-theme=light] #bg3d{opacity:.55}
+    [data-theme=light] header.scrolled{background:rgba(245,247,239,.82)}
+    [data-theme=light] footer{background:rgba(255,255,255,.6)}
+    [data-theme=light] .hero h1{background:linear-gradient(180deg,#141a0e 30%,#4b5a40);-webkit-background-clip:text;background-clip:text}
+    [data-theme=light] .modal{background:rgba(235,240,225,.82)}
+    [data-theme=light] .box,[data-theme=light] .toast{background:#fff}
+    [data-theme=light] .field input,[data-theme=light] .field select,[data-theme=light] .addr code,[data-theme=light] pre{background:#f3f6ec;color:#243312}
+    [data-theme=light] #payAmt{color:#141a0e!important}
+    [data-theme=light] .demo,[data-theme=light] .prev,[data-theme=light] .prev iframe,[data-theme=light] .screen,[data-theme=light] .screen iframe{background:#fff}
+    [data-theme=light] .dart{background:radial-gradient(circle at 30% 20%,rgba(74,122,12,.18),transparent 60%),#eef3e2}
+    [data-theme=light] .glass,[data-theme=light] .card,[data-theme=light] .dcard,[data-theme=light] .win{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.62))}
+    [data-theme=light] .btn-ghost,[data-theme=light] .search,[data-theme=light] .navbtn,[data-theme=light] .vt,[data-theme=light] .op,[data-theme=light] .cl,[data-theme=light] .oc,[data-theme=light] .fq,[data-theme=light] .chip,[data-theme=light] .stats2 div,[data-theme=light] .gbox,[data-theme=light] .eyebrow,[data-theme=light] .status,[data-theme=light] .fq.open{background:rgba(255,255,255,.75)}
+    [data-theme=light] .tag{background:rgba(255,255,255,.92)}
+    [data-theme=light] .gbox{color:#33402a}[data-theme=light] .gbox code{background:rgba(0,0,0,.07)}
+    [data-theme=light] .nav-mid a:hover,[data-theme=light] .x:hover,[data-theme=light] .rm:hover{background:rgba(0,0,0,.06);color:var(--text)}
+    [data-theme=light] .dotsnav button{background:rgba(0,0,0,.18)}[data-theme=light] .dotsnav button.on{background:var(--accent)}
+    [data-theme=light] .btn-primary,[data-theme=light] .chip.on,[data-theme=light] .tab.on,[data-theme=light] .vt.on{color:#fff}[data-theme=light] .chip.on,[data-theme=light] .tab.on{background:var(--accent);border-color:var(--accent)}[data-theme=light] .vt.on,[data-theme=light] .op:has(input:checked){background:rgba(74,122,12,.14);color:var(--text);border-color:var(--accent)}
     @media(hover:none){.cursor{display:none}}
     @media(prefers-reduced-motion:reduce){.r3d{opacity:1;transform:none}.badge-float,.lime-panel img{animation:none}*,*::before,*::after{transition-duration:.01ms!important;scroll-behavior:auto!important}}
   </style>
@@ -200,7 +241,7 @@
     <nav class="nav" aria-label="Main">
       <a href="#top" class="logo"><img src="logo.svg" alt="" width="30" height="30"><span data-brand>Geostore Codes</span></a>
       <div class="nav-mid"><a href="#about">What we do</a><a href="#products">Products</a><a href="#websites" id="navWeb">Websites</a><a href="#digital" id="navDig">Digital items</a><a href="#how">How it works</a><a href="#faq">FAQ</a></div>
-      <div class="nav-right"><span class="status"><i></i><span id="statusTxt">store open</span></span><button type="button" class="navbtn" data-openacct aria-label="Account">👤 <span data-acctlabel>Sign in</span></button><button type="button" class="navbtn" data-opencart aria-label="Cart">🛒 <span class="cc" data-cartcount hidden>0</span></button><a href="#products" class="btn btn-primary hide-m">Browse codes</a></div>
+      <div class="nav-right"><span class="status"><i></i><span id="statusTxt">store open</span></span><button type="button" class="navbtn" id="themeBtn" aria-label="Switch light or dark theme" title="Light / dark">🌙</button><button type="button" class="navbtn" data-openacct aria-label="Account">👤 <span data-acctlabel>Sign in</span></button><button type="button" class="navbtn" data-opencart aria-label="Cart">🛒 <span class="cc" data-cartcount hidden>0</span></button><a href="#products" class="btn btn-primary hide-m">Browse codes</a></div>
     </nav>
   </header>
 
@@ -337,15 +378,14 @@
       <h3 id="pmTitle"></h3>
       <p class="sub" id="pmSub"></p>
       <div class="vtabs" id="pmVars" hidden></div>
-      <div class="tabs"><button type="button" class="tab on" data-tab="demo">Live demo</button><button type="button" class="tab" data-tab="code">Free sample code</button><button type="button" class="tab" data-tab="guide" id="pmGuideTab" hidden>How to use &amp; connect your data</button></div>
-      <iframe class="demo" id="pmDemo" sandbox="allow-scripts allow-forms" title="Live demo"></iframe>
-      <p class="hint" id="demoNote" style="margin-top:8px">💡 This is a live demo — you can click and scroll inside it. Links and forms are for show and never leave this window.</p>
-      <pre id="pmCode" hidden></pre>
+      <div class="tabs"><button type="button" class="tab on" data-tab="demo">Live demo</button><button type="button" class="tab" data-tab="guide" id="pmGuideTab" hidden>How to use &amp; connect your data</button></div>
+      <div class="demowrap" id="demoWrap"><iframe class="demo" id="pmDemo" sandbox="allow-scripts allow-forms" title="Live demo"></iframe><div class="dload" id="pmLoad">Loading the full preview…</div><button type="button" class="fsbtn" id="pmFs" aria-label="Full screen preview">⛶ Full screen</button></div>
+      <p class="hint" id="demoNote" style="margin-top:8px">💡 This is the complete, paid version running live — scroll and click inside it. It is view-only: copying is disabled, and links and forms are for show. Buy to get the full code.</p>
       <div class="gbox" id="pmGuide" hidden></div>
       <div class="opts" id="pmOpts" hidden></div>
       <div class="actions">
         <span class="hint" id="pmHint"></span>
-        <span style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-ghost" id="pmCopy">Copy free sample</button><button type="button" class="btn btn-ghost" id="pmAdd">Add to cart</button><button type="button" class="btn btn-primary" id="pmBuy">Buy now</button></span>
+        <span style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-ghost" id="pmAdd">Add to cart</button><button type="button" class="btn btn-primary" id="pmBuy">Buy now</button></span>
       </div>
     </div>
   </div>
@@ -500,7 +540,7 @@
     /* ---- modals ---- */
     var lastFocus = null, onClose = {};
     function openModal(m, from){ lastFocus = from || document.activeElement; m.classList.add('open'); m.setAttribute('aria-hidden','false'); }
-    function closeModal(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); if (m.id==='pm') $('pmDemo').srcdoc=''; if (onClose[m.id]) onClose[m.id](); if (lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch(e) {} }
+    function closeModal(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); if (m.id==='pm'){ demoSeq++; $('pmDemo').srcdoc=''; fullCache={}; $('demoWrap').classList.remove('fs'); } if (onClose[m.id]) onClose[m.id](); if (lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch(e) {} }
     Array.prototype.forEach.call(document.querySelectorAll('.modal'), function(m){
       m.addEventListener('click', function(e){ if (e.target===m || e.target.closest('[data-close]')) closeModal(m); });
     });
@@ -532,9 +572,50 @@
     /* ---- product window: styles, options, guide ---- */
     var cur = null, curV = 0, opt = 'all';
     function byId(id){ return live.filter(function(p){ return p.id===id; })[0]; }
+    var fullCache = {}, demoSeq = 0;
+    /* runs INSIDE the preview frame: view-only protection (a deterrent — it cannot stop a determined developer) */
+    function protectFn(){
+      var st = document.createElement('style');
+      st.textContent = '*{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}input,textarea{-webkit-user-select:text!important;user-select:text!important}@media print{html{display:none!important}}';
+      document.head.appendChild(st);
+      var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='260' height='170'><text x='20' y='95' transform='rotate(-24 130 85)' font-family='Arial,sans-serif' font-size='17' font-weight='700' fill='%23888' fill-opacity='.9'>GEOSTORE PREVIEW</text></svg>";
+      var w = document.createElement('div');
+      w.style.cssText = 'position:fixed;inset:0;z-index:2147483646;pointer-events:none;opacity:.10;background-image:url("data:image/svg+xml,' + svg.replace(/#/g, '%23') + '")';
+      document.body.appendChild(w);
+      function inField(e){ return /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || ''); }
+      ['contextmenu','copy','cut','dragstart','selectstart'].forEach(function(n){ document.addEventListener(n, function(e){ if (n !== 'contextmenu' && inField(e)) return; e.preventDefault(); }, true); });
+      document.addEventListener('keydown', function(e){
+        var k = String(e.key || '').toLowerCase(), m = e.ctrlKey || e.metaKey;
+        if (k === 'f12' || (m && (k === 's' || k === 'u' || k === 'p' || (!inField(e) && (k === 'c' || k === 'a' || k === 'x'))) || (m && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')))) e.preventDefault();
+      }, true);
+    }
+    function protect(html){
+      var g = '<script>(' + protectFn.toString() + ')()<\/script>', i = html.lastIndexOf('</body>');
+      return i < 0 ? html + g : html.slice(0, i) + g + html.slice(i);
+    }
+    function loadFull(p, i){
+      if (!API || p.type === 'digital') return Promise.resolve(null);
+      var k = p.id + '/' + i; if (fullCache[k]) return Promise.resolve(fullCache[k]);
+      return fetch(API + '/api/preview/' + encodeURIComponent(p.id) + '/' + i).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){
+        if (!j || !j.k || !j.d) return null;
+        var bin = atob(j.d), a = new Uint8Array(bin.length), kk = j.k;
+        for (var x = 0; x < bin.length; x++) a[x] = bin.charCodeAt(x) ^ kk.charCodeAt(x % kk.length);
+        return (fullCache[k] = new TextDecoder().decode(a));
+      }).catch(function(){ return null; });
+    }
+    function loadDemo(p, i, v){
+      var my = ++demoSeq;
+      if (!API){ $('pmDemo').srcdoc = guard(v.sample); return; }
+      $('pmLoad').hidden = false; $('pmDemo').srcdoc = '';
+      loadFull(p, i).then(function(h){
+        if (my !== demoSeq) return;
+        $('pmLoad').hidden = true;
+        $('pmDemo').srcdoc = h ? guard(protect(h)) : guard(v.sample);
+      });
+    }
     function showVariant(i){
       curV = i; var v = cur.variants[i];
-      $('pmDemo').srcdoc = guard(v.sample); $('pmCode').textContent = v.sample;
+      loadDemo(cur, i, v);
       Array.prototype.forEach.call($('pmVars').children, function(b,k){ b.classList.toggle('on', k===i); });
       renderOpts();
     }
@@ -556,24 +637,19 @@
       $('pmVars').innerHTML = p.variants.map(function(v,k){ return '<button type="button" class="vt'+(k===0?' on':'')+'" data-v="'+k+'">'+esc(v.name)+'</button>'; }).join('');
       $('pmGuideTab').hidden = !p.guide; $('pmGuide').innerHTML = p.guide || '';
       $('pmHint').textContent = n > 1
-        ? 'Free, basic sample of each style. Buying unlocks the full code — with animations, JavaScript, mobile layout and extra sections.'
-        : 'The free sample is a basic version. The full version adds animations, interactivity and polished styling.';
-      $('pmDemo').className = 'demo' + (p.group === 'website' ? ' tall' : '');
+        ? 'Every style is shown in full, view-only. Buying unlocks the complete code to copy and use.'
+        : 'View-only preview. Buying unlocks the complete code to copy and use.';
+      $('pmDemo').className = 'demo' + (p.group === 'website' ? ' tall' : ''); $('demoWrap').classList.remove('fs'); $('pmFs').textContent = '⛶ Full screen';
       showVariant(0); showTab('demo');
       openModal($('pm'), from);
     }
     $('pmVars').addEventListener('click', function(e){ var b = e.target.closest('.vt'); if (b) showVariant(+b.dataset.v); });
     function showTab(t){
       Array.prototype.forEach.call(document.querySelectorAll('#pm .tab'), function(b){ b.classList.toggle('on', b.dataset.tab===t); });
-      $('pmDemo').hidden = t!=='demo'; $('demoNote').hidden = t!=='demo'; $('pmCode').hidden = t!=='code'; $('pmGuide').hidden = t!=='guide';
+      $('demoWrap').hidden = t!=='demo'; $('demoNote').hidden = t!=='demo'; $('pmGuide').hidden = t!=='guide';
     }
     Array.prototype.forEach.call(document.querySelectorAll('#pm .tab'), function(b){ b.addEventListener('click', function(){ showTab(b.dataset.tab); }); });
-    $('pmCopy').addEventListener('click', function(){
-      var b = this; if (!cur) return;
-      function done(){ b.textContent = 'Copied!'; setTimeout(function(){ b.textContent = 'Copy free sample'; }, 1600); }
-      var t = cur.variants[curV].sample;
-      if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, done); else done();
-    });
+    $('pmFs').addEventListener('click', function(){ var w = $('demoWrap'), on = w.classList.toggle('fs'); this.textContent = on ? '✕ Close full screen' : '⛶ Full screen'; });
     function chosen(){ return opt === 'one' && cur.variants.length > 1 ? curV : 'all'; }
     $('pmAdd').addEventListener('click', function(){ addToCart(cur.id, chosen()); });
     $('pmBuy').addEventListener('click', function(){ addToCart(cur.id, chosen(), true); closeModal($('pm')); openCart(); });
@@ -912,6 +988,15 @@
       document.addEventListener('pointerover', function(e){ c.classList.toggle('big', !!(e.target.closest && e.target.closest('a,button,.prev,.win,input'))); });
       document.addEventListener('mouseleave', function(){ c.classList.remove('on'); });
       (function loop(){ cx += (x - cx) * .22; cy += (y - cy) * .22; c.style.transform = 'translate(' + cx.toFixed(1) + 'px,' + cy.toFixed(1) + 'px)'; requestAnimationFrame(loop); })();
+    })();
+
+    /* ---------- light / dark theme ---------- */
+    (function(){
+      var b = $('themeBtn'), root = document.documentElement, m = document.querySelector('meta[name=theme-color]');
+      function cur(){ return root.getAttribute('data-theme') === 'light' ? 'light' : 'dark'; }
+      function paint(){ var l = cur() === 'light'; b.textContent = l ? '☀️' : '🌙'; b.title = l ? 'Switch to dark' : 'Switch to light'; if (m) m.setAttribute('content', l ? '#f5f7ef' : '#040605'); }
+      b.addEventListener('click', function(){ var n = cur() === 'light' ? 'dark' : 'light'; root.setAttribute('data-theme', n); try { localStorage.setItem('geostore_theme', n); } catch(e) {} paint(); });
+      paint();
     })();
 
     /* ---------- aurora ribbons background (canvas, no libraries) ---------- */
