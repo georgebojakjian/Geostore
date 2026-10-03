@@ -108,3 +108,27 @@ So roughly **150–200 orders per day** fit inside the free plan. The errors you
 
 ## Changing a price
 Change it in the dashboard, then **Publish → Sync to server**. That is all — the shop reads prices live from your server, so the new price shows (refresh the page) and is charged. You only need to **Download data.js and upload the `site` folder** when you add/remove products, change names, images, designs or text.
+
+
+## Selling gift cards from FazerCards (no stock needed)
+FazerCards is a wholesaler. You list their gift cards in your shop at YOUR price. When a customer pays you, your server buys the code from FazerCards and shows it to the customer. You keep the difference.
+
+**One-time setup**
+1. Create an account at https://reseller.fazercards.com and (if you like) start the free trial. Open your account's API section and create an **API key** (it starts with `fc_`). **Keep it secret — never paste it into the dashboard or send it to anyone.**
+2. Put some money into your FazerCards **balance** (their site shows the crypto top-up options). Every sale is paid from this balance.
+3. In Cloudflare: your Worker → **Settings → Variables and Secrets → Add** → type **Secret**, name `FAZER_KEY`, value = your key → **Deploy**. Then open `/api/health` — it should show `"supplier":true` and `version: 6`.
+4. Paste the new `worker/worker.js` (Edit code → Deploy) and open the new `admin/admin.html`.
+5. Dashboard → **🎁 Supplier** → **Check connection & balance**. You should see your balance.
+
+**Adding products**
+1. Supplier tab → **Load catalog** → search (for example "steam") → **View offers**.
+2. Each offer shows **your cost**. The price box is pre-filled with your margin (change the % at the bottom). Edit the price if you like → **Add to my shop**.
+3. **Publish → Sync to server**, then download `data.js` and upload your `site` folder (new products need this once; later price changes only need Sync).
+
+**What protects you**
+- Before a customer is allowed to pay, the server checks that the item is in stock at FazerCards, that your price is still above the current cost, and that your balance is enough. If not, the item shows "temporarily unavailable" and nobody pays.
+- If FazerCards is down right after a payment, the customer sees "your code is being prepared" and the server keeps retrying by itself. Dashboard → **Orders** shows the state, and **Retry supplier purchase** if something needs you. Retrying can never buy twice.
+- Costs change at FazerCards. Supplier tab → **Refresh costs** shows your current profit on each item; **Apply margin** reprices everything.
+
+**Please test first:** buy ONE cheap gift card yourself (about $1–10) with USDT and check the code works, before announcing the shop.
+Game top-ups (which need the player's ID) are the next step and are not in this version.

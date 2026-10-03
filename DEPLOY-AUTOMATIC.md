@@ -110,3 +110,7 @@ The server never uses Cloudflare's `list()` operation any more (free limit: 1,00
 - Honest limit: anything a browser can display can in theory be extracted by an expert, so this deters casual copying; it is not a vault. Previews are also rate-limited per visitor.
 - The free sample code tab is gone from the product window. Customers can switch between light and dark with the button in the top bar (their choice is remembered).
 - `ALLOWED_ORIGIN` is no longer needed: customer requests are accepted from any address (sign-in uses a token, not cookies). This also fixes the "Failed to fetch" error on sign-up when that variable did not exactly match the shop address.
+
+
+## Supplier (FazerCards)
+See the section "Selling gift cards from FazerCards" in `START-HERE.md`. The Worker needs one extra Secret named `FAZER_KEY`. Server version is now 6.
