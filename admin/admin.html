@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geostore Admin Dashboard</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/svg+xml" href="../site/logo.svg">
+  <style>
+    :root{--bg:#0b0f1a;--panel:#111827;--surface:#151c2c;--border:rgba(148,163,184,.16);--text:#f8fafc;--muted:#94a3b8;--accent:#6366f1;--accent2:#22d3a5;--danger:#f87171;--warn:#fbbf24;--ease:cubic-bezier(.22,.61,.36,1)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;min-height:100vh}
+    button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer;border:0;background:none}
+    :focus-visible{outline:2px solid var(--accent2);outline-offset:2px;border-radius:6px}
+    .app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+    aside{position:sticky;top:0;height:100vh;padding:22px 16px;border-right:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;gap:6px}
+    .brand{display:flex;gap:10px;align-items:center;font-weight:800;padding:0 8px 18px}.mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+    .navb{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;color:var(--muted);text-align:left;width:100%;transition:all .25s var(--ease)}
+    .navb:hover{background:rgba(255,255,255,.05);color:#fff}.navb.on{background:rgba(99,102,241,.16);color:#fff}
+    .lock{margin-top:auto;font-size:.78rem;color:var(--muted);padding:12px;border:1px dashed var(--border);border-radius:12px}
+    main{padding:30px clamp(18px,3vw,40px) 80px;min-width:0}
+    h1{font-size:1.7rem;letter-spacing:-.02em;margin-bottom:4px}.lead{color:var(--muted);margin-bottom:24px}
+    .view{display:none}.view.on{display:block;animation:in .35s var(--ease)}@keyframes in{from{opacity:0;transform:translateY(8px)}}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px}
+    .stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px}.stat small{color:var(--muted)}.stat b{display:block;font-size:1.9rem;letter-spacing:-.03em}
+    .panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:20px}
+    .panel h2{font-size:1.1rem;margin-bottom:12px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:12px;font-weight:600;font-size:.9rem;transition:transform .25s var(--ease),background .25s,border-color .25s}
+    .btn:hover{transform:translateY(-2px)}.btn-p{background:linear-gradient(135deg,var(--accent),#8b5cf6)}.btn-g{border:1px solid var(--border);background:rgba(255,255,255,.03)}.btn-g:hover{border-color:var(--accent2)}.btn-d{border:1px solid rgba(248,113,113,.4);color:var(--danger)}.btn-d:hover{background:rgba(248,113,113,.1)}.btn-s{padding:6px 12px;font-size:.82rem;border-radius:9px}
+    .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:16px}
+    table{width:100%;border-collapse:collapse;font-size:.92rem}th{color:var(--muted);font-weight:500;text-align:left;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}
+    th,td{padding:12px 10px;border-bottom:1px solid var(--border);vertical-align:middle}tr:last-child td{border-bottom:0}
+    .tw{overflow-x:auto}.acts{display:flex;gap:6px;flex-wrap:wrap}
+    .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:600;border:1px solid var(--border)}
+    .pill.pending{color:var(--warn);border-color:rgba(251,191,36,.4)}.pill.paid{color:var(--accent2);border-color:rgba(34,211,165,.4)}.pill.delivered{color:#a5b4fc;border-color:rgba(165,180,252,.4)}.pill.off{color:var(--muted)}
+    .form{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form .full{grid-column:1/-1}
+    label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:6px}
+    input,select,textarea{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg);outline:0;transition:border-color .25s,box-shadow .25s}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(99,102,241,.18)}
+    textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.78rem;min-height:210px;resize:vertical;white-space:pre;tab-size:2}
+    select option{background:var(--bg)}input[type=checkbox]{width:auto}
+    .chk{display:flex;gap:10px;align-items:center;color:var(--text);font-size:.92rem;margin:0}
+    iframe.pv{width:100%;height:380px;border:1px solid var(--border);border-radius:12px;background:#0b0f1a}
+    .help{color:var(--muted);font-size:.85rem}.help code,.step code{background:rgba(255,255,255,.07);padding:1px 7px;border-radius:6px;font-size:.82rem}
+    .step{display:grid;grid-template-columns:34px 1fr;gap:14px;margin-bottom:18px}.num{width:34px;height:34px;border-radius:50%;background:rgba(99,102,241,.18);border:1px solid rgba(99,102,241,.4);display:grid;place-items:center;font-weight:700}.step p{color:var(--muted);font-size:.92rem;margin-top:2px}.step h3{font-size:1rem}
+    .warn{border:1px solid rgba(251,191,36,.4);background:rgba(251,191,36,.07);color:#fde68a;padding:14px 16px;border-radius:12px;font-size:.9rem;margin-bottom:18px}
+    .toast{position:fixed;bottom:22px;right:22px;z-index:99;background:#1b2438;border:1px solid var(--accent2);padding:12px 18px;border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.5);opacity:0;transform:translateY(12px);pointer-events:none;transition:all .3s var(--ease)}.toast.show{opacity:1;transform:none}
+    .empty{text-align:center;color:var(--muted);padding:30px 0}
+    @media(max-width:900px){.app{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;padding:12px;border-right:0;border-bottom:1px solid var(--border)}.brand{padding:0 8px 0 4px;width:100%}.lock{display:none}.navb{width:auto;padding:9px 14px}.stats{grid-template-columns:1fr 1fr}.form{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><img src="../site/logo.svg" alt="" width="30" height="30" style="border-radius:9px">Admin</div>
+    <button class="navb on" data-v="dash">📊 Dashboard</button>
+    <button class="navb" data-v="products">📦 Products</button>
+    <button class="navb" data-v="supplier">🎁 Supplier</button>
+    <button class="navb" data-v="orders">🧾 Orders</button>
+    <button class="navb" data-v="customers">👥 Customers</button>
+    <button class="navb" data-v="settings">⚙️ Settings</button>
+    <button class="navb" data-v="publish">🚀 Publish</button>
+    <div class="lock">🔒 Private. Keep this <b>admin</b> folder on your computer — never upload it.</div>
+  </aside>
+
+  <main>
+    <!-- DASHBOARD -->
+    <section class="view on" id="v-dash">
+      <h1>Dashboard</h1><p class="lead">Your store at a glance.</p>
+      <div class="stats">
+        <div class="stat"><small>Products</small><b id="sP">0</b></div>
+        <div class="stat"><small>Orders</small><b id="sO">0</b></div>
+        <div class="stat"><small>Waiting for payment check</small><b id="sW">0</b></div>
+        <div class="stat"><small>Revenue (paid)</small><b id="sR">$0</b></div>
+      </div>
+      <div class="panel"><h2>What to do next</h2>
+        <p class="help">1) Add or edit your codes in <b>Products</b>. 2) Fill your email and wallet in <b>Settings</b>. 3) Go to <b>Publish</b> and follow the steps. 4) When a customer emails you an order, record it in <b>Orders</b>, check your wallet, and press <b>Deliver</b>.</p></div>
+      <div class="panel"><h2>Latest orders</h2><div class="tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Item</th><th>Status</th></tr></thead><tbody id="dashOrders"></tbody></table></div></div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section class="view" id="v-products">
+      <h1>Products</h1><p class="lead">Every code you sell. Customers see the <b>free sample</b>; the <b>full version</b> stays private until they pay.</p>
+      <div id="plist">
+        <div class="bar"><span class="help" id="pcount"></span><button class="btn btn-p" id="newP">+ New product</button></div>
+        <div class="panel tw"><table><thead><tr><th>Title</th><th>Category</th><th>Price</th><th>Status</th><th></th></tr></thead><tbody id="ptbody"></tbody></table></div>
+      </div>
+      <div id="pedit" hidden>
+        <div class="bar"><h2 id="peTitle" style="font-size:1.2rem">Edit product</h2><button class="btn btn-g" id="peBack">← Back to list</button></div>
+        <form class="panel form" id="pf" autocomplete="off">
+          <div><label for="fTitle">Title</label><input id="fTitle" required></div>
+          <div><label for="fCat">Category</label><input id="fCat" list="cats" placeholder="Navigation, Hero, Shop…"><datalist id="cats"></datalist></div>
+          <div><label for="fPrice">Price (USD)</label><input id="fPrice" type="number" min="0" step="0.5" required></div>
+          <div><label class="chk" style="margin-top:28px"><input type="checkbox" id="fPub"> Show on the website</label></div>
+          <div class="full"><label for="fTag">One-line description</label><input id="fTag"></div>
+          <div><label for="fStyleP">Price for ONE style only (leave empty = half of the product price)</label><input id="fStyleP" type="number" min="0" step="0.5" placeholder="e.g. 9"></div>
+          <div><label for="fGroup">Shown in</label><select id="fGroup"><option value="">Code snippets section</option><option value="website">Complete websites section</option></select></div>
+          <div><label for="fType">Type</label><select id="fType"><option value="code">Code product (HTML / CSS / JS)</option><option value="digital">Digital item (gift card, licence key…)</option></select></div>
+          <div class="full" id="codeFields">
+            <label>Styles — each style has its own free sample and private full code. Customers who buy get ALL styles.</label>
+            <div class="bar" style="margin:0 0 12px"><div id="vRow" style="display:flex;gap:8px;flex-wrap:wrap"></div><span style="display:flex;gap:8px"><button type="button" class="btn btn-g btn-s" id="vAdd">+ Add style</button><button type="button" class="btn btn-d btn-s" id="vDel">Remove this style</button></span></div>
+            <label for="fGuide">How-to-use guide for the customer (HTML allowed). Shown on the product page and on their delivery page. Explain how to edit the file and connect their own data.</label>
+            <textarea id="fGuide" spellcheck="false" style="min-height:130px;white-space:pre-wrap;margin-bottom:14px"></textarea>
+            <label for="vName">Style name</label><input id="vName" style="margin-bottom:12px">
+            <label for="fSample">FREE sample code (shown publicly — a basic complete HTML page)</label><textarea id="fSample" spellcheck="false"></textarea>
+            <label for="fFull" style="margin-top:12px">FULL code (private — sent to the customer after payment)</label><textarea id="fFull" spellcheck="false"></textarea>
+            <div class="bar" style="margin:14px 0 0"><span class="help">Preview what you typed:</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-g btn-s" id="pvS">Preview free sample</button><button type="button" class="btn btn-g btn-s" id="pvF">Preview full code</button></span></div>
+            <iframe class="pv" id="pvFrame" sandbox="allow-scripts allow-forms" title="Preview" style="margin-top:12px"></iframe>
+          </div>
+          <div class="full" id="digFields" hidden>
+            <p class="help" id="supNote" hidden></p>
+            <div class="form"><div><label for="fIcon">Card icon (one emoji)</label><input id="fIcon" placeholder="🎁"></div><div><label>In stock</label><div class="help" id="stockCount" style="padding-top:10px"></div></div></div>
+            <div id="stockBox"><label for="fStock" style="margin-top:12px">Stock — one code per line (private; each paid order gets the next unused code)</label>
+            <textarea id="fStock" spellcheck="false" style="min-height:170px"></textarea>
+            <p class="help" style="margin-top:8px">Only add codes you obtained legitimately and are allowed to resell. After editing stock, press <b>Sync to server</b> on the Publish tab so automatic delivery can use it. <b>Always add new codes at the END of the list and never delete or reorder lines that were already sold.</b></p></div>
+          </div>
+          <div class="full" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" type="submit">Save product</button><button type="button" class="btn btn-d" id="delP">Delete</button></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ORDERS -->
+    <section class="view" id="v-supplier">
+      <h1>Supplier — FazerCards</h1><p class="lead">Sell gift cards without holding any stock. Pick a product from FazerCards, set your own price, and when a customer pays you the server buys the code from FazerCards and delivers it. Your profit is your price minus their cost.</p>
+      <div class="panel"><div class="bar"><h2 style="margin:0">Connection</h2><button class="btn btn-g btn-s" id="supCheck">Check connection &amp; balance</button></div>
+        <p class="help" id="supStatus">Add your FazerCards API key to Cloudflare first (see the steps in START-HERE.md → "Selling gift cards"), then press the button.</p>
+        <p class="help">Every sale is paid from your FazerCards balance. Keep it topped up — if it runs low the shop automatically stops offering those items so nobody pays for something you cannot deliver.</p></div>
+      <div class="panel"><h2>Browse the catalog</h2>
+        <div class="bar" style="margin:0 0 10px"><input id="supSearch" placeholder="Search: steam, itunes, roblox, google play…" style="max-width:340px"><span style="display:flex;gap:8px"><button class="btn btn-p btn-s" id="supLoad">Load catalog</button></span></div>
+        <p class="help" id="supCatMsg">Press "Load catalog" (one request), then search.</p>
+        <div class="tw"><table><tbody id="supCats"></tbody></table></div></div>
+      <div class="panel" id="supOffers" hidden></div>
+      <div class="panel"><div class="bar"><h2 style="margin:0">My supplier products</h2><span style="display:flex;gap:8px;align-items:center"><span class="help">My margin %</span><input id="supMargin" type="number" min="1" max="500" style="width:80px"><button class="btn btn-g btn-s" id="supRefresh">↻ Refresh costs</button><button class="btn btn-g btn-s" id="supApply">Apply margin to all prices</button></span></div>
+        <div class="tw"><table><thead><tr><th>Product</th><th>Cost now</th><th>My price</th><th>Profit</th><th>Stock</th><th></th></tr></thead><tbody id="supMine"></tbody></table></div>
+        <p class="help" id="supMineMsg"></p>
+        <p class="help">After changing prices press <b>Publish → Sync to server</b>. Costs change at FazerCards; if the cost rises above your price the shop stops selling that item until you reprice it.</p></div>
+    </section>
+
+    <section class="view" id="v-orders">
+      <h1>Orders</h1><p class="lead">Automatic orders come from your payment server. Manual orders (if you do not use a server) are recorded below.</p>
+      <div class="panel"><div class="bar"><h2 style="margin:0">Automatic orders (server)</h2><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></div>
+        <p class="help" id="srvMsg">Press Refresh to load orders from your server.</p>
+        <div class="tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Items</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="srvBody"></tbody></table></div></div>
+      <p class="help" style="margin:4px 0 18px">Customer accounts moved to the <b>👥 Customers</b> tab.</p>
+      <h2 style="font-size:1.1rem;margin:26px 0 12px">Manual orders</h2>
+      <form class="panel form" id="of">
+        <div><label for="oEmail">Customer email</label><input id="oEmail" type="email" required></div>
+        <div><label for="oItem">Item</label><select id="oItem"></select></div>
+        <div><label for="oCoin">Coin</label><input id="oCoin" placeholder="USDT"></div>
+        <div><label for="oAmt">Amount received (USD)</label><input id="oAmt" type="number" min="0" step="0.5"></div>
+        <div class="full"><button class="btn btn-p" type="submit">+ Add order</button></div>
+      </form>
+      <div class="panel tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Item</th><th>USD</th><th>Status</th><th></th></tr></thead><tbody id="otbody"></tbody></table></div>
+    </section>
+
+    <!-- CUSTOMERS -->
+    <section class="view" id="v-customers">
+      <h1>Customers</h1><p class="lead">Everyone who created an account on your shop. Search, open a customer to see their orders, edit their details, disable or delete the account, or set a new password.</p>
+      <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat"><small>Customers</small><b id="cTotal">–</b></div>
+        <div class="stat"><small>With orders (loaded)</small><b id="cOrd">–</b></div>
+        <div class="stat"><small>Disabled (loaded)</small><b id="cDis">–</b></div>
+      </div>
+      <div class="bar"><input id="cSearch" placeholder="Search name, email, phone, country…" style="max-width:360px"><span style="display:flex;gap:8px"><button class="btn btn-g btn-s" id="cRefresh">↻ Refresh</button><button class="btn btn-g btn-s" id="cCsv">⬇ Export CSV</button></span></div>
+      <div class="panel tw"><table><thead><tr><th>Joined</th><th>Name</th><th>Email</th><th>Phone</th><th>Country</th><th>Orders</th><th>Status</th><th></th></tr></thead><tbody id="cBody"></tbody></table>
+        <p class="help" id="cMsg">Press Refresh to load your customers.</p><p><button class="btn btn-g btn-s" id="cMore" hidden>Load more</button></p></div>
+      <div class="panel" id="cDetail" hidden></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="v-settings">
+      <h1>Settings</h1><p class="lead">Your store name, email, crypto wallets and the All-Access pass.</p>
+      <form class="panel form" id="sf">
+        <div><label for="sName">Store name</label><input id="sName"></div>
+        <div><label for="sEmail">Your email (orders arrive here)</label><input id="sEmail" type="email"></div>
+        <div class="full"><label for="sTag">Tagline</label><input id="sTag"></div>
+        <div class="full"><label for="sApi">Payment server URL (public — from Cloudflare, e.g. https://geostore-api.yourname.workers.dev). Leave empty for manual mode.</label><input id="sApi" placeholder="https://geostore-api.yourname.workers.dev"></div>
+        <div class="full"><label for="sTok">Server admin token (private — saved only in this browser, never published)</label><input id="sTok" type="password" autocomplete="off" placeholder="the ADMIN_TOKEN you chose in Cloudflare"></div>
+        <div class="full"><label for="sWalU">USDT wallet — TRON network (TRC20), starts with T. Customers pay this automatically.</label><input id="sWalU" placeholder="T..." autocomplete="off"></div>
+        <div class="full"><label for="sWalB">Bitcoin wallet address (starts with bc1, 1 or 3). Customers pay this automatically.</label><input id="sWalB" placeholder="bc1..." autocomplete="off"></div>
+        <div class="full"><label for="sWal">Other coins (manual mode only — used when no payment server is connected) — one per line, format: <code>Coin name | address</code></label><textarea id="sWal" style="min-height:110px;white-space:pre-wrap" placeholder="USDT (TRC20 network) | TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></textarea></div>
+        <div class="full"><label class="chk"><input type="checkbox" id="sDig"> Show the “Digital items” section on the home page (shows “coming soon” until you add items)</label></div>
+        <div class="full"><label class="chk"><input type="checkbox" id="aaOn"> Sell an All-Access pass (one payment → every code)</label></div>
+        <div><label for="aaTitle">Pass name</label><input id="aaTitle"></div>
+        <div><label for="aaPrice">Pass price (USD) — you choose</label><input id="aaPrice" type="number" min="0" step="1"></div>
+        <div class="full"><label for="aaDesc">Pass description</label><input id="aaDesc"></div>
+        <div class="full"><button class="btn btn-p" type="submit">Save settings</button></div>
+      </form>
+    </section>
+
+    <!-- PUBLISH -->
+    <section class="view" id="v-publish">
+      <h1>Publish</h1><p class="lead">Put your store online for free. After every change in Products or Settings, repeat steps 1–3.</p>
+      <div class="warn">⚠️ Never upload this <b>admin</b> folder or <code>private.js</code> to the internet — it contains your paid code.</div>
+      <div class="panel"><h2>Automatic payments</h2>
+        <p class="help" style="margin-bottom:12px">After you change products, prices or the All-Access pass, press <b>Sync</b>. This sends your prices and your private full code to YOUR payment server so it can deliver automatically after payment.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" id="srvSync">⬆ Sync to server</button><button class="btn btn-g" id="srvTest">Test connection</button><button class="btn btn-g" id="srvSyncAll" title="Only needed if something looks out of date on the server">Re-upload everything</button></div>
+        <p class="help" id="srvStatus" style="margin-top:12px"></p></div>
+      <div class="panel">
+        <div class="step"><div class="num">1</div><div><h3>Download your public data file</h3><p>This holds your product list and free samples (not the paid code).</p><p style="margin-top:10px"><button class="btn btn-p" id="dlData">⬇ Download data.js</button></p></div></div>
+        <div class="step"><div class="num">2</div><div><h3>Replace the old file</h3><p>Put the downloaded <code>data.js</code> in your <code>site</code> folder, replacing the old one.</p></div></div>
+        <div class="step"><div class="num">3</div><div><h3>Upload the site folder</h3><p>Open <code>app.netlify.com/drop</code> and drag the whole <code>site</code> folder onto it. Your shop is live (free).</p></div></div>
+        <div class="step"><div class="num">4</div><div><h3>Make a backup (important)</h3><p>Your products live in this browser. Download a backup now and then — and keep it safe.</p><p style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-g" id="dlBackup">⬇ Backup everything (.json)</button><label class="btn btn-g" style="margin:0;cursor:pointer">⬆ Restore backup<input type="file" id="restore" accept=".json" hidden></label><button class="btn btn-d" id="resetAll">Reset to original files</button></p></div></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="../site/data.js"></script>
+<script src="private.js"></script>
+<script src="../site/pack-1.js"></script>
+<script src="private-pack-1.js"></script>
+<script src="../site/pack-2.js"></script>
+<script src="private-pack-2.js"></script>
+<script>
+(function(){
+  'use strict';
+  var KEY = 'geostore_admin_v1';
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function money(n){ return '$' + (Math.round((+n||0)*100)/100); }
+  function uid(){ return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(function(){t.classList.remove('show');},2400); }
+
+  /* ---------- state ---------- */
+  function clone(x){ return JSON.parse(JSON.stringify(x)); }
+  var WAL = {usdt_trc20:/^T[1-9A-HJ-NP-Za-km-z]{33}$/, btc:/^(bc1[a-z0-9]{25,87}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})$/};
+  // add products from the shipped packs that this state does not have (never re-adds ones you deleted)
+  function addPacks(d){
+    var have = {}; d.products.forEach(function(p){ have[p.id] = 1; });
+    (d.removed || []).forEach(function(id){ have[id] = 1; });
+    var pv2 = window.GEOSTORE_PRIVATE_V2 || {};
+    (window.GEOSTORE_PACKS || []).forEach(function(pk){ (pk.products || []).forEach(function(src){
+      if (have[src.id]) return; have[src.id] = 1;
+      var p = clone(src), f = pv2[p.id] || [];
+      p.variants.forEach(function(v, i){ v.full = (f[i] && f[i].full) || ''; });
+      d.products.push(p);
+    }); });
+  }
+  function migrate(d){
+    d.removed = d.removed || []; d.orders = d.orders || [];
+    d.settings = d.settings || {}; d.settings.wallets = d.settings.wallets || {};
+    d.settings.allAccess = d.settings.allAccess || {enabled:false,title:'All-Access Pass',price:49,description:''};
+    if (d.settings.digitalSection === undefined) d.settings.digitalSection = true;
+    if (!d.settings.autoWallets){                       // pick up addresses typed into the old wallet list
+      d.settings.autoWallets = {usdt_trc20:'', btc:''};
+      Object.keys(d.settings.wallets).forEach(function(k){ var v = String(d.settings.wallets[k] || '').trim();
+        if (WAL.usdt_trc20.test(v)) d.settings.autoWallets.usdt_trc20 = v; else if (WAL.btc.test(v)) d.settings.autoWallets.btc = v; });
+    }
+    addPacks(d);
+    d.products.forEach(function(p){
+      if (!p.variants || !p.variants.length) p.variants = [{name:'Standard', sample:p.sample || '', full:p.full || ''}];
+      delete p.sample; delete p.full;
+      p.type = p.type === 'digital' ? 'digital' : 'code';
+      p.stock = p.stock || []; p.used = p.used || 0;
+    });
+    return d;
+  }
+  function seed(){
+    var d = clone(window.GEOSTORE_DATA || {settings:{},products:[]});
+    var pv = window.GEOSTORE_PRIVATE || {};
+    d.products.forEach(function(p){ if (!p.variants) p.full = pv[p.id] || ''; });
+    return migrate(d);
+  }
+  var state;
+  try { state = JSON.parse(localStorage.getItem(KEY)); } catch(e) { state = null; }
+  state = (state && state.products) ? migrate(state) : seed();
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) { toast('Browser storage is blocked — use Backup on the Publish tab'); } }
+
+  save();
+
+  /* ---------- navigation ---------- */
+  function show(v){
+    Array.prototype.forEach.call(document.querySelectorAll('.view'), function(s){ s.classList.toggle('on', s.id==='v-'+v); });
+    Array.prototype.forEach.call(document.querySelectorAll('.navb'), function(b){ b.classList.toggle('on', b.dataset.v===v); });
+    if (v==='dash') renderDash(); if (v==='products') { backToList(); } if (v==='orders') { renderOrders(); if (base()) loadServerOrders(); } if (v==='settings') renderSettings(); if (v==='supplier') renderSupMine(); if (v==='customers' && base() && !custs.length) loadCustomers(false);
+    window.scrollTo(0,0);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.navb'), function(b){ b.addEventListener('click', function(){ show(b.dataset.v); }); });
+
+  /* ---------- dashboard ---------- */
+  function itemName(id){ if (id==='ALL') return (state.settings.allAccess.title||'All-Access'); var p=state.products.filter(function(x){return x.id===id;})[0]; return p?p.title:'(deleted)'; }
+  function renderDash(){
+    var paid = state.orders.filter(function(o){ return o.status!=='pending'; });
+    $('sP').textContent = state.products.length;
+    $('sO').textContent = state.orders.length;
+    $('sW').textContent = state.orders.filter(function(o){ return o.status==='pending'; }).length;
+    $('sR').textContent = money(paid.reduce(function(a,o){ return a + (+o.amount||0); }, 0));
+    var last = state.orders.slice().reverse().slice(0,5);
+    $('dashOrders').innerHTML = last.length ? last.map(function(o){
+      return '<tr><td>'+esc(o.date)+'</td><td>'+esc(o.email)+'</td><td>'+esc(itemName(o.item))+'</td><td><span class="pill '+o.status+'">'+o.status+'</span></td></tr>';
+    }).join('') : '<tr><td colspan="4" class="empty">No orders yet.</td></tr>';
+  }
+
+  /* ---------- products ---------- */
+  var editing = null;
+  function renderProducts(){
+    $('pcount').textContent = state.products.length + ' product(s)';
+    $('ptbody').innerHTML = state.products.length ? state.products.map(function(p){
+      var extra = p.supplier ? ' <span class="pill">supplier · cost $'+(Math.round(p.supplier.cost*100)/100)+'</span>' : p.type==='digital' ? ' <span class="pill">digital · '+(p.stock.length-p.used)+' left</span>' : (p.variants.length>1 ? ' <span class="pill">'+p.variants.length+' styles</span>' : '');
+      return '<tr><td><b>'+esc(p.title)+'</b>'+extra+'<div class="help">'+esc(p.tagline||'')+'</div></td><td>'+esc(p.category||'')+'</td><td>'+money(p.price)+'</td><td><span class="pill '+(p.published!==false?'paid':'off')+'">'+(p.published!==false?'Live':'Hidden')+'</span></td>' +
+        '<td><div class="acts"><button class="btn btn-g btn-s" data-edit="'+esc(p.id)+'">Edit</button><button class="btn btn-g btn-s" data-dup="'+esc(p.id)+'">Duplicate</button></div></td></tr>';
+    }).join('') : '<tr><td colspan="5" class="empty">No products yet. Click "New product".</td></tr>';
+    var cats = {}; state.products.forEach(function(p){ if (p.category) cats[p.category]=1; });
+    $('cats').innerHTML = Object.keys(cats).map(function(c){ return '<option value="'+esc(c)+'">'; }).join('');
+  }
+  function backToList(){ editing=null; $('pedit').hidden=true; $('plist').hidden=false; renderProducts(); }
+  var draft = null, vi = 0;
+  var TPL = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>New code</title>\n<style>\n body{font-family:system-ui,sans-serif;background:#0b0f1a;color:#fff;margin:0}\n</style>\n</head>\n<body>\n<!-- your code here -->\n</body>\n</html>\n';
+
+  /* ---- demo guard: links/forms inside a live preview must never leave the preview ---- */
+    function guardFn(){
+      var t;
+      function note(m){var n=document.getElementById('__dm');if(!n){n=document.createElement('div');n.id='__dm';n.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;background:#111;color:#fff;border:1px solid #c5f442;padding:10px 16px;border-radius:99px;font:600 13px system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:92vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none';document.body.appendChild(n)}n.textContent=m;n.style.opacity=1;clearTimeout(t);t=setTimeout(function(){n.style.opacity=0},2800)}
+      document.addEventListener('click',function(e){
+        var a=e.target.closest&&e.target.closest('a[href]');if(!a)return;
+        var h=a.getAttribute('href')||'';
+        if(h.length>1&&h.charAt(0)==='#'){e.preventDefault();var el=document.getElementById(h.slice(1));if(el)el.scrollIntoView({behavior:'smooth'});else note('Demo: this link has no page in the preview');return}
+        e.preventDefault();
+        note(h==='#'||h===''?'Demo link — in your real site this goes to your own page':'Demo: this link goes to another page ('+h.slice(0,40)+') that you add in your real site');
+      },true);
+      document.addEventListener('submit',function(e){if(!e.defaultPrevented){e.preventDefault();note('Demo form — connect it to your email or server in your real site')}});
+      window.open=function(u){note('Demo: this would open '+String(u||'a new page').slice(0,50)+' in your real site');return null};
+    }
+    function guard(html){
+      html = String(html || '');
+      var g = '<script>(' + guardFn.toString() + ')()<\/script>', i = html.lastIndexOf('</body>');
+      return i < 0 ? html + g : html.slice(0, i) + g + html.slice(i);
+    }
+
+  function saveVariantFields(){
+    if (!draft || draft.type !== 'code') return;
+    var v = draft.variants[vi]; v.name = $('vName').value.trim() || ('Style ' + (vi + 1)); v.sample = $('fSample').value; v.full = $('fFull').value;
+  }
+  function renderVariants(){
+    $('vRow').innerHTML = draft.variants.map(function(v, i){ return '<button type="button" class="btn btn-s ' + (i===vi ? 'btn-p' : 'btn-g') + '" data-vi="' + i + '">' + esc(v.name || ('Style ' + (i+1))) + '</button>'; }).join('');
+    var v = draft.variants[vi]; $('vName').value = v.name || ''; $('fSample').value = v.sample || ''; $('fFull').value = v.full || '';
+    $('pvFrame').srcdoc = guard(v.sample || ''); $('vDel').hidden = draft.variants.length < 2;
+  }
+  function stockCount(){ var n = $('fStock').value.split('\n').filter(function(x){ return x.trim(); }).length; $('stockCount').textContent = n + ' code(s) listed' + (draft && draft.used ? ' · ' + draft.used + ' already used (manual delivery)' : ''); }
+  function toggleType(){
+    var dg = draft.type === 'digital';
+    $('codeFields').hidden = dg; $('digFields').hidden = !dg; $('fType').value = draft.type;
+    $('fStyleP').parentNode.hidden = dg; $('fGroup').parentNode.hidden = dg;
+    if (dg){ $('fIcon').value = draft.icon || ''; $('fStock').value = (draft.stock || []).join('\n'); stockCount(); }
+    var sup = !!draft.supplier; $('supNote').hidden = !sup; $('stockBox').hidden = sup; $('fType').disabled = sup;
+    if (sup) $('supNote').innerHTML = '🎁 <b>Supplied automatically by FazerCards.</b> Cost now: <b>$' + (Math.round(draft.supplier.cost*100)/100) + '</b>. Change <b>My price</b> above; there is no stock to manage — the code is bought the moment a customer pays.';
+    else renderVariants();
+  }
+  function openEditor(p){
+    editing = p; draft = clone(p); vi = 0; $('plist').hidden = true; $('pedit').hidden = false;
+    $('peTitle').textContent = p._new ? 'New product' : 'Edit: ' + p.title;
+    $('fTitle').value = p.title||''; $('fCat').value = p.category||''; $('fPrice').value = p.price==null?'':p.price;
+    $('fPub').checked = p.published!==false; $('fTag').value = p.tagline||'';
+    $('fStyleP').value = p.stylePrice||''; $('fGroup').value = p.group||''; $('fGuide').value = p.guide||'';
+    $('delP').style.display = p._new ? 'none' : '';
+    toggleType();
+    window.scrollTo(0,0);
+  }
+  $('vRow').addEventListener('click', function(e){ var b = e.target.closest('[data-vi]'); if (!b) return; saveVariantFields(); vi = +b.dataset.vi; renderVariants(); });
+  $('vAdd').addEventListener('click', function(){ saveVariantFields(); draft.variants.push({name:'Style ' + (draft.variants.length + 1), sample:TPL, full:TPL}); vi = draft.variants.length - 1; renderVariants(); });
+  $('vDel').addEventListener('click', function(){ if (draft.variants.length < 2 || !confirm('Remove this style?')) return; draft.variants.splice(vi, 1); vi = Math.min(vi, draft.variants.length - 1); renderVariants(); });
+  $('fType').addEventListener('change', function(){ saveVariantFields(); draft.type = this.value; toggleType(); });
+  $('fStock').addEventListener('input', stockCount);
+  $('newP').addEventListener('click', function(){
+    openEditor({_new:true, id:uid(), title:'', category:'', price:9, tagline:'', type:'code', variants:[{name:'Standard', sample:TPL, full:TPL}], stock:[], used:0, published:true});
+  });
+  $('ptbody').addEventListener('click', function(e){
+    var ed = e.target.closest('[data-edit]'), du = e.target.closest('[data-dup]');
+    if (ed) openEditor(state.products.filter(function(p){return p.id===ed.dataset.edit;})[0]);
+    if (du){ var src = state.products.filter(function(p){return p.id===du.dataset.dup;})[0]; var c = clone(src); c.id = uid(); c.title += ' (copy)'; c.used = 0; state.products.push(c); save(); renderProducts(); toast('Duplicated'); }
+  });
+  $('peBack').addEventListener('click', backToList);
+  $('pvS').addEventListener('click', function(){ $('pvFrame').srcdoc = guard($('fSample').value); });
+  $('pvF').addEventListener('click', function(){ $('pvFrame').srcdoc = guard($('fFull').value); });
+  $('pf').addEventListener('submit', function(e){
+    e.preventDefault();
+    var p = editing; if (!p) return;
+    saveVariantFields();
+    var title = $('fTitle').value.trim(); if (!title){ toast('Please enter a title'); return; }
+    draft.title = title; draft.category = $('fCat').value.trim(); draft.price = +$('fPrice').value || 0;
+    draft.published = $('fPub').checked; draft.tagline = $('fTag').value.trim();
+    draft.stylePrice = +$('fStyleP').value || 0; draft.group = $('fGroup').value; draft.guide = $('fGuide').value;
+    if (draft.type === 'digital'){
+      draft.icon = $('fIcon').value.trim();
+      if (!draft.supplier) draft.stock = $('fStock').value.split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
+      if (draft.used > draft.stock.length) draft.used = draft.stock.length;
+    }
+    var isNew = p._new; delete draft._new;
+    if (isNew) state.products.push(draft);
+    else { var i = state.products.indexOf(p); state.products[i] = draft; }
+    save(); toast('Product saved'); backToList();
+  });
+  $('delP').addEventListener('click', function(){
+    if (!editing || editing._new) return;
+    if (!confirm('Delete "' + editing.title + '"? This cannot be undone (make a backup first).')) return;
+    state.removed.push(editing.id);
+    state.products = state.products.filter(function(p){ return p.id !== editing.id; });
+    save(); toast('Deleted'); backToList();
+  });
+
+  /* ---------- orders ---------- */
+  function fillItems(){
+    var o = state.products.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.title)+' — '+money(p.price)+'</option>'; });
+    var aa = state.settings.allAccess; if (aa && aa.enabled) o.unshift('<option value="ALL">'+esc(aa.title)+' — '+money(aa.price)+'</option>');
+    $('oItem').innerHTML = o.join('');
+  }
+  $('oItem').addEventListener('change', function(){ $('oAmt').value = priceOf(this.value); });
+  function priceOf(id){ if (id==='ALL') return state.settings.allAccess.price; var p=state.products.filter(function(x){return x.id===id;})[0]; return p?p.price:''; }
+  function renderOrders(){
+    fillItems(); $('oAmt').value = priceOf($('oItem').value);
+    $('otbody').innerHTML = state.orders.length ? state.orders.slice().reverse().map(function(o){
+      return '<tr><td>'+esc(o.date)+'</td><td>'+esc(o.email)+'<div class="help">'+esc(o.coin||'')+'</div></td><td>'+esc(itemName(o.item))+'</td><td>'+money(o.amount)+'</td>' +
+        '<td><select data-st="'+o.id+'"><option value="pending"'+(o.status==='pending'?' selected':'')+'>Waiting</option><option value="paid"'+(o.status==='paid'?' selected':'')+'>Paid</option><option value="delivered"'+(o.status==='delivered'?' selected':'')+'>Delivered</option></select></td>' +
+        '<td><div class="acts"><button class="btn btn-p btn-s" data-del="'+o.id+'">⬇ Deliver</button><button class="btn btn-g btn-s" data-mail="'+o.id+'">✉ Email</button><button class="btn btn-d btn-s" data-rm="'+o.id+'">✕</button></div></td></tr>';
+    }).join('') : '<tr><td colspan="6" class="empty">No orders yet.</td></tr>';
+  }
+  $('of').addEventListener('submit', function(e){
+    e.preventDefault();
+    state.orders.push({id:uid(), date:new Date().toISOString().slice(0,10), email:$('oEmail').value.trim(), item:$('oItem').value, coin:$('oCoin').value.trim(), amount:+$('oAmt').value||0, status:'pending'});
+    save(); $('oEmail').value=''; renderOrders(); toast('Order added');
+  });
+  function order(id){ return state.orders.filter(function(o){return o.id===id;})[0]; }
+  $('otbody').addEventListener('change', function(e){
+    var s = e.target.closest('[data-st]'); if (!s) return; order(s.dataset.st).status = s.value; save();
+  });
+  $('otbody').addEventListener('click', function(e){
+    var d=e.target.closest('[data-del]'), m=e.target.closest('[data-mail]'), r=e.target.closest('[data-rm]');
+    if (d){
+      var o = order(d.dataset.del), list = o.item==='ALL' ? state.products.filter(function(p){ return p.type==='code'; }) : state.products.filter(function(p){return p.id===o.item;});
+      if (!list.length){ toast('That product no longer exists'); return; }
+      var missing = list.filter(function(p){ return p.type==='code' && p.variants.some(function(v){ return !v.full; }); }); if (missing.length && !confirm('Some styles have no FULL code yet. Deliver anyway?')) return;
+      var codes = {};
+      for (var k = 0; k < list.length; k++){ var pp = list[k]; if (pp.type==='digital'){ var c = pp.stock[pp.used || 0]; if (!c){ toast('"' + pp.title + '" is out of stock — add more codes in Products'); return; } codes[pp.id] = c; pp.used = (pp.used || 0) + 1; } }
+      download(safeName(o.email) + '-codes.html', bundle(list, o, codes)); o.status = 'delivered'; save(); renderOrders();
+      toast('Downloaded — now attach this file to an email to the customer');
+    }
+    if (m){
+      var o2 = order(m.dataset.mail);
+      var body = 'Hi,\n\nThank you for your purchase of "' + itemName(o2.item) + '"!\n\nYour code file is attached. Open it in your browser: every code has a live preview and a Copy button.\n\nIf you need any help, just reply to this email.\n\n' + (state.settings.storeName||'');
+      location.href = 'mailto:' + o2.email + '?subject=' + encodeURIComponent('Your ' + (state.settings.storeName||'') + ' order') + '&body=' + encodeURIComponent(body);
+    }
+    if (r && confirm('Remove this order record?')){ state.orders = state.orders.filter(function(x){return x.id!==r.dataset.rm;}); save(); renderOrders(); }
+  });
+  function safeName(s){ return String(s).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'customer'; }
+  function download(name, text, type){
+    var a = document.createElement('a'), u = URL.createObjectURL(new Blob([text], {type:type||'text/html'}));
+    a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 1500);
+  }
+  /* The delivery file the customer receives: one page, live preview + copy button for each code */
+  function bundle(list, o, codes){
+    var n = 0; codes = codes || {};
+    var items = list.map(function(p){
+      if (p.type === 'digital'){
+        var i = n++;
+        return '<section><h2>'+esc(p.title)+'</h2><p class="d">'+esc(p.tagline||'')+'</p><div class="bar"><b>Your code</b><button onclick="cp('+i+',this)">Copy</button></div><pre id="c'+i+'" style="font-size:1.05rem">'+esc(codes[p.id]||'')+'</pre></section>';
+      }
+      return '<section><h2>'+esc(p.title)+'</h2><p class="d">'+esc(p.tagline||'')+'</p>' + p.variants.map(function(v){
+        var i = n++;
+        return '<h3 style="margin:22px 0 4px;font-size:1.05rem">'+esc(v.name)+'</h3><iframe sandbox="allow-scripts" srcdoc="'+esc(v.full)+'" title="Preview"></iframe><div class="bar"><b>Full code</b><button onclick="cp('+i+',this)">Copy code</button></div><pre id="c'+i+'">'+esc(v.full)+'</pre>';
+      }).join('') + '</section>';
+    }).join('');
+    return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your codes — '+esc(state.settings.storeName||'')+'</title><style>' +
+      'body{margin:0;font-family:system-ui,sans-serif;background:#0b0f1a;color:#f8fafc;line-height:1.6}.w{max-width:960px;margin:auto;padding:30px 18px 80px}h1{margin-bottom:4px}.d{color:#94a3b8}' +
+      'section{margin-top:36px;padding:22px;border:1px solid #243049;border-radius:16px;background:#111827}iframe{width:100%;height:380px;border:1px solid #243049;border-radius:12px;background:#0b0f1a;margin:10px 0}' +
+      '.bar{display:flex;justify-content:space-between;align-items:center;margin:8px 0}button{background:#c5f442;color:#0a1000;border:0;padding:9px 18px;border-radius:10px;font-weight:600;cursor:pointer}' +
+      'pre{max-height:360px;overflow:auto;background:#070a12;border:1px solid #243049;border-radius:12px;padding:14px;font-size:.78rem;color:#c7d2fe}</style></head><body><div class="w">' +
+      '<h1><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="34" height="34" style="vertical-align:middle;margin-right:10px"><rect width="32" height="32" rx="9" fill="#c5f442"/><path d="M16 6.2l8.6 4.9-8.6 4.9-8.6-4.9z" fill="#0a1000"/><path d="M7.4 12.9l8.6 4.9v8.6l-8.6-4.9z" fill="#0a1000" fill-opacity=".72"/><path d="M24.6 12.9l-8.6 4.9v8.6l8.6-4.9z" fill="#0a1000" fill-opacity=".42"/></svg>Thank you! 🎉</h1><p class="d">Order for '+esc(o.email)+' · '+esc(o.date)+'. Each code below has a live preview and a copy button. Paste the code into a file named <b>index.html</b> and open it.</p>' + items +
+      '<p class="d" style="margin-top:40px">Licence: you may use these codes in your own and your clients\' projects. You may not resell or share the code files themselves.</p></div>' +
+      '<script>function cp(i,b){var t=document.getElementById("c"+i).textContent;function d(){b.textContent="Copied!";setTimeout(function(){b.textContent="Copy code"},1500)}if(navigator.clipboard){navigator.clipboard.writeText(t).then(d,d)}else{d()}}<\/script></body></html>';
+  }
+
+  /* ---------- settings ---------- */
+  function renderSettings(){
+    var s = state.settings, aa = s.allAccess;
+    $('sWalU').value = (s.autoWallets||{}).usdt_trc20||''; $('sWalB').value = (s.autoWallets||{}).btc||''; $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
+    $('sWal').value = Object.keys(s.wallets||{}).map(function(k){ return k + ' | ' + s.wallets[k]; }).join('\n');
+    $('sDig').checked = s.digitalSection !== false; $('aaOn').checked = !!aa.enabled; $('aaTitle').value = aa.title||''; $('aaPrice').value = aa.price==null?'':aa.price; $('aaDesc').value = aa.description||'';
+  }
+  $('sf').addEventListener('submit', function(e){
+    e.preventDefault();
+    var s = state.settings;
+    s.apiUrl = $('sApi').value.trim().replace(/\/+$/,''); try { localStorage.setItem('geostore_admin_token', $('sTok').value.trim()); } catch(e) {} s.storeName = $('sName').value.trim(); s.email = $('sEmail').value.trim(); s.tagline = $('sTag').value.trim();
+    var w = {}; $('sWal').value.split('\n').forEach(function(line){ var i = line.indexOf('|'); if (i>0){ var k = line.slice(0,i).trim(), v = line.slice(i+1).trim(); if (k && v) w[k]=v; } });
+    s.wallets = w;
+    var wu = $('sWalU').value.trim(), wb = $('sWalB').value.trim();
+    if (wu && !WAL.usdt_trc20.test(wu)){ toast('The USDT address does not look right (TRON addresses start with T and have 34 characters)'); return; }
+    if (wb && !WAL.btc.test(wb)){ toast('The Bitcoin address does not look right'); return; }
+    s.autoWallets = {usdt_trc20: wu, btc: wb};
+    s.digitalSection = $('sDig').checked;
+    s.allAccess = {enabled:$('aaOn').checked, title:$('aaTitle').value.trim()||'All-Access Pass', price:+$('aaPrice').value||0, description:$('aaDesc').value.trim()};
+    save(); toast('Settings saved — now go to Publish');
+  });
+
+  /* ---------- payment server (Cloudflare Worker) ---------- */
+  function token(){ try { return localStorage.getItem('geostore_admin_token') || ''; } catch(e) { return ''; } }
+  function base(){ return String(state.settings.apiUrl || '').replace(/\/+$/,''); }
+  function api(path, opt){
+    if (!base()) return Promise.reject(new Error('Enter your Payment server URL in Settings first.'));
+    if (!/^https:\/\/[^\s]+$/.test(base())) return Promise.reject(new Error('The Payment server URL must start with https:// — check it in Settings.'));
+    opt = opt || {};
+    opt.headers = Object.assign({'content-type':'application/json', authorization:'Bearer ' + token()}, opt.headers || {});
+    return fetch(base() + path, opt).then(function(r){ return r.json().then(function(j){ if (!r.ok) throw new Error(limitHint(j.error || ('Server error ' + r.status))); return j; }); }, function(){ throw new Error(NOREACH); });
+  }
+  // Cloudflare's free plan has daily limits that reset at 00:00 UTC; tell the owner exactly when, in their own time.
+  function limitHint(m){
+    if (!/limit exceeded|too many requests|busy/i.test(m)) return m;
+    var d = new Date(); var next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1));
+    return m + ' → This is Cloudflare\'s FREE daily limit. It resets by itself at ' + next.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' your local time (00:00 UTC). Nothing is broken — try again after that.';
+  }
+  var NOREACH = 'Could not reach the server. Open YOUR-URL/api/health in a new browser tab — if it does not show {"ok":true…}, the URL is wrong or the Worker is not deployed. If it does, re-paste the latest worker.js into Cloudflare and press Deploy.';
+  function srvStatus(t, bad){ var e = $('srvStatus'); e.textContent = t; e.style.color = bad ? 'var(--danger)' : 'var(--accent2)'; }
+  $('srvTest').addEventListener('click', function(){
+    srvStatus('Testing…');
+    if (!base()) return srvStatus('Enter your Payment server URL in Settings first.', true);
+    if (!/^https:\/\/[^\s]+$/.test(base())) return srvStatus('The Payment server URL must start with https:// — check it in Settings.', true);
+    fetch(base() + '/api/health').then(function(r){ return r.json(); }, function(){ throw new Error(NOREACH); }).then(function(h){
+      var miss = []; if (!h.kv) miss.push('storage (KV binding ORDERS)'); if (!h.admin) miss.push('ADMIN_TOKEN');
+      if (miss.length) return srvStatus('Server reachable, but missing: ' + miss.join(', '), true);
+      return api('/api/admin/ping').then(function(){ srvStatus('✅ Everything is connected and your admin token works.' + (h.wallet ? '' : ' (No wallet yet — add it in Settings, then press Sync.)')); });
+    }).catch(function(e){ srvStatus('❌ ' + e.message, true); });
+  });
+  // Sync = upload each CHANGED product on its own (small requests), then one small index.
+  // This is gentle on Cloudflare's free plan and fast: unchanged products are skipped.
+  function hash(str){ var h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (var i = 0, c; i < str.length; i++){ c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); } h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909); h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909); return (h2>>>0).toString(16) + (h1>>>0).toString(16); }
+  function srvProduct(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, guide:p.guide||'', type:p.type, published:p.published!==false,
+    variants:p.type==='code' ? p.variants.map(function(v){ return {name:v.name, full:v.full}; }) : [], stock:p.type==='digital' ? p.stock : []}; }
+  var syncing = false;
+  function runSync(force){
+    if (syncing) return; syncing = true;
+    if (force || state.syncUrl !== base()) state.sync = {};      // new server (or forced): upload everything
+    state.syncUrl = base(); state.sync = state.sync || {};
+    var todo = state.products.filter(function(p){ return state.sync[p.id] !== hash(JSON.stringify(srvProduct(p))); });
+    var done = 0, total = todo.length;
+    function finish(msg, bad){ syncing = false; srvStatus(msg, bad); }
+    function next(){
+      if (!todo.length) return sendIndex();
+      var p = todo.shift(); srvStatus('Uploading ' + (done + 1) + ' of ' + total + ': ' + p.title + '…');
+      var body = srvProduct(p), hh = hash(JSON.stringify(body));
+      api('/api/admin/product', {method:'POST', body: JSON.stringify(body)}).then(function(){ state.sync[p.id] = hh; save(); done++; next(); }).catch(function(e){ finish('❌ Stopped at "' + p.title + '": ' + e.message + (done ? ' (' + done + ' product(s) were uploaded; press Sync again to continue.)' : ''), true); });
+    }
+    function sendIndex(){
+      var aa = state.settings.allAccess || {}, removed = (state.removed || []).filter(function(id){ return state.sync['gone:' + id] !== 1; });
+      srvStatus('Finishing…');
+      api('/api/admin/index', {method:'POST', body: JSON.stringify({
+        storeName: state.settings.storeName, wallets: state.settings.autoWallets || {}, remove: removed,
+        allAccess: {enabled: !!aa.enabled, title: aa.title, price: aa.price},
+        products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, type:p.type, published:p.published!==false, supplier:p.supplier ? {cat:p.supplier.cat, card:p.supplier.card} : undefined, variants:p.type==='code' ? p.variants.map(function(v){ return v.name; }) : [], stockN:p.type==='digital' ? p.stock.length : 0}; })
+      })}).then(function(r){ removed.forEach(function(id){ state.sync['gone:' + id] = 1; }); save(); finish('✅ Synced: ' + total + ' product(s) uploaded, ' + (r.products - total) + ' unchanged. Everything is up to date.'); })
+        .catch(function(e){ finish('❌ ' + e.message, true); });
+    }
+    srvStatus('Starting…'); next();
+  }
+  $('srvSync').addEventListener('click', function(){ runSync(false); });
+  $('srvSyncAll').addEventListener('click', function(){ if (confirm('Re-upload every product? This uses more of Cloudflare\'s free daily writes (about 1 per product).')) runSync(true); });
+  function loadServerOrders(){
+    $('srvMsg').textContent = 'Loading…';
+    api('/api/admin/orders').then(function(r){
+      $('srvMsg').textContent = r.orders.length ? r.orders.length + ' order(s)' : 'No automatic orders yet.';
+      $('srvBody').innerHTML = r.orders.map(function(o){
+        var link = base() + '/api/delivery/' + o.id + '?k=' + o.key;
+        return '<tr><td>' + esc(new Date(o.createdAt).toISOString().slice(0,16).replace('T',' ')) + '</td><td>' + esc(o.email) + '</td><td>' + esc(o.title) + '</td><td>' + (o.usd ? '$' + esc(o.usd) + '<div class="help">' : '<div class="help">') + esc(o.amount) + ' ' + esc(o.coin || 'USDT') + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span></td><td><div class="acts">' +
+          (o.fulfil ? '<div class="help" style="width:100%">' + (o.fulfil==='ok' ? '🎁 supplier code delivered · cost $' + esc(o.cost) + ' · profit $' + esc(Math.round((o.usd - o.cost)*100)/100) : o.fulfil==='wait' ? '⏳ buying from supplier… ' + esc(o.fulfilErr) : '⚠ NEEDS YOU: ' + esc(o.fulfilErr || 'supplier problem')) + '</div>' + (o.fulfil!=='ok' && o.status==='paid' ? '<button class="btn btn-p btn-s" data-retry="' + esc(o.id) + '">Retry supplier purchase</button>' : '') : '') +
+          (o.status==='paid' ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(link) + '">Open codes</a>' : '') +
+          (o.status!=='paid' ? '<button class="btn btn-g btn-s" data-mp="' + esc(o.id) + '">Mark paid</button>' : '') + '</div></td></tr>';
+      }).join('');
+    }).catch(function(e){ $('srvMsg').textContent = '❌ ' + e.message; $('srvBody').innerHTML = ''; });
+  }
+  $('srvRefresh').addEventListener('click', loadServerOrders);
+  /* ---------- customers (accounts stored on your server) ---------- */
+  var custs = [], custNext = null, custTotal = 0;
+  function dstr(ms){ return ms ? new Date(ms).toISOString().slice(0,10) : ''; }
+  function loadCustomers(more){
+    $('cMsg').textContent = 'Loading…';
+    api('/api/admin/customers' + (more && custNext ? '?offset=' + custNext : '')).then(function(r){
+      custs = more ? custs.concat(r.customers) : r.customers; custNext = r.next; custTotal = r.total; renderCustomers();
+    }).catch(function(e){ $('cMsg').textContent = '❌ ' + e.message; });
+  }
+  function renderCustomers(){
+    var q = $('cSearch').value.trim().toLowerCase();
+    var list = custs.filter(function(c){ return !q || (c.name + ' ' + c.email + ' ' + c.phone + ' ' + c.country).toLowerCase().indexOf(q) > -1; });
+    $('cTotal').textContent = custTotal; $('cOrd').textContent = custs.filter(function(c){ return c.orders > 0; }).length; $('cDis').textContent = custs.filter(function(c){ return c.disabled; }).length;
+    $('cBody').innerHTML = list.map(function(c){
+      return '<tr><td>'+esc(dstr(c.createdAt))+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+esc(c.phone)+'</td><td>'+esc(c.country)+'</td><td>'+c.orders+'</td><td><span class="pill '+(c.disabled?'pending':'paid')+'">'+(c.disabled?'Disabled':'Active')+'</span></td><td><button class="btn btn-g btn-s" data-cv="'+esc(c.email)+'">Open</button></td></tr>';
+    }).join('') || '<tr><td colspan="8" class="empty">No customers found.</td></tr>';
+    $('cMsg').textContent = custs.length + ' of ' + custTotal + ' customer(s) loaded' + (q ? ' · ' + list.length + ' match your search' : '');
+    $('cMore').hidden = custNext == null;
+  }
+  $('cRefresh').addEventListener('click', function(){ $('cDetail').hidden = true; loadCustomers(false); });
+  $('cMore').addEventListener('click', function(){ loadCustomers(true); });
+  $('cSearch').addEventListener('input', renderCustomers);
+  $('cCsv').addEventListener('click', function(){
+    if (!custs.length){ toast('Load your customers first (Refresh)'); return; }
+    function cell(v){ v = String(v == null ? '' : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }
+    var rows = [['Joined','Name','Email','Phone','Country','Orders','Status']].concat(custs.map(function(c){ return [dstr(c.createdAt), c.name, c.email, c.phone, c.country, c.orders, c.disabled ? 'Disabled' : 'Active']; }));
+    download('customers-' + new Date().toISOString().slice(0,10) + '.csv', '﻿' + rows.map(function(r){ return r.map(cell).join(','); }).join('\r\n'), 'text/csv');
+  });
+  function openCustomer(email){
+    var box = $('cDetail'); box.hidden = false; box.innerHTML = '<p class="help">Loading…</p>'; box.scrollIntoView({behavior:'smooth'});
+    api('/api/admin/customer?email=' + encodeURIComponent(email)).then(function(r){
+      var p = r.profile;
+      box.innerHTML = '<div class="bar"><h2 style="margin:0">' + esc(p.name || p.email) + ' <span class="pill ' + (p.disabled ? 'pending' : 'paid') + '">' + (p.disabled ? 'Disabled' : 'Active') + '</span></h2><button class="btn btn-g btn-s" id="cdClose">Close</button></div>' +
+        '<p class="help">' + esc(p.email) + ' · member since ' + esc(dstr(p.createdAt)) + ' · ' + r.orders.length + ' order(s) · total paid <b>$' + esc(r.spent) + '</b></p>' +
+        '<form class="form" id="cdForm" style="margin:14px 0"><div><label>Name</label><input id="cdName" value="' + esc(p.name) + '"></div><div><label>Phone</label><input id="cdPhone" value="' + esc(p.phone) + '"></div><div><label>Country</label><input id="cdCountry" value="' + esc(p.country) + '"></div><div><label>Private note (only you can see it)</label><input id="cdNote" value="' + esc(p.note) + '"></div><div class="full" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p btn-s" type="submit">Save details</button><button class="btn btn-g btn-s" type="button" id="cdToggle">' + (p.disabled ? 'Enable account' : 'Disable account') + '</button><button class="btn btn-g btn-s" type="button" id="cdPw">Set a new password…</button><button class="btn btn-d btn-s" type="button" id="cdDel">Delete account</button></div></form>' +
+        '<h2 style="font-size:1rem">Orders</h2><div class="tw"><table><thead><tr><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>' +
+        (r.orders.map(function(o){ return '<tr><td>' + esc(dstr(o.createdAt)) + '</td><td>' + esc(o.title) + '</td><td>$' + esc(o.usd) + '<div class="help">' + esc(o.amount) + ' ' + esc(o.coinName.split(' ')[0]) + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span></td><td>' + (o.deliveryUrl ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(o.deliveryUrl) + '">Open codes</a>' : '') + '</td></tr>'; }).join('') || '<tr><td colspan="5" class="empty">No orders yet.</td></tr>') + '</tbody></table></div>';
+      function act(body, ok, reload){ body.email = email; return api('/api/admin/customer', {method:'POST', body: JSON.stringify(body)}).then(function(){ toast(ok); reload(); }).catch(function(e){ toast(e.message); }); }
+      $('cdClose').onclick = function(){ box.hidden = true; };
+      $('cdForm').onsubmit = function(e){ e.preventDefault(); act({action:'profile', name:$('cdName').value, phone:$('cdPhone').value, country:$('cdCountry').value, note:$('cdNote').value}, 'Saved', function(){ loadCustomers(false); openCustomer(email); }); };
+      $('cdToggle').onclick = function(){ act({action: p.disabled ? 'enable' : 'disable'}, p.disabled ? 'Account enabled' : 'Account disabled', function(){ loadCustomers(false); openCustomer(email); }); };
+      $('cdPw').onclick = function(){ var pw = prompt('New password for ' + email + ' (at least 8 characters).\nTell the customer; they can change it later in their profile:'); if (pw) act({action:'setpassword', password:pw}, 'Password changed — the old one no longer works', function(){}); };
+      $('cdDel').onclick = function(){ if (confirm('Delete the account of ' + email + '? Their order records stay, but they can no longer sign in. This cannot be undone.')) act({action:'delete'}, 'Account deleted', function(){ box.hidden = true; loadCustomers(false); }); };
+    }).catch(function(e){ box.innerHTML = '<p class="help">❌ ' + esc(e.message) + '</p>'; });
+  }
+  $('cBody').addEventListener('click', function(e){ var b = e.target.closest('[data-cv]'); if (b) openCustomer(b.dataset.cv); });
+  $('srvBody').addEventListener('click', function(e){
+    var rb = e.target.closest('[data-retry]');
+    if (rb){ rb.disabled = true; api('/api/admin/retry', {method:'POST', body: JSON.stringify({id: rb.dataset.retry})}).then(function(r){ toast(r.fulfil === 'ok' ? 'Delivered ✅' : 'Still not delivered: ' + (r.error || 'supplier problem')); loadServerOrders(); }).catch(function(er){ toast(er.message); rb.disabled = false; }); return; }
+    var b = e.target.closest('[data-mp]'); if (!b) return;
+    if (!confirm('Mark this order as paid? Only do this after you saw the money in your wallet.')) return;
+    api('/api/admin/markpaid', {method:'POST', body: JSON.stringify({id:b.dataset.mp})}).then(function(){ toast('Marked as paid'); loadServerOrders(); }).catch(function(e){ toast(e.message); });
+  });
+
+  /* ---------- supplier (FazerCards) ---------- */
+  var supCats = [], supOpen = null;
+  function supMargin(){ var m = +$('supMargin').value; return m > 0 ? m : 15; }
+  function suggest(cost){ return Math.ceil(cost * (1 + supMargin()/100) * 100) / 100; }
+  function supProducts(){ return state.products.filter(function(p){ return p.supplier; }); }
+  function renderCats(){
+    var q = $('supSearch').value.trim().toLowerCase();
+    var list = supCats.filter(function(c){ return !q || (c.name||'').toLowerCase().indexOf(q) > -1; });
+    $('supCatMsg').textContent = supCats.length ? (list.length + ' of ' + supCats.length + ' categories' + (list.length > 80 ? ' (showing the first 80 — type to narrow down)' : '')) : $('supCatMsg').textContent;
+    $('supCats').innerHTML = list.slice(0, 80).map(function(c){ return '<tr><td><b>' + esc(c.name) + '</b>' + (c.note ? '<div class="help">' + esc(c.note) + '</div>' : '') + '</td><td style="text-align:right"><button class="btn btn-g btn-s" data-sc="' + esc(c.category_id) + '">View offers</button></td></tr>'; }).join('');
+  }
+  $('supCheck').addEventListener('click', function(){
+    $('supStatus').textContent = 'Checking…';
+    api('/api/admin/supplier/status').then(function(r){ $('supStatus').innerHTML = '✅ Connected' + (r.email ? ' as <b>' + esc(r.email) + '</b>' : '') + (r.plan ? ' · plan <b>' + esc(r.plan) + '</b>' : '') + ' · balance <b>$' + esc(r.balance) + '</b>'; })
+      .catch(function(e){ $('supStatus').textContent = '❌ ' + e.message; });
+  });
+  $('supLoad').addEventListener('click', function(){
+    supCats = []; $('supCatMsg').textContent = 'Loading…';
+    (function page(cur, n){
+      api('/api/admin/supplier/categories' + (cur ? '?cursor=' + encodeURIComponent(cur) : '')).then(function(r){
+        supCats = supCats.concat(r.items || []);
+        if (r.meta && r.meta.has_more && r.meta.next_cursor && n < 12) return page(r.meta.next_cursor, n + 1);
+        $('supCatMsg').textContent = supCats.length + ' categories loaded.'; renderCats();
+      }).catch(function(e){ $('supCatMsg').textContent = '❌ ' + e.message; });
+    })(null, 0);
+  });
+  $('supSearch').addEventListener('input', renderCats);
+  $('supCats').addEventListener('click', function(e){
+    var b = e.target.closest('[data-sc]'); if (!b) return;
+    var box = $('supOffers'); box.hidden = false; box.innerHTML = '<p class="help">Loading offers…</p>';
+    api('/api/admin/supplier/offers?category_id=' + encodeURIComponent(b.dataset.sc)).then(function(r){
+      supOpen = {cat: b.dataset.sc, name: r.name || b.dataset.sc, offers: r.offers || []};
+      renderOffers();
+    }).catch(function(er){ box.innerHTML = '<p class="help">❌ ' + esc(er.message) + '</p>'; });
+    box.scrollIntoView({behavior:'smooth'});
+  });
+  function renderOffers(){
+    if (!supOpen) return;
+    var rows = supOpen.offers.map(function(o, i){
+      var cost = +o.price_usd, have = state.products.some(function(p){ return p.supplier && p.supplier.cat === supOpen.cat && String(p.supplier.card) === String(o.card_id); });
+      var bad = +o.min_order_quantity > 1;
+      return '<tr><td>' + esc(o.name) + '</td><td>$' + esc(cost) + '</td><td>' + (o.stock == null ? '–' : esc(o.stock)) + '</td>' +
+        '<td>' + (have ? '✓ already in my shop' : bad ? '<span class="help">needs quantity ≥ ' + esc(o.min_order_quantity) + ' — not supported</span>' : '$ <input type="number" step="0.01" min="0.01" style="width:90px" data-op="' + i + '" value="' + suggest(cost) + '">') + '</td>' +
+        '<td>' + (have || bad ? '' : '<button class="btn btn-p btn-s" data-add="' + i + '">Add to my shop</button>') + '</td></tr>';
+    }).join('');
+    $('supOffers').innerHTML = '<div class="bar"><h2 style="margin:0">' + esc(supOpen.name) + '</h2><button class="btn btn-g btn-s" id="supClose">Close</button></div><p class="help">Prices below are suggestions using your margin (' + supMargin() + '%). Change any price before adding.</p>' +
+      '<div class="tw"><table><thead><tr><th>Offer</th><th>Your cost</th><th>In stock</th><th>Your price</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+  $('supOffers').addEventListener('click', function(e){
+    if (e.target.id === 'supClose'){ $('supOffers').hidden = true; return; }
+    var b = e.target.closest('[data-add]'); if (!b || !supOpen) return;
+    var o = supOpen.offers[+b.dataset.add], price = +($('supOffers').querySelector('[data-op="' + b.dataset.add + '"]').value);
+    if (!(price > +o.price_usd)){ toast('Your price must be higher than your cost ($' + o.price_usd + ')'); return; }
+    state.products.push({id: uid(), title: supOpen.name + ' — ' + o.name, category: 'Gift cards', price: Math.round(price*100)/100, tagline: 'Instant delivery by code', type: 'digital', icon: '🎁', variants: [{name:'Standard', sample:'', full:''}], stock: [], used: 0, published: true,
+      supplier: {kind:'giftcard', cat: supOpen.cat, card: String(o.card_id), cost: +o.price_usd}});
+    save(); toast('Added — press Sync to server on the Publish tab'); renderOffers(); renderSupMine();
+  });
+  function renderSupMine(){
+    $('supMargin').value = state.settings.supMargin || 15;
+    var list = supProducts();
+    $('supMine').innerHTML = list.length ? list.map(function(p){
+      var c = +p.supplier.cost, pr = +p.price, prof = pr - c, bad = !(prof > 0);
+      return '<tr><td><b>' + esc(p.title) + '</b></td><td>$' + esc(Math.round(c*100)/100) + '</td><td>' + money(pr) + '</td><td>' + (bad ? '<span class="pill pending">loss / none</span>' : '$' + (Math.round(prof*100)/100) + ' <span class="help">(' + Math.round(prof / c * 100) + '%)</span>') + '</td><td>' + (p.supplier.stock == null ? '–' : esc(p.supplier.stock)) + '</td><td><button class="btn btn-g btn-s" data-se="' + esc(p.id) + '">Edit</button></td></tr>';
+    }).join('') : '<tr><td colspan="6" class="empty">Nothing yet — browse the catalog above and add products.</td></tr>';
+  }
+  $('supMargin').addEventListener('change', function(){ state.settings.supMargin = supMargin(); save(); renderOffers(); });
+  $('supMine').addEventListener('click', function(e){ var b = e.target.closest('[data-se]'); if (!b) return; show('products'); openEditor(state.products.filter(function(p){ return p.id === b.dataset.se; })[0]); });
+  $('supRefresh').addEventListener('click', function(){
+    var list = supProducts(); if (!list.length){ toast('No supplier products yet'); return; }
+    $('supMineMsg').textContent = 'Checking current costs…'; var chunks = [], i = 0, n = 0;
+    for (; i < list.length; i += 50) chunks.push(list.slice(i, i + 50));
+    (function next(){
+      if (!chunks.length){ save(); renderSupMine(); $('supMineMsg').textContent = '✅ Costs updated for ' + n + ' product(s).' + (list.some(function(p){ return !(p.price > p.supplier.cost); }) ? ' ⚠ Some items now cost more than you charge — reprice them.' : ''); return; }
+      var ch = chunks.shift();
+      api('/api/admin/supplier/costs', {method:'POST', body: JSON.stringify({items: ch.map(function(p){ return {cat:p.supplier.cat, card:p.supplier.card}; })})}).then(function(r){
+        ch.forEach(function(p){ var c = r.costs[p.supplier.cat + '|' + p.supplier.card]; if (c){ p.supplier.cost = c.cost; p.supplier.stock = c.stock; n++; } else p.supplier.stock = 0; });
+        next();
+      }).catch(function(e){ $('supMineMsg').textContent = '❌ ' + e.message; });
+    })();
+  });
+  $('supApply').addEventListener('click', function(){
+    var list = supProducts(); if (!list.length) return;
+    if (!confirm('Set every supplier product price to its latest cost + ' + supMargin() + '%? (Press "Refresh costs" first so costs are current.)')) return;
+    list.forEach(function(p){ p.price = suggest(+p.supplier.cost); }); save(); renderSupMine(); toast('Prices updated — press Sync to server');
+  });
+
+  /* ---------- publish / backup ---------- */
+  $('dlData').addEventListener('click', function(){
+    var pub = {settings: state.settings, products: state.products.map(function(p){
+      var q = {id:p.id, title:p.title, category:p.category, price:p.price, stylePrice:p.stylePrice||0, group:p.group||'', guide:p.guide||'', tagline:p.tagline, type:p.type, published:p.published!==false};
+      if (p.type === 'digital') q.icon = p.icon || '';
+      else q.variants = p.variants.map(function(v){ return {name:v.name, sample:v.sample}; });
+      return q;
+    })};
+    download('data.js', '/* Geostore public data — generated by the admin dashboard. Upload this file with your site. */\nwindow.GEOSTORE_DATA = ' + JSON.stringify(pub, null, 1) + ';\n', 'text/javascript');
+    toast('data.js downloaded — put it in your site folder');
+  });
+  $('dlBackup').addEventListener('click', function(){ download('geostore-backup-' + new Date().toISOString().slice(0,10) + '.json', JSON.stringify(state), 'application/json'); });
+  $('restore').addEventListener('change', function(){
+    var f = this.files[0]; if (!f) return; var r = new FileReader();
+    r.onload = function(){ try { var d = JSON.parse(r.result); if (!d.products || !d.settings) throw 0; state = migrate(d); state.sync = {}; save(); toast('Backup restored'); show('dash'); } catch(e){ toast('That file is not a valid backup'); } };
+    r.readAsText(f); this.value = '';
+  });
+  $('resetAll').addEventListener('click', function(){
+    if (!confirm('Reset everything (products, settings, orders) back to the original files? Make a backup first.')) return;
+    state = seed(); save(); toast('Reset done'); show('dash');
+  });
+
+  show('dash');
+})();
+</script>
+</body>
+</html>
