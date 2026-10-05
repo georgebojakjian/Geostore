@@ -108,12 +108,13 @@ function itemsOf(o) {
   if (Array.isArray(o.items) && o.items.length) return o.items;
   return [{ id: o.item, title: o.title, mode: 'all', type: o.item === 'ALL' ? 'all' : 'code' }];
 }
-const orderTitle = o => itemsOf(o).map(i => i.title).join(', ');
+const qtyOf = i => Math.max(1, Math.min(10, Math.floor(Number(i && i.qty) || 1)));
+const orderTitle = o => itemsOf(o).map(i => i.title + (qtyOf(i) > 1 ? ' ×' + qtyOf(i) : '')).join(', ');
 function orderCoin(o) { return o.coin || 'usdt_trc20'; }
 function publicOrder(env, o, apiBase) {
   const coin = orderCoin(o), c = COINS[coin];
   return {
-    id: o.id, status: o.status, title: orderTitle(o), items: itemsOf(o).map(i => ({ title: i.title, price: i.price, mode: i.mode, styles: i.styles })),
+    id: o.id, status: o.status, title: orderTitle(o), items: itemsOf(o).map(i => ({ title: i.title, price: i.price, qty: qtyOf(i), mode: i.mode, styles: i.styles })), fromBinance: !!o.fromBinance,
     usd: o.usd, coin, coinName: c.name, amount: fmtAmount(coin, o.amount), wallet: o.wallet || env.WALLET || '',
     network: c.network, kind: c.kind || (coin === 'btc' ? 'btc' : 'tron'), claimed: !!o.claimed, expiresAt: o.expiresAt, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null,
     fulfil: fulfilState(o), deliveryUrl: o.status === 'paid' ? apiBase + '/api/delivery/' + o.id + '?k=' + o.key : null
@@ -134,7 +135,7 @@ function priceCart(cat, raw, gp) {
     const p = (cat.products && cat.products[id]) || gp[id];
     if (!p || p.published === false) return { error: 'One of the items is not available any more' };
     const g = byProd[id] || (byProd[id] = { p, all: false, styles: new Set() });
-    if (p.type === 'digital') { g.all = true; continue; }
+    if (p.type === 'digital') { g.all = true; g.q = Math.min(10, (g.q || 0) + Math.max(1, Math.min(10, Math.floor(Number(it.q) || 1)))); continue; }
     if (it.v === undefined || it.v === null || it.v === 'all') g.all = true;
     else {
       const n = Number(it.v);
@@ -146,7 +147,7 @@ function priceCart(cat, raw, gp) {
   if (hasAll) lines.push({ id: 'ALL', title: cat.allAccess.title || 'All-Access Pass', type: 'all', mode: 'all', price: Number(cat.allAccess.price) });
   for (const id of Object.keys(byProd)) {
     const g = byProd[id], p = g.p;
-    if (p.type === 'digital') { lines.push({ id, title: p.title, type: 'digital', mode: 'all', price: Number(p.price), supplier: p.supplier || undefined, gift: p.gift || undefined }); continue; }
+    if (p.type === 'digital') { const q = g.q || 1; lines.push({ id, title: p.title, type: 'digital', mode: 'all', unit: Number(p.price), qty: q, price: round2(Number(p.price) * q), supplier: p.supplier || undefined, gift: p.gift || undefined }); continue; }
     if (hasAll) continue;                                  // already included in All-Access
     const n = (p.variants || []).length, sp = stylePriceOf(p);
     if (n < 2 || g.all || g.styles.size >= n || g.styles.size * sp >= p.price) lines.push({ id, title: p.title, type: 'code', mode: 'all', price: Number(p.price) });
@@ -290,12 +291,13 @@ async function checkSupplierLines(env, cat, lines) {
     const p = cat.products[l.id] || (l.gift ? { title: l.title, supplier: l.supplier } : null); if (!p || !p.supplier) continue;
     let offer;
     try { offer = fzFind(await fzOffers(env, p.supplier.cat), p.supplier.card); } catch (e) { return 'This item is temporarily unavailable. Please try again later.'; }
-    if (!offer || (offer.stock != null && Number(offer.stock) < 1)) return '"' + p.title + '" is out of stock right now.';
+    const qty = qtyOf(l);
+    if (!offer || (offer.stock != null && Number(offer.stock) < qty)) return offer && Number(offer.stock) > 0 ? 'Only ' + offer.stock + ' of "' + p.title + '" left right now.' : '"' + p.title + '" is out of stock right now.';
     const cost = Number(offer.price_usd);
-    if (!(cost > 0) || Number(offer.min_order_quantity) > 1) return 'This item is temporarily unavailable. Please try again later.';
-    if (cost >= l.price) return 'This item is being repriced and cannot be ordered right now. Please try again later.';
+    if (!(cost > 0) || Number(offer.min_order_quantity || 1) > qty || (Number(offer.max_order_quantity) > 0 && qty > Number(offer.max_order_quantity))) return 'This quantity is not available for "' + p.title + '". Please choose fewer.';
+    if (cost >= (l.unit || l.price)) return 'This item is being repriced and cannot be ordered right now. Please try again later.';
     l.supplier = { cat: p.supplier.cat, card: p.supplier.card, cost };
-    need += cost;
+    need += cost * qty;
   }
   if (need > 0) {
     let bal = 0;
@@ -314,7 +316,7 @@ function giftPrice(rule, cost) {
 async function giftOffers(env, cat, catId) {
   const sup = cat && cat.sup; if (!sup || !sup.cats || !sup.cats[catId]) return null;
   const j = await fzOffers(env, catId);
-  return { name: sup.cats[catId].n || j.name || catId, offers: (j.offers || []).filter(o => Number(o.min_order_quantity || 1) <= 1 && Number(o.price_usd) > 0).map(o => ({ card: String(o.card_id), name: String(o.name), cost: Number(o.price_usd), stock: o.stock == null ? null : Number(o.stock) })) };
+  return { name: sup.cats[catId].n || j.name || catId, offers: (j.offers || []).filter(o => Number(o.min_order_quantity || 1) <= 1 && Number(o.price_usd) > 0).map(o => ({ card: String(o.card_id), name: String(o.name), cost: Number(o.price_usd), stock: o.stock == null ? null : Number(o.stock), max: Math.min(10, Number(o.max_order_quantity) > 0 ? Number(o.max_order_quantity) : 10) })) };
 }
 const giftHits = new Map();
 async function giftRoute(req, env, url) {
@@ -324,7 +326,7 @@ async function giftRoute(req, env, url) {
   const cat = await getCatalog(env);
   let g; try { g = await giftOffers(env, cat, catId); } catch (e) { return fail(env, 'This item is temporarily unavailable. Please try again later.', 503); }
   if (!g) return fail(env, 'Not found', 404);
-  return json(env, { ok: true, name: g.name, offers: g.offers.map(o => ({ card: o.card, name: o.name, price: giftPrice(cat.sup.rule, o.cost), inStock: o.stock == null || o.stock > 0 })) });
+  return json(env, { ok: true, name: g.name, offers: g.offers.map(o => ({ card: o.card, name: o.name, price: giftPrice(cat.sup.rule, o.cost), inStock: o.stock == null || o.stock > 0, max: Math.max(1, Math.min(o.max, o.stock == null ? 10 : o.stock)) })) });
 }
 // Turn "g:<category>:<card>" cart ids into priced products (the server decides every price)
 async function resolveGift(env, cat, raw) {
@@ -335,7 +337,8 @@ async function resolveGift(env, cat, raw) {
     let g; try { g = await giftOffers(env, cat, m[1]); } catch (e) { return { error: 'This item is temporarily unavailable. Please try again later.' }; }
     const of = g && g.offers.find(o => o.card === m[2]);
     if (!of) return { error: 'One of the items is not available any more' };
-    if (of.stock != null && of.stock < 1) return { error: '"' + g.name + ' ' + of.name + '" is out of stock right now.' };
+    const wantQ = Math.max(1, Math.min(10, Math.floor(Number((raw.find(x => x && x.id === id) || {}).q) || 1)));
+    if (of.stock != null && of.stock < wantQ) return { error: of.stock > 0 ? 'Only ' + of.stock + ' of "' + g.name + ' ' + of.name + '" left right now.' : '"' + g.name + ' ' + of.name + '" is out of stock right now.' };
     gp[id] = { title: g.name + ' — ' + of.name, price: giftPrice(cat.sup.rule, of.cost), type: 'digital', gift: true, supplier: { cat: m[1], card: m[2] } };
   }
   return { gp };
@@ -350,6 +353,11 @@ function fzCodeText(c) {
     rows.push(/^(code|key|voucher)$/i.test(k) ? String(v) : k.replace(/[_-]+/g, ' ').replace(/^./, x => x.toUpperCase()) + ': ' + v);
   }
   return rows.join('\n');
+}
+function fzCards(order) {
+  const arr = order && (order.cards || order.codes || order.keys || order.vouchers);
+  if (!arr) return [];
+  return (Array.isArray(arr) ? arr : [arr]).map(fzCodeText).filter(Boolean);
 }
 function fzCodes(order) {
   const arr = order && (order.cards || order.codes || order.keys || order.vouchers);
@@ -372,15 +380,17 @@ async function fulfil(env, o, force) {
     try {
       let order;
       if (!f.sid) {
-        const j = await fz(env, 'POST', '/giftcards/order', { category_id: l.supplier.cat, card_id: l.supplier.card, quantity: 1 }, 'gs-' + o.id + '-' + i);
+        const j = await fz(env, 'POST', '/giftcards/order', { category_id: l.supplier.cat, card_id: l.supplier.card, quantity: qtyOf(l) }, 'gs-' + o.id + '-' + i);
         order = j.order; f.sid = order && (order.id || order.order_id || order.public_id) || null;
       } else order = (await fz(env, 'GET', '/orders/' + encodeURIComponent(f.sid))).order;
-      const codes = fzCodes(order), st = String((order && order.status) || '').toLowerCase();
-      if (codes) { o.codes[l.id] = codes; f.state = 'done'; f.error = ''; f.doneAt = Date.now(); }
+      const list = fzCards(order), codes = list.join('\n\n'), st = String((order && order.status) || '').toLowerCase();
+      if (list.length >= qtyOf(l)) { o.codeList = o.codeList || {}; o.codeList[l.id] = list; o.codes[l.id] = codes; f.state = 'done'; f.error = ''; f.doneAt = Date.now(); }
+      else if (list.length && /complet|done|deliver|success/.test(st)) { f.state = 'stuck'; f.error = 'FazerCards returned ' + list.length + ' of ' + qtyOf(l) + ' codes'; }
       else if (/refund|cancel|fail|reject|error/.test(st)) { f.state = 'stuck'; f.error = 'FazerCards says: ' + st; }
       else { f.state = 'wait'; f.error = ''; }
     } catch (e) { f.state = 'wait'; f.error = String((e && e.message) || e).slice(0, 200); }
     if (f.state === 'wait' && f.tries >= 30) f.state = 'stuck';
+    if (f.state === 'stuck' && !f.alerted) { f.alerted = true; notify(env, '⚠️ <b>Needs you</b> — supplier delivery stuck for order #' + o.id.slice(0, 8).toUpperCase() + '\n' + esc(f.error || '')); }
   }
   return changed;
 }
@@ -397,6 +407,71 @@ function fulfilState(o) {
   return fs.every(f => f.state === 'done') ? 'ok' : fs.some(f => f.state === 'stuck') ? 'stuck' : 'wait';
 }
 
+/* ---------------- Telegram: alerts to you + live chat bridge ----------------
+   Needs the Cloudflare secret TELEGRAM_BOT_TOKEN (from @BotFather). You connect it once from the dashboard (Settings → Telegram).
+   Customer chat messages arrive in your Telegram; you answer by using Telegram's "Reply" on the message. */
+const tgMem = { owner: null, t: 0 };
+const bg = (env, p) => { const q = Promise.resolve(p).catch(() => {}); if (env.__ctx && env.__ctx.waitUntil) env.__ctx.waitUntil(q); };
+async function tg(env, method, body) {
+  const r = await fetch('https://api.telegram.org/bot' + env.TELEGRAM_BOT_TOKEN + '/' + method, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}), signal: AbortSignal.timeout(8000) });
+  const j = await r.json().catch(() => null);
+  if (!j || !j.ok) throw new Error((j && j.description) || 'Telegram error');
+  return j.result;
+}
+async function tgOwner(env) {
+  if (env.TELEGRAM_CHAT_ID) return String(env.TELEGRAM_CHAT_ID);
+  if (tgMem.owner && Date.now() - tgMem.t < 60000) return tgMem.owner;
+  const v = await env.ORDERS.get('tg:owner'); tgMem.owner = v || ''; tgMem.t = Date.now(); return v || '';
+}
+function notify(env, text) {
+  if (!env.TELEGRAM_BOT_TOKEN) return;
+  bg(env, (async () => { const chat = await tgOwner(env); if (chat) await tg(env, 'sendMessage', { chat_id: chat, text, parse_mode: 'HTML', disable_web_page_preview: true }); })());
+}
+const tgSecret = async env => (await sign(env, 'tg-webhook')).replace(/[^A-Za-z0-9]/g, '').slice(0, 32);
+const chatHits = new Map(), pollHits = new Map();
+const SID = /^[a-f0-9]{16,32}$/;
+async function chatSend(req, env) {
+  if (!env.TELEGRAM_BOT_TOKEN || !(await tgOwner(env))) return fail(env, 'Live chat is offline right now. Please use WhatsApp or email.', 503);
+  const ip = req.headers.get('cf-connecting-ip') || 'x', b = await req.json().catch(() => ({}));
+  const sid = String(b.sid || ''), text = String(b.text || '').trim().slice(0, 600);
+  if (!SID.test(sid) || !text) return fail(env, 'Bad message');
+  if (tooMany(chatHits, ip, 20, 10 * 60000) || tooMany(chatHits, 's|' + sid, 20, 10 * 60000)) return fail(env, 'You are sending messages too fast. Please wait a moment.', 429);
+  const name = String(b.name || '').trim().slice(0, 40) || 'Visitor', order = /^[A-Za-z0-9-]{4,20}$/.test(String(b.order || '')) ? String(b.order) : '';
+  await tg(env, 'sendMessage', { chat_id: await tgOwner(env), parse_mode: 'HTML', disable_web_page_preview: true,
+    text: '💬 <b>' + esc(name) + '</b>' + (order ? ' · order #' + esc(order) : '') + '\n' + esc(text) + '\n\n<i>↩ Reply to this message to answer</i>\n#sid:' + sid });
+  return json(env, { ok: true });
+}
+async function chatPoll(req, env, url) {
+  const sid = String(url.searchParams.get('sid') || ''), after = Number(url.searchParams.get('after')) || 0;
+  if (!SID.test(sid)) return fail(env, 'Bad session');
+  if (tooMany(pollHits, req.headers.get('cf-connecting-ip') || 'x', 200, 10 * 60000)) return fail(env, 'Too many requests', 429);
+  const list = (await env.ORDERS.get('chat:' + sid, 'json')) || [];
+  return json(env, { ok: true, msgs: list.filter(m => m.t > after), online: !!env.TELEGRAM_BOT_TOKEN });
+}
+async function telegramHook(req, env, secretInPath) {
+  if (!env.TELEGRAM_BOT_TOKEN || !safeEqual(secretInPath, await tgSecret(env))) return fail(env, 'Not found', 404);
+  const u = await req.json().catch(() => ({})), m = u && u.message; if (!m || !m.chat) return json(env, { ok: true });
+  const chat = String(m.chat.id), text = String(m.text || '');
+  const start = text.match(/^\/start(?:@\w+)?\s+([A-Za-z0-9_-]{6,40})/);
+  if (start) {
+    const code = await env.ORDERS.get('tg:pair');
+    if (code && safeEqual(start[1], code)) {
+      await env.ORDERS.put('tg:owner', chat); await env.ORDERS.delete('tg:pair'); tgMem.owner = chat; tgMem.t = Date.now();
+      await tg(env, 'sendMessage', { chat_id: chat, text: '✅ Connected! You will now get an alert for every order and every chat message. To answer a customer, use Telegram’s “Reply” on their message.' });
+    } else await tg(env, 'sendMessage', { chat_id: chat, text: 'That connect code is wrong or expired. Press “Connect Telegram” in your dashboard again.' });
+    return json(env, { ok: true });
+  }
+  const owner = await tgOwner(env);
+  if (!owner || chat !== owner) { await tg(env, 'sendMessage', { chat_id: chat, text: 'This is a private shop assistant bot.' }).catch(() => {}); return json(env, { ok: true }); }
+  const rt = m.reply_to_message && String(m.reply_to_message.text || ''), sid = rt && (rt.match(/#sid:([a-f0-9]{16,32})/) || [])[1];
+  if (sid && text) {
+    const list = (await env.ORDERS.get('chat:' + sid, 'json')) || [];
+    list.push({ t: Date.now(), text: text.slice(0, 1000) });
+    await env.ORDERS.put('chat:' + sid, JSON.stringify(list.slice(-30)), { expirationTtl: 3 * 86400 });
+    await tg(env, 'sendMessage', { chat_id: chat, text: '✓ sent', reply_to_message_id: m.message_id }).catch(() => {});
+  } else if (text && !text.startsWith('/')) await tg(env, 'sendMessage', { chat_id: chat, text: 'To answer a customer, long-press their message and choose “Reply”.' }).catch(() => {});
+  return json(env, { ok: true });
+}
 async function createOrder(req, env, apiBase) {
   // each order costs 3 writes of the free daily allowance, so one visitor (and the whole shop) is capped
   if (tooMany(ipHits, req.headers.get('cf-connecting-ip') || 'x', 4, 10 * 60000) || tooMany(ipHits, '*all*', 60, 10 * 60000)) return fail(env, 'Too many orders right now. Please wait a few minutes and try again.', 429);
@@ -420,8 +495,8 @@ async function createOrder(req, env, apiBase) {
   for (const l of priced.lines) {                              // digital items: refuse when stock is gone
     if (l.type !== 'digital') continue;
     const p = cat.products[l.id]; if (!p || p.supplier) continue;
-    const used = Number(await env.ORDERS.get('used:' + l.id)) || 0;
-    if (used >= (p.stockN || 0)) return fail(env, 'Sorry, "' + p.title + '" is out of stock right now.', 409);
+    const used = Number(await env.ORDERS.get('used:' + l.id)) || 0, want = qtyOf(l);
+    if (used + want > (p.stockN || 0)) return fail(env, (p.stockN || 0) - used > 0 ? 'Only ' + ((p.stockN || 0) - used) + ' left of "' + p.title + '".' : 'Sorry, "' + p.title + '" is out of stock right now.', 409);
   }
 
   const sup = await checkSupplierLines(env, cat, priced.lines);
@@ -442,12 +517,14 @@ async function createOrder(req, env, apiBase) {
   if (amount === null) return fail(env, 'Too many open orders, please try again in a minute', 503);
 
   const now = Date.now();
-  const o = { id: hex(16), key: hex(16), email, items: priced.lines, usd: priced.usd, coin, amount, amtKey, wallet, status: 'pending', createdAt: now, expiresAt: now + C.minutes * 60000, account: acct ? acct.email : null };
+  const fromBinance = !!b.fromBinance && !!(cat.binanceAddr && cat.binanceAddr[coin]);
+  const o = { id: hex(16), key: hex(16), fromBinance, email, items: priced.lines, usd: priced.usd, coin, amount, amtKey, wallet, status: 'pending', createdAt: now, expiresAt: now + C.minutes * 60000, account: acct ? acct.email : null };
   await saveOrder(env, o, 7 * 86400);
   // the "amt:" key both reserves the amount AND is the list of open orders the cron job checks
   await env.ORDERS.put(amtKey, o.id, { expirationTtl: (C.minutes + C.graceMs / 60000 + 5) * 60 });
   await pushIndex(env, 'oidx', o.id, 400);
   if (acct) { acct.orders = (acct.orders || []).concat(o.id).slice(-200); await env.ORDERS.put('acct:' + acct.email, JSON.stringify(acct)); }
+  notify(env, '🛒 <b>New order</b> #' + o.id.slice(0, 8).toUpperCase() + '\n$' + o.usd + ' · ' + esc(C.name) + (fromBinance ? ' · 🟡 paying from Binance' : '') + '\n' + esc(orderTitle(o)) + '\n' + esc(email) + '\n⏳ waiting for payment');
   return json(env, publicOrder(env, o, apiBase));
 }
 
@@ -461,14 +538,16 @@ async function markPaid(env, o, txid) {
     for (const l of dig) {
       const p = cat && cat.products && cat.products[l.id]; if (!p) continue;
       const stock = await env.ORDERS.get('stock:' + l.id, 'json') || [];
-      const used = Number(await env.ORDERS.get('used:' + l.id)) || 0, code = stock[used];
-      if (code) { o.codes[l.id] = code; await env.ORDERS.put('used:' + l.id, String(used + 1)); }
+      const used = Number(await env.ORDERS.get('used:' + l.id)) || 0, take = stock.slice(used, used + qtyOf(l));
+      if (take.length) { o.codeList = o.codeList || {}; o.codeList[l.id] = take; o.codes[l.id] = take.join('\n\n'); await env.ORDERS.put('used:' + l.id, String(used + take.length)); }
     }
   }
   if (supplierLines(o).length) { try { await fulfil(env, o, false); lastFul.set(o.id, Date.now()); } catch (e) { /* the payment is recorded either way; retried later */ } }
   await saveOrder(env, o);
   if (txid) await env.ORDERS.put('tx:' + txid, o.id);
   await env.ORDERS.delete(o.amtKey || ('amt:' + o.amount));
+  const fs = fulfilState(o);
+  notify(env, '✅ <b>Paid</b> #' + o.id.slice(0, 8).toUpperCase() + '\n$' + o.usd + ' · ' + esc(orderTitle(o)) + '\n' + esc(o.email) + (o.fromBinance ? '\n🟡 from Binance' : '') + (fs === 'ok' ? '\n🎁 delivered automatically' : fs === 'wait' ? '\n⏳ buying from supplier…' : fs === 'stuck' ? '\n⚠️ needs you (supplier)' : '\n📦 delivered'));
 }
 async function bscRpc(method, params) {
   let last = null;
@@ -577,11 +656,12 @@ async function deliveryData(env, o, cat) {
     const p = prods[l.id] || (l.gift ? { title: l.title, tagline: '', type: 'digital' } : null); if (!p) continue;
     if (p.type === 'digital') {
       const c = o.codes && !Array.isArray(o.codes) ? o.codes[l.id] : (Array.isArray(o.codes) ? o.codes[0] : '');
-      jobs.push(Promise.resolve(head(l.id, p) + '"code":' + J(c || '') + '}'));
+      const list = (o.codeList && o.codeList[l.id]) || (c ? [c] : []);
+      jobs.push(Promise.resolve(head(l.id, p) + '"code":' + J(list.join('\n\n')) + ',"codes":' + J(list) + ',"qty":' + qtyOf(l) + '}'));
     } else jobs.push(code(l.id, l.mode === 'styles' && Array.isArray(l.styles) ? l.styles : null));
   }
   (await Promise.all(jobs)).forEach(x => { if (x) parts.push(x); });
-  const coin = orderCoin(o), inv = { no: 'INV-' + o.id.slice(0, 8).toUpperCase(), createdAt: o.createdAt, paidAt: o.paidAt || null, items: itemsOf(o).map(i => ({ title: i.title, price: i.price })), total: o.usd, coin: COINS[coin].name, network: COINS[coin].network, amount: fmtAmount(coin, o.amount), txid: o.txid && o.txid !== 'manual' ? o.txid : '' };
+  const coin = orderCoin(o), inv = { no: 'INV-' + o.id.slice(0, 8).toUpperCase(), createdAt: o.createdAt, paidAt: o.paidAt || null, items: itemsOf(o).map(i => ({ title: i.title, price: i.price, qty: qtyOf(i), unit: i.unit || null })), total: o.usd, coin: COINS[coin].name, network: COINS[coin].network, amount: fmtAmount(coin, o.amount), txid: o.txid && o.txid !== 'manual' ? o.txid : '' };
   inv.txUrl = !inv.txid ? '' : coin === 'btc' ? 'https://mempool.space/tx/' + inv.txid : coin === 'usdt_bep20' ? 'https://bscscan.com/tx/' + inv.txid : 'https://tronscan.org/#/transaction/' + inv.txid;
   return '{"order":' + J({ id: o.id.slice(0, 8), email: o.email, invoice: inv }) + ',"store":' + J(cat.storeName || '') + ',"logo":' + J(LOGO_DATA) + ',"sections":[' + parts.join(',') + ']}';
 }
@@ -767,6 +847,7 @@ async function adminIndex(req, env) {
     storeName: String(b.storeName || ''), products,
     wallets: { usdt_trc20: String(w.usdt_trc20 || '').trim().slice(0, 120), usdt_bep20: String(w.usdt_bep20 || '').trim().slice(0, 120), btc: String(w.btc || '').trim().slice(0, 120), binancepay: String(w.binancepay || '').trim().slice(0, 160) },
     sup: cleanSup(b.sup),
+    binanceAddr: { usdt_trc20: !!(b.binanceAddr && b.binanceAddr.usdt_trc20), usdt_bep20: !!(b.binanceAddr && b.binanceAddr.usdt_bep20) },
     allAccess: { enabled: !!aa.enabled, title: String(aa.title || 'All-Access Pass'), price: Number(aa.price) || 0 }
   }));
   return json(env, { ok: true, products: Object.keys(products).length });
@@ -776,7 +857,7 @@ async function adminOrders(env) {
   let list = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
   list = await Promise.all(list.map((o, i) => o.status === 'pending' && i < 8 ? checkOrder(env, o) : (i < 8 ? ensureFulfilled(env, o) : o)));   // refresh waiting orders
   const orders = list.map(o => ({ id: o.id, email: o.email, title: orderTitle(o), item: o.item || '', amount: fmtAmount(orderCoin(o), o.amount), coin: COINS[orderCoin(o)].short, usd: o.usd || null, status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null, key: o.key, account: o.account || null, claimed: o.claimed || null,
-    fulfil: fulfilState(o), fulfilErr: Object.values(o.fulfil || {}).map(f => f.error).filter(Boolean)[0] || '', cost: round2(supplierLines(o).reduce((a, l) => a + (Number(l.supplier.cost) || 0), 0)) || null }));
+    fulfil: fulfilState(o), fulfilErr: Object.values(o.fulfil || {}).map(f => f.error).filter(Boolean)[0] || '', cost: round2(supplierLines(o).reduce((a, l) => a + (Number(l.supplier.cost) || 0) * qtyOf(l), 0)) || null, fromBinance: !!o.fromBinance }));
   return json(env, { orders });
 }
 async function adminCustomers(env, url) {
@@ -829,7 +910,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, version: 7 });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 8 });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
@@ -837,18 +918,22 @@ async function route(req, env) {
       const cat = await getCatalog(env);
       const prices = {}; if (cat && cat.products) Object.keys(cat.products).forEach(id => { const q = cat.products[id]; prices[id] = { price: q.price, stylePrice: q.stylePrice || 0 }; });
       return json(env, { storeName: cat ? cat.storeName : '', prices, allAccess: cat && cat.allAccess ? { price: cat.allAccess.price } : null, accounts: !!(env.ADMIN_TOKEN || env.SESSION_SECRET),
-        coins: Object.keys(COINS).filter(c => walletFor(env, cat, c)).map(c => ({ id: c, name: COINS[c].name, network: COINS[c].network, kind: COINS[c].kind || (c === 'btc' ? 'btc' : 'tron'), minutes: COINS[c].minutes })) });
+        coins: Object.keys(COINS).filter(c => walletFor(env, cat, c)).map(c => ({ id: c, name: COINS[c].name, network: COINS[c].network, kind: COINS[c].kind || (c === 'btc' ? 'btc' : 'tron'), minutes: COINS[c].minutes, binance: !!(cat && cat.binanceAddr && cat.binanceAddr[c]) })), chat: !!(env.TELEGRAM_BOT_TOKEN && (await tgOwner(env))) });
     }
     let pm = path.match(/^\/api\/preview\/([A-Za-z0-9_-]{1,64})\/(\d{1,2})$/);
     if (pm && req.method === 'GET') return await fullPreview(req, env, pm[1], +pm[2]);
     if (path === '/api/gift/offers' && req.method === 'GET') return await giftRoute(req, env, url);
+    if (path === '/api/chat/send' && req.method === 'POST') return await chatSend(req, env);
+    if (path === '/api/chat/poll' && req.method === 'GET') return await chatPoll(req, env, url);
+    let tm = path.match(/^\/api\/telegram\/([A-Za-z0-9]{16,64})$/);
+    if (tm && req.method === 'POST') return await telegramHook(req, env, tm[1]);
     if (path === '/api/order' && req.method === 'POST') return await createOrder(req, env, apiBase);
     let cm = path.match(/^\/api\/order\/([a-f0-9]{32})\/claim$/);
     if (cm && req.method === 'POST') {
       if (tooMany(ipHits, 'claim|' + (req.headers.get('cf-connecting-ip') || 'x'), 20, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
       const o = await env.ORDERS.get('order:' + cm[1], 'json'), b = await req.json().catch(() => ({}));
       if (!o) return fail(env, 'Order not found', 404);
-      if (o.status === 'pending' && !o.claimed && COINS[orderCoin(o)].kind === 'manual') { o.claimed = { at: Date.now(), ref: String(b.ref || '').slice(0, 80) }; await saveOrder(env, o); }
+      if (o.status === 'pending' && !o.claimed && COINS[orderCoin(o)].kind === 'manual') { o.claimed = { at: Date.now(), ref: String(b.ref || '').slice(0, 80) }; await saveOrder(env, o); notify(env, '🟡 <b>Binance Pay</b> — customer says they paid #' + o.id.slice(0, 8).toUpperCase() + '\n$' + o.usd + ' · ' + esc(o.email) + (o.claimed.ref ? '\nref: ' + esc(o.claimed.ref) : '') + '\nCheck Binance, then Orders → Mark paid.'); }
       return json(env, publicOrder(env, o, apiBase));
     }
     let m = path.match(/^\/api\/order\/([a-f0-9]{32})$/);
@@ -899,6 +984,28 @@ async function route(req, env) {
         await fulfil(env, o, true); await saveOrder(env, o);
         return json(env, { ok: true, fulfil: fulfilState(o), error: Object.values(o.fulfil || {}).map(f => f.error).filter(Boolean)[0] || '' });
       }
+      if (path === '/api/admin/telegram/status') {
+        if (!env.TELEGRAM_BOT_TOKEN) return json(env, { ok: true, token: false });
+        let bot = ''; try { bot = (await tg(env, 'getMe')).username; } catch (e) { return json(env, { ok: true, token: true, error: String(e.message || e) }); }
+        return json(env, { ok: true, token: true, bot, connected: !!(await tgOwner(env)) });
+      }
+      if (path === '/api/admin/telegram/connect' && req.method === 'POST') {
+        if (!env.TELEGRAM_BOT_TOKEN) return fail(env, 'TELEGRAM_BOT_TOKEN is not set in Cloudflare (Worker → Settings → Variables and Secrets)');
+        const me = await tg(env, 'getMe'), code = hex(6);
+        await env.ORDERS.put('tg:pair', code, { expirationTtl: 900 });
+        await tg(env, 'setWebhook', { url: apiBase + '/api/telegram/' + (await tgSecret(env)), allowed_updates: ['message'], drop_pending_updates: true });
+        return json(env, { ok: true, bot: me.username, link: 'https://t.me/' + me.username + '?start=' + code });
+      }
+      if (path === '/api/admin/telegram/test' && req.method === 'POST') {
+        if (!(await tgOwner(env))) return fail(env, 'Telegram is not connected yet');
+        await tg(env, 'sendMessage', { chat_id: await tgOwner(env), text: '🔔 Test alert — it works!' });
+        return json(env, { ok: true });
+      }
+      if (path === '/api/admin/telegram/disconnect' && req.method === 'POST') {
+        await env.ORDERS.delete('tg:owner'); tgMem.owner = ''; tgMem.t = Date.now();
+        if (env.TELEGRAM_BOT_TOKEN) await tg(env, 'deleteWebhook', {}).catch(() => {});
+        return json(env, { ok: true });
+      }
       if (path === '/api/admin/markpaid' && req.method === 'POST') {
         const b = await req.json().catch(() => ({}));
         const o = await env.ORDERS.get('order:' + String(b.id || ''), 'json');
@@ -917,7 +1024,8 @@ async function route(req, env) {
 }
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env0, ctx) {
+    const env = Object.assign(Object.create(env0), { __ctx: ctx });         // lets alerts finish after the reply is sent
     const path = new URL(req.url).pathname.replace(/\/+$/, '');
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(env, path) });
     const res = await route(req, env);
