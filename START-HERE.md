@@ -18,10 +18,10 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 
 1. **Back up first.** Open your OLD dashboard → **Publish → Backup everything**. Keep that file.
 2. **Download the new project** (GitHub → branch `claude/geostore-website-template-bwou47` → Code → Download ZIP) and unzip it.
-3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":7`.
+3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":8`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
-6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`.
+6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`.
 
 > Always upload the **whole folder** — the shop is now several files.
 
@@ -32,7 +32,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 ### 1 — Server (Cloudflare)
 1. Cloudflare → Workers & Pages → create a Worker → paste `worker/worker.js` → Deploy.
 2. Settings → **Variables and Secrets**: add a **Secret** named `ADMIN_TOKEN` (a long password only you know). Settings → **Bindings** → add a **KV namespace** named `ORDERS`.
-3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":7`.
+3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":8`.
 4. Do **not** add a Cron Trigger (the shop does not need one).
 
 ### 2 — Dashboard
@@ -80,6 +80,32 @@ Customers then see: **Gift cards → brand (iTunes) → country (flag) → amoun
 
 **Please test first:** buy ONE cheap gift card yourself with USDT and check the code works before announcing the shop.
 Game top-ups (which need the player's ID) are the next step and are not in this version.
+
+
+---
+
+## Live chat, WhatsApp and Telegram alerts (free)
+
+**What customers get:** a round chat button on the shop. It opens a small window with your **WhatsApp**, **Telegram** and **Email**, and a **live chat** box when you connect Telegram. Inside the payment window there are the same contact buttons, so anyone with a problem can reach you in one tap.
+
+**What you get:** a Telegram alert for every new order (“🛒 New order… waiting for payment”), every payment (“✅ Paid…”), Binance Pay claims and stuck deliveries, plus every chat message.
+
+**Set it up (10 minutes, one time)**
+1. In Telegram open **@BotFather** → send `/newbot` → choose a name → copy the **token** it gives you.
+2. Cloudflare → your Worker → **Settings → Variables and Secrets → Add** → **Secret**, name `TELEGRAM_BOT_TOKEN`, value = the token → **Deploy**.
+3. Dashboard → **Settings → Contact & alerts**: type your **WhatsApp number** (country code, digits only — e.g. `963912345678`) and, if you like, your Telegram username → **Save settings** → **Publish → Sync**, then **Download data.js** and upload the site folder.
+4. Settings → **Connect Telegram** → press **Open Telegram and press START** → come back and press **Refresh status** (you want ✅ Connected). **Send test alert** to check.
+
+**Answering a chat:** in Telegram, long-press the customer's message → **Reply**. Your answer appears in their chat window within seconds. (WhatsApp messages come to your normal WhatsApp.)
+
+## Quantity (buy 3 iTunes cards in one order)
+In the gift-card window every amount has a **− 1 +** stepper (limited by what FazerCards allows per order, up to 10). The cart also has steppers. One payment buys all cards; the order page shows each code on its own scratch card, and the invoice shows “×3”.
+
+## Customers paying from Binance to your Binance address
+In **Settings → Where customers pay you** tick **“This is a Binance deposit address”** under the TRC20/BEP20 address if it is a Binance address. At checkout customers then choose **Another wallet or exchange** or **Binance app**. If they pick the Binance app they see: *“a Binance→Binance transfer is internal and can take a while — if your order is not confirmed within 1 hour, contact us”* with WhatsApp / chat buttons. Those orders stay open for 3 hours, you get a Telegram alert immediately, and after 1 hour they show up as **needs you** in the dashboard so you can check Binance and press **Mark paid** (delivery is then automatic). Customers using any other wallet continue the normal way.
+
+## Dashboard
+The dashboard now has the dark glass look. **Home** shows revenue, paid orders, estimated profit and “needs you” for **Today / 7D / 30D / 1Y**, a performance chart, payment-method split and the latest orders. **Gift cards → Prices** shows what each amount **costs you** at FazerCards, what you sell it for and your profit. The sun/moon button switches to a light dashboard.
 
 ---
 

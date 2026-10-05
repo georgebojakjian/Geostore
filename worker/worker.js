@@ -857,7 +857,7 @@ async function adminOrders(env) {
   const ids = ((await env.ORDERS.get('oidx', 'json')) || []).slice(-100).reverse();
   let list = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
   list = await Promise.all(list.map((o, i) => o.status === 'pending' && i < 8 ? checkOrder(env, o) : (i < 8 ? ensureFulfilled(env, o) : o)));   // refresh waiting orders
-  const orders = list.map(o => ({ id: o.id, email: o.email, title: orderTitle(o), item: o.item || '', amount: fmtAmount(orderCoin(o), o.amount), coin: COINS[orderCoin(o)].short, usd: o.usd || null, status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null, key: o.key, account: o.account || null, claimed: o.claimed || null,
+  const orders = list.map(o => ({ id: o.id, email: o.email, title: orderTitle(o), item: o.item || '', amount: fmtAmount(orderCoin(o), o.amount), coin: COINS[orderCoin(o)].short, coinName: COINS[orderCoin(o)].name, usd: o.usd || null, status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null, key: o.key, account: o.account || null, claimed: o.claimed || null,
     fulfil: fulfilState(o), fulfilErr: Object.values(o.fulfil || {}).map(f => f.error).filter(Boolean)[0] || '', cost: round2(supplierLines(o).reduce((a, l) => a + (Number(l.supplier.cost) || 0) * qtyOf(l), 0)) || null, fromBinance: !!o.fromBinance }));
   return json(env, { orders });
 }
