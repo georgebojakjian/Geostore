@@ -329,6 +329,7 @@ async function giftRoute(req, env, url) {
 // Turn "g:<category>:<card>" cart ids into priced products (the server decides every price)
 async function resolveGift(env, cat, raw) {
   const gp = {};
+  if (new Set(raw.map(it => String((it && it.id) || '').split(':')[1]).filter(Boolean)).size > 8) return { error: 'Please order gift cards from at most 8 different brands at a time.' };
   for (const it of raw.slice(0, 30)) {
     const id = String((it && it.id) || ''), m = id.match(GIFT_ID); if (!m || gp[id]) continue;
     let g; try { g = await giftOffers(env, cat, m[1]); } catch (e) { return { error: 'This item is temporarily unavailable. Please try again later.' }; }
@@ -397,7 +398,8 @@ function fulfilState(o) {
 }
 
 async function createOrder(req, env, apiBase) {
-  if (tooMany(ipHits, req.headers.get('cf-connecting-ip') || 'x', 6, 10 * 60000)) return fail(env, 'Too many orders from your connection. Please wait a few minutes.', 429);
+  // each order costs 3 writes of the free daily allowance, so one visitor (and the whole shop) is capped
+  if (tooMany(ipHits, req.headers.get('cf-connecting-ip') || 'x', 4, 10 * 60000) || tooMany(ipHits, '*all*', 60, 10 * 60000)) return fail(env, 'Too many orders right now. Please wait a few minutes and try again.', 429);
   const b = await req.json().catch(() => null) || {};
   const cat = await getCatalog(env);
   if (!cat) return fail(env, 'The store has not been synced yet', 503);
@@ -827,9 +829,10 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, version: 6 });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, version: 7 });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
+    if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
     if (path === '/api/config' && req.method === 'GET') {
       const cat = await getCatalog(env);
       const prices = {}; if (cat && cat.products) Object.keys(cat.products).forEach(id => { const q = cat.products[id]; prices[id] = { price: q.price, stylePrice: q.stylePrice || 0 }; });
@@ -859,7 +862,9 @@ async function route(req, env) {
     if (m && req.method === 'GET') return await delivery(env, m[1], url, !!m[2]);
     if (path.startsWith('/api/account/')) return await accountRoutes(req, env, path, apiBase);
     if (path.startsWith('/api/admin/')) {
-      if (!isAdmin(req, env)) return fail(env, 'Wrong or missing admin token', 401);
+      const aip = 'adm|' + (req.headers.get('cf-connecting-ip') || 'x');
+      if ((authHits.get(aip) || []).filter(t => Date.now() - t < 10 * 60000).length >= 12) return fail(env, 'Too many failed attempts. Please wait a few minutes.', 429);
+      if (!isAdmin(req, env)) { tooMany(authHits, aip, 99, 10 * 60000); return fail(env, 'Wrong or missing admin token', 401); }
       if (path === '/api/admin/product' && req.method === 'POST') return await adminProduct(req, env);
       if (path === '/api/admin/index' && req.method === 'POST') return await adminIndex(req, env);
       if (path === '/api/admin/ping') return json(env, { ok: true });

@@ -114,3 +114,10 @@ The server never uses Cloudflare's `list()` operation any more (free limit: 1,00
 
 ## Supplier (FazerCards)
 See the section "Selling gift cards from FazerCards" in `START-HERE.md`. The Worker needs one extra Secret named `FAZER_KEY`. Server version is now 6.
+
+
+## Version 7 (payments + security)
+- New payment methods: **USDT BEP20** (watched through public BNB-chain nodes, needs 10 confirmations ≈ seconds) and **Binance Pay** (customer presses “I have paid”, you press **Mark paid**).
+- Gift cards are priced live from FazerCards with your profit rule; the shop never stores supplier costs.
+- Security: admin routes lock a connection for 10 minutes after 12 wrong tokens; public requests are size-limited; orders are limited to 4 per visitor per 10 minutes (60 for the whole shop); customer messages only show the short order number; security headers on every response.
+- The Binance deposit-address caveat (internal transfers are invisible on-chain) is explained in `START-HERE.md`.

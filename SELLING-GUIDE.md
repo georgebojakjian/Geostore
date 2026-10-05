@@ -1,6 +1,6 @@
 # Geostore Codes — Complete Guide (for beginners)
 
-> **New here? Read `START-HERE.md` first — it is the short, simple version.**
+> **New here? Read `START-HERE.md` first — it is the short, simple version and it is the up-to-date one.**
 
 > **Want fully automatic payments and delivery?** Follow `DEPLOY-AUTOMATIC.md` first. This guide describes the simple manual mode and the business side.
 
@@ -15,7 +15,8 @@ Customers see a live preview and a FREE sample. After they pay, you send the FUL
 | `site/data.js` | Your product list + free samples | YES |
 | `site/pack-2.js` | 10 complete 3D websites (free previews + how-to guides) | YES |
 | `site/pack-1.js` | 20 extra products, free samples only (3 styles each) | YES |
-| `site/logo.svg` | Your logo (used on the site, the browser tab and the dashboard) | YES |
+| `site/style.css`, `site/app.js`, `site/qr.js` | The shop's design and logic | YES |
+| `site/logo*.png`, `site/favicon.png` | Your logo (site, browser tab, dashboard, order pages) | YES |
 | `admin/admin.html` | Your private dashboard | **NEVER** |
 | `admin/private.js` | The paid FULL code of the first 6 products | **NEVER** |
 | `admin/private-pack-2.js` | The paid FULL code of the 10 complete websites | **NEVER** |
@@ -23,7 +24,7 @@ Customers see a live preview and a FREE sample. After they pay, you send the FUL
 
 ## Step 1 — Open your dashboard
 Double-click `admin/admin.html`. It opens in your browser (works offline, free).
-Tabs: **Dashboard · Products · Orders · Customers · Settings · Publish**.
+Menu: **Home · Products · Gift cards · Orders · Customers · Settings · Publish**.
 Your data is saved inside that browser on that computer — use **Publish → Backup** regularly.
 
 ## Step 2 — Fill Settings
@@ -78,7 +79,7 @@ Do **not** copy paid templates from other people: it is illegal, gets you banned
 Add Privacy and Terms pages, keep sales records, and follow your local laws.
 
 ## Your logo
-The logo is one file: `site/logo.svg`. The website, the browser-tab icon and the dashboard all use it. To use a different logo, replace that file with your own `logo.svg` (keep the same name), then upload the `site` folder again.
+The logo files are `site/logo.png` (256px), `logo-96.png` (header), `logo-512.png` and `favicon.png`. To use a different logo, replace those files (keep the same names and square shapes), then upload the `site` folder again.
 
 ## Product packs: 20 products with 3 styles each
 `site/pack-1.js` adds 20 products (portfolio bento grid, SaaS pricing, email template, glass login, 404 page, dashboard sidebar, countdown page, floating action button, mega menu, SVG hero backgrounds, link-in-bio, crypto ticker, restaurant site, checkout wizard, dark/light toggle, agency site, testimonial slider, course accordion, real-estate listings, cookie banner).
@@ -100,7 +101,7 @@ The logo is one file: `site/logo.svg`. The website, the browser-tab icon and the
 3. Open the NEW `admin/admin.html` → Publish → **Restore backup** and pick your backup file. Your products, prices, orders and settings return, and the 20 new products are added.
 4. Cloudflare → your Worker → Edit code → paste the new `worker/worker.js` → Deploy.
 5. Dashboard → Publish → **Sync to server** (this uploads the full code of all products).
-6. Copy the new `site/index.html`, `site/pack-1.js` and `site/logo.svg` into your `site` folder. Keep your own `data.js`. Upload the `site` folder to Netlify (Deploys tab).
+6. Copy the new `site/index.html`, `site/pack-1.js` and the logo files into your `site` folder. Keep your own `data.js`. Upload the `site` folder to Netlify (Deploys tab).
 
 ## New in version 3
 
@@ -125,4 +126,4 @@ See `DEPLOY-AUTOMATIC.md`. The payment window no longer pops up when a page is r
 2. Download the latest project; open the new `admin/admin.html` → Publish → **Restore backup**. The 10 websites are added automatically.
 3. Cloudflare → your Worker → paste the new `worker/worker.js` → Deploy.
 4. Dashboard → Settings → check your **USDT and Bitcoin** wallets → Save → Publish → **Sync to server**.
-5. Copy the new `site/index.html`, `site/pack-1.js`, `site/pack-2.js`, `site/logo.svg` into your `site` folder (keep your own `data.js`) and upload to Netlify (Deploys tab).
+5. Copy the new `site/index.html`, `site/pack-1.js`, `site/pack-2.js`, the logo files into your `site` folder (keep your own `data.js`) and upload to Netlify (Deploys tab).

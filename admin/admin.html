@@ -205,7 +205,7 @@
     <!-- ORDERS -->
     <section class="view" id="v-orders">
       <h1>Orders</h1><p class="lead">Every order from your shop. Paid orders are delivered automatically — you only act on the ones marked <b>needs you</b>.</p>
-      <div class="bar"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="oSearch" type="search" placeholder="Search email or item…"><div class="seg" id="oFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="need">Needs you</button><button type="button" data-f="paid">Paid</button><button type="button" data-f="pending">Waiting</button></div></div><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></div>
+      <div class="bar"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="oSearch" type="search" placeholder="Search email, item or order number…"><div class="seg" id="oFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="need">Needs you</button><button type="button" data-f="paid">Paid</button><button type="button" data-f="pending">Waiting</button></div></div><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></div>
       <div class="panel tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Items</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="srvBody"></tbody></table>
         <p class="help" id="srvMsg">Press Refresh to load orders from your server.</p></div>
       <details class="panel"><summary style="cursor:pointer;font-weight:700">Old manual orders (only if you do not use the server)</summary>
@@ -724,7 +724,7 @@
     var q = $('oSearch').value.trim().toLowerCase();
     var list = lastOrders.filter(function(o){
       if (of === 'need' && !needsYou(o)) return false; if (of === 'paid' && o.status !== 'paid') return false; if (of === 'pending' && o.status !== 'pending') return false;
-      return !q || (o.email + ' ' + o.title).toLowerCase().indexOf(q) > -1;
+      return !q || (o.email + ' ' + o.title + ' ' + o.id.slice(0, 8)).toLowerCase().indexOf(q) > -1;
     });
     $('srvMsg').textContent = lastOrders.length ? list.length + ' of ' + lastOrders.length + ' order(s)' : 'No orders yet.';
     $('srvBody').innerHTML = list.map(function(o){

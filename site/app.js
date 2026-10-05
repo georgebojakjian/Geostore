@@ -185,7 +185,7 @@
     return '<button type="button" class="brand-tile" data-brand-id="' + esc(b.id || b.name) + '"><span class="logo-box">' + logoHTML(b.logo, b.name) + '</span><b>' + esc(b.name) + '</b><small>' + (n > 1 ? n + ' regions' : esc(regionLabel(b.regions[0].region))) + '</small></button>';
   }
   function digitalTile(p){
-    return '<button type="button" class="brand-tile" data-dbuy="' + esc(p.id) + '"><span class="logo-box"><span style="font-size:2rem">' + esc(p.icon || '🎁') + '</span></span><b>' + esc(p.title) + '</b><small>' + money(p.price) + ' · tap to add</small></button>';
+    return '<button type="button" class="brand-tile" data-dbuy="' + esc(p.id) + '"><span class="logo-box">' + (safeUrl(p.icon) ? logoHTML(p.icon, p.title) : '<span style="font-size:2rem">' + esc(p.icon || '🎁') + '</span>') + '</span><b>' + esc(p.title) + '</b><small>' + money(p.price) + ' · tap to add</small></button>';
   }
   function renderGift(){
     var cl = giftCats(); chipRow($('gChips'), cl, gcat, 'data-g');
@@ -493,7 +493,7 @@
     loadQR().then(function(){ var el = $('payQR'); if (!el || !window.qrcode) return; try { var q2 = window.qrcode(0, 'M'); q2.addData(String(text)); q2.make(); el.innerHTML = q2.createSvgTag({cellSize:4, margin:0, scalable:true}); } catch(e) { el.parentNode.hidden = true; } });
   }
   function showPay(o){
-    curOrder = o; stopTimers(); view = 'pay'; openModal($('cartM'));
+    curOrder = o; stopTimers(); view = 'pay'; $('toast').classList.remove('show'); openModal($('cartM'));
     setCartTitle('Pay with ' + o.coinName);
     var manual = o.kind === 'manual', isBtc = o.kind === 'btc';
     var rows = (o.items || []).map(function(i){ return '<div><span>' + esc(i.title) + '</span><span>' + money(i.price) + '</span></div>'; }).join('') + '<div><span>Total</span><span>' + money(o.usd) + '</span></div>';
@@ -512,7 +512,7 @@
       (manual ? '<div class="field"><label for="payRef">Binance Pay order ID or note (optional)</label><input id="payRef" maxlength="80" placeholder="e.g. from the payment receipt"></div><button type="button" class="btn btn-primary btn-block" id="payClaim">I have paid</button>' : '') +
       '<div class="pstatus" id="payStatus" style="margin-top:12px"><span class="spin"></span><span id="payStatusTxt">Waiting for your payment…</span></div></div>' +
       '<div id="payDone" hidden></div>' +
-      '<p class="note" style="text-align:center">Problem with your payment? <a class="link" href="mailto:' + esc(S.email || '') + '?subject=' + encodeURIComponent('Order ' + o.id) + '">Contact us</a> with order ID <span class="mono">' + esc(o.id.slice(0, 8).toUpperCase()) + '</span>.</p>';
+      '<p class="note" style="text-align:center">Problem with your payment? <a class="link" href="mailto:' + esc(S.email || '') + '?subject=' + encodeURIComponent('Order ' + o.id.slice(0, 8).toUpperCase()) + '">Contact us</a> with order ID <span class="mono">' + esc(o.id.slice(0, 8).toUpperCase()) + '</span>.</p>';
     if (!manual) drawQR(o.wallet);
     renderPay(o);
     if (o.status === 'pending'){
@@ -529,11 +529,11 @@
       pill.className = 'pill paid'; pill.textContent = 'Paid'; timer.hidden = true;
       if (o.fulfil === 'wait'){ main.hidden = false; st.hidden = false; stt.textContent = 'Payment received ✓ — preparing your code, this takes a few seconds…'; return; }
       main.hidden = true; done.hidden = false; setCartTitle('Order complete');
-      if (o.fulfil === 'stuck'){ done.innerHTML = '<div class="done"><div class="big" style="background:var(--warn)">!</div><h3 style="padding:0">Payment received</h3><p class="note">Your code needs a quick manual check. We will deliver it very soon — it will appear in your account too.<br>Order ID: <span class="mono">' + esc(o.id) + '</span></p></div>'; stopTimers(); return; }
+      if (o.fulfil === 'stuck'){ done.innerHTML = '<div class="done"><div class="big" style="background:var(--warn)">!</div><h3 style="padding:0">Payment received</h3><p class="note">Your code needs a quick manual check. We will deliver it very soon — it will appear in your account too.<br>Order number: <span class="mono">' + esc(o.id.slice(0, 8).toUpperCase()) + '</span></p></div>'; stopTimers(); return; }
       done.innerHTML = '<div class="done"><div class="big">✓</div><h3 style="padding:0">Payment received — thank you!</h3><p class="note">Your order is ready. Open your private page for your codes and your invoice.</p><a class="btn btn-primary btn-block" style="margin-top:14px" target="_blank" rel="noopener" href="' + esc(o.deliveryUrl) + '">Open my codes &amp; invoice</a><p class="note">Keep the link — it is also saved under <b>Account → Orders</b>.</p></div>';
       stopTimers(); return;
     }
-    if (o.status === 'expired'){ pill.className = 'pill expired'; pill.textContent = 'Expired'; timer.hidden = true; st.classList.add('err'); st.firstChild.hidden = true; stt.textContent = 'This order expired. If you already paid, email us your order ID: ' + o.id; stopTimers(); return; }
+    if (o.status === 'expired'){ pill.className = 'pill expired'; pill.textContent = 'Expired'; timer.hidden = true; st.classList.add('err'); st.firstChild.hidden = true; stt.textContent = 'This order expired. If you already paid, email us your order number: ' + o.id.slice(0, 8).toUpperCase(); stopTimers(); return; }
     var total = o.expiresAt - o.createdAt, left = o.expiresAt - Date.now();
     timer.firstChild.style.width = Math.max(0, Math.min(100, left / total * 100)) + '%';
     if (o.kind === 'manual'){
