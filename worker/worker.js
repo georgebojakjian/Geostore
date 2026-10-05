@@ -21,8 +21,15 @@
 const USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // USDT on TRON (TRC20)
 const COINS = {
   usdt_trc20: { name: 'USDT (TRC20)', network: 'TRON (TRC20)', short: 'USDT', minutes: 60, graceMs: 15 * 60000, throttle: 7000 },
-  btc:        { name: 'Bitcoin (BTC)', network: 'Bitcoin', short: 'BTC',  minutes: 90, graceMs: 180 * 60000, throttle: 20000 }
+  usdt_bep20: { name: 'USDT (BEP20)', network: 'BNB Smart Chain (BEP20)', short: 'USDT', minutes: 60, graceMs: 15 * 60000, throttle: 8000, kind: 'bsc' },
+  btc:        { name: 'Bitcoin (BTC)', network: 'Bitcoin', short: 'BTC',  minutes: 90, graceMs: 180 * 60000, throttle: 20000 },
+  // Binance Pay cannot be watched automatically without handing over a Binance API key, so the customer presses
+  // "I have paid" and you confirm it with Mark paid (delivery is automatic after that).
+  binancepay: { name: 'Binance Pay', network: 'Binance Pay (inside the Binance app)', short: 'USDT', minutes: 120, graceMs: 24 * 3600000, throttle: 0, kind: 'manual' }
 };
+const BSC_USDT = '0x55d398326f99059ff775485246999027b3197955';          // USDT on BNB Smart Chain (18 decimals)
+const BSC_RPCS = ['https://bsc-dataseed.bnbchain.org', 'https://bsc-dataseed1.binance.org', 'https://bsc-dataseed.binance.org'];
+const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const PBKDF2_ITER = 10000;   // kept modest so it fits Cloudflare's free CPU limit; raise to 100000 on the paid plan
 // Cloudflare's FREE plan allows only 1,000 KV writes and 1,000 KV list calls per day,
 // so this server writes ONLY when something really changes (new order, paid, expired, account change)
@@ -91,7 +98,7 @@ function tooMany(map, key, max, windowMs) {
   return hits.length > max;
 }
 function walletFor(env, cat, coin) {
-  const w = (cat && cat.wallets && cat.wallets[coin]) || (coin === 'btc' ? env.WALLET_BTC : env.WALLET) || '';
+  const w = (cat && cat.wallets && cat.wallets[coin]) || (coin === 'btc' ? env.WALLET_BTC : coin === 'usdt_trc20' ? env.WALLET : '') || '';
   return String(w).trim();
 }
 
@@ -108,14 +115,15 @@ function publicOrder(env, o, apiBase) {
   return {
     id: o.id, status: o.status, title: orderTitle(o), items: itemsOf(o).map(i => ({ title: i.title, price: i.price, mode: i.mode, styles: i.styles })),
     usd: o.usd, coin, coinName: c.name, amount: fmtAmount(coin, o.amount), wallet: o.wallet || env.WALLET || '',
-    network: c.network, expiresAt: o.expiresAt, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null,
+    network: c.network, kind: c.kind || (coin === 'btc' ? 'btc' : 'tron'), claimed: !!o.claimed, expiresAt: o.expiresAt, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null,
     fulfil: fulfilState(o), deliveryUrl: o.status === 'paid' ? apiBase + '/api/delivery/' + o.id + '?k=' + o.key : null
   };
 }
 
 /* ---------------- pricing (the server decides every price) ---------------- */
 function stylePriceOf(p) { const s = Number(p.stylePrice); return s > 0 ? s : Math.max(1, Math.ceil(Number(p.price) / 2)); }
-function priceCart(cat, raw) {
+function priceCart(cat, raw, gp) {
+  gp = gp || {};
   const byProd = {}; let hasAll = false;
   for (const it of raw.slice(0, 30)) {
     const id = String((it && it.id) || '');
@@ -123,7 +131,7 @@ function priceCart(cat, raw) {
       if (!cat.allAccess || !cat.allAccess.enabled) return { error: 'All-Access is not available' };
       hasAll = true; continue;
     }
-    const p = cat.products && cat.products[id];
+    const p = (cat.products && cat.products[id]) || gp[id];
     if (!p || p.published === false) return { error: 'One of the items is not available any more' };
     const g = byProd[id] || (byProd[id] = { p, all: false, styles: new Set() });
     if (p.type === 'digital') { g.all = true; continue; }
@@ -138,7 +146,7 @@ function priceCart(cat, raw) {
   if (hasAll) lines.push({ id: 'ALL', title: cat.allAccess.title || 'All-Access Pass', type: 'all', mode: 'all', price: Number(cat.allAccess.price) });
   for (const id of Object.keys(byProd)) {
     const g = byProd[id], p = g.p;
-    if (p.type === 'digital') { lines.push({ id, title: p.title, type: 'digital', mode: 'all', price: Number(p.price), supplier: p.supplier || undefined }); continue; }
+    if (p.type === 'digital') { lines.push({ id, title: p.title, type: 'digital', mode: 'all', price: Number(p.price), supplier: p.supplier || undefined, gift: p.gift || undefined }); continue; }
     if (hasAll) continue;                                  // already included in All-Access
     const n = (p.variants || []).length, sp = stylePriceOf(p);
     if (n < 2 || g.all || g.styles.size >= n || g.styles.size * sp >= p.price) lines.push({ id, title: p.title, type: 'code', mode: 'all', price: Number(p.price) });
@@ -279,7 +287,7 @@ async function fzBalance(env) {
 async function checkSupplierLines(env, cat, lines) {
   let need = 0;
   for (const l of lines) {
-    const p = cat.products[l.id]; if (!p || !p.supplier) continue;
+    const p = cat.products[l.id] || (l.gift ? { title: l.title, supplier: l.supplier } : null); if (!p || !p.supplier) continue;
     let offer;
     try { offer = fzFind(await fzOffers(env, p.supplier.cat), p.supplier.card); } catch (e) { return 'This item is temporarily unavailable. Please try again later.'; }
     if (!offer || (offer.stock != null && Number(offer.stock) < 1)) return '"' + p.title + '" is out of stock right now.';
@@ -295,6 +303,41 @@ async function checkSupplierLines(env, cat, lines) {
     if (bal < need) return 'This item is temporarily unavailable. Please try again later.';
   }
   return null;
+}
+/* ---- live gift-card catalog: the category list lives in idx.sup, prices are cost + your rule, computed fresh ---- */
+const GIFT_ID = /^g:([A-Za-z0-9_-]{1,80}):([A-Za-z0-9_.-]{1,80})$/;
+function giftPrice(rule, cost) {
+  const v = Number(rule && rule.value) || 0, c = Number(cost);
+  const raw = rule && rule.mode === 'fixed' ? c + v : c * (1 + v / 100);
+  return Math.max(Math.ceil(raw * 100 - 1e-7) / 100, round2(c + 0.01));
+}
+async function giftOffers(env, cat, catId) {
+  const sup = cat && cat.sup; if (!sup || !sup.cats || !sup.cats[catId]) return null;
+  const j = await fzOffers(env, catId);
+  return { name: sup.cats[catId].n || j.name || catId, offers: (j.offers || []).filter(o => Number(o.min_order_quantity || 1) <= 1 && Number(o.price_usd) > 0).map(o => ({ card: String(o.card_id), name: String(o.name), cost: Number(o.price_usd), stock: o.stock == null ? null : Number(o.stock) })) };
+}
+const giftHits = new Map();
+async function giftRoute(req, env, url) {
+  if (tooMany(giftHits, req.headers.get('cf-connecting-ip') || 'x', 90, 10 * 60000)) return fail(env, 'Too many requests. Please wait a moment.', 429);
+  const catId = String(url.searchParams.get('cat') || '');
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(catId)) return fail(env, 'Not found', 404);
+  const cat = await getCatalog(env);
+  let g; try { g = await giftOffers(env, cat, catId); } catch (e) { return fail(env, 'This item is temporarily unavailable. Please try again later.', 503); }
+  if (!g) return fail(env, 'Not found', 404);
+  return json(env, { ok: true, name: g.name, offers: g.offers.map(o => ({ card: o.card, name: o.name, price: giftPrice(cat.sup.rule, o.cost), inStock: o.stock == null || o.stock > 0 })) });
+}
+// Turn "g:<category>:<card>" cart ids into priced products (the server decides every price)
+async function resolveGift(env, cat, raw) {
+  const gp = {};
+  for (const it of raw.slice(0, 30)) {
+    const id = String((it && it.id) || ''), m = id.match(GIFT_ID); if (!m || gp[id]) continue;
+    let g; try { g = await giftOffers(env, cat, m[1]); } catch (e) { return { error: 'This item is temporarily unavailable. Please try again later.' }; }
+    const of = g && g.offers.find(o => o.card === m[2]);
+    if (!of) return { error: 'One of the items is not available any more' };
+    if (of.stock != null && of.stock < 1) return { error: '"' + g.name + ' ' + of.name + '" is out of stock right now.' };
+    gp[id] = { title: g.name + ' — ' + of.name, price: giftPrice(cat.sup.rule, of.cost), type: 'digital', gift: true, supplier: { cat: m[1], card: m[2] } };
+  }
+  return { gp };
 }
 const FZ_SKIP = /^(id|order_id|status|name|title|price|price_usd|total|card_id|category_id|offer_id|created_at|createdat|updated_at|updatedat|quantity|currency|kind|type|note|image|imageurl)$/i;
 function fzCodeText(c) {
@@ -368,11 +411,13 @@ async function createOrder(req, env, apiBase) {
   if (!wallet) return fail(env, C.name + ' payments are not set up yet. Please choose another coin.', 503);
 
   const raw = Array.isArray(b.items) ? b.items : (b.item ? [{ id: b.item, v: 'all' }] : []);
-  const priced = priceCart(cat, raw);
+  const rg = await resolveGift(env, cat, raw);
+  if (rg.error) return fail(env, rg.error, 409);
+  const priced = priceCart(cat, raw, rg.gp);
   if (priced.error) return fail(env, priced.error);
   for (const l of priced.lines) {                              // digital items: refuse when stock is gone
     if (l.type !== 'digital') continue;
-    const p = cat.products[l.id]; if (p.supplier) continue;
+    const p = cat.products[l.id]; if (!p || p.supplier) continue;
     const used = Number(await env.ORDERS.get('used:' + l.id)) || 0;
     if (used >= (p.stockN || 0)) return fail(env, 'Sorry, "' + p.title + '" is out of stock right now.', 409);
   }
@@ -423,8 +468,38 @@ async function markPaid(env, o, txid) {
   if (txid) await env.ORDERS.put('tx:' + txid, o.id);
   await env.ORDERS.delete(o.amtKey || ('amt:' + o.amount));
 }
+async function bscRpc(method, params) {
+  let last = null;
+  for (const u of BSC_RPCS) {
+    try {
+      const r = await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }), signal: AbortSignal.timeout(7000) });
+      const j = await r.json();
+      if (j && j.result !== undefined && !j.error) return j.result;
+      last = j && j.error;
+    } catch (e) { last = e; }
+  }
+  throw new Error('BSC node unavailable' + (last && last.message ? ': ' + last.message : ''));
+}
+async function findBsc(env, o) {
+  const head = parseInt(await bscRpc('eth_blockNumber', []), 16), want = BigInt(o.amount) * 1000000000000n;   // 6-decimal order amount -> 18-decimal token units
+  const topicTo = '0x' + '0'.repeat(24) + o.wallet.toLowerCase().replace(/^0x/, '');
+  const age = (Date.now() - o.createdAt) / 1000 + 120, chunk = 4500;
+  const chunks = Math.min(4, Math.max(1, Math.ceil(age / 0.75 / chunk)));        // BSC makes a block roughly every 0.75-3 s
+  for (let c = 0; c < chunks; c++) {
+    const to = head - c * chunk, from = Math.max(0, to - chunk + 1);
+    const logs = await bscRpc('eth_getLogs', [{ fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16), address: BSC_USDT, topics: [TRANSFER_TOPIC, null, topicTo] }]);
+    for (const l of logs) {
+      if (BigInt(l.data) !== want) continue;
+      if (head - parseInt(l.blockNumber, 16) < 10) continue;                      // wait for a few confirmations
+      if (!(await env.ORDERS.get('tx:' + l.transactionHash))) return l.transactionHash;
+    }
+  }
+  return null;
+}
 async function findPayment(env, o) {
   const coin = orderCoin(o), until = o.expiresAt + COINS[coin].graceMs;
+  if (COINS[coin].kind === 'manual') return null;
+  if (COINS[coin].kind === 'bsc') return await findBsc(env, o);
   if (coin === 'btc') {
     const res = await fetch('https://mempool.space/api/address/' + o.wallet + '/txs');
     if (!res.ok) return null;
@@ -497,14 +572,15 @@ async function deliveryData(env, o, cat) {
   }
   for (const l of itemsOf(o)) {
     if (l.id === 'ALL') { Object.keys(prods).forEach(id => { const p = prods[id]; if (p.type !== 'digital' && (p.variants || []).length) jobs.push(code(id)); }); continue; }
-    const p = prods[l.id]; if (!p) continue;
+    const p = prods[l.id] || (l.gift ? { title: l.title, tagline: '', type: 'digital' } : null); if (!p) continue;
     if (p.type === 'digital') {
       const c = o.codes && !Array.isArray(o.codes) ? o.codes[l.id] : (Array.isArray(o.codes) ? o.codes[0] : '');
       jobs.push(Promise.resolve(head(l.id, p) + '"code":' + J(c || '') + '}'));
     } else jobs.push(code(l.id, l.mode === 'styles' && Array.isArray(l.styles) ? l.styles : null));
   }
   (await Promise.all(jobs)).forEach(x => { if (x) parts.push(x); });
-  return '{"order":' + J({ id: o.id.slice(0, 8), email: o.email }) + ',"store":' + J(cat.storeName || '') + ',"sections":[' + parts.join(',') + ']}';
+  const coin = orderCoin(o), inv = { no: 'INV-' + o.id.slice(0, 8).toUpperCase(), createdAt: o.createdAt, paidAt: o.paidAt || null, items: itemsOf(o).map(i => ({ title: i.title, price: i.price })), total: o.usd, coin: COINS[coin].name, network: COINS[coin].network, amount: fmtAmount(coin, o.amount), txid: o.txid && o.txid !== 'manual' ? o.txid : '' };
+  return '{"order":' + J({ id: o.id.slice(0, 8), email: o.email, invoice: inv }) + ',"store":' + J(cat.storeName || '') + ',"sections":[' + parts.join(',') + ']}';
 }
 const SHELL_CORE = String.raw`
 function guardFn(){var t;function note(m){var n=document.getElementById("__dm");if(!n){n=document.createElement("div");n.id="__dm";n.style.cssText="position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;background:#111;color:#fff;border:1px solid #c5f442;padding:10px 16px;border-radius:99px;font:600 13px system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:92vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none";document.body.appendChild(n)}n.textContent=m;n.style.opacity=1;clearTimeout(t);t=setTimeout(function(){n.style.opacity=0},2800)}
@@ -577,6 +653,12 @@ async function adminProduct(req, env) {
   if (p.type === 'digital') await env.ORDERS.put('stock:' + id, J((Array.isArray(p.stock) ? p.stock : []).map(String).filter(Boolean)));
   return json(env, { ok: true, id });
 }
+function cleanSup(x) {
+  if (!x || typeof x !== 'object') return undefined;
+  const r = x.rule || {}, mode = r.mode === 'fixed' ? 'fixed' : 'percent', value = Math.min(Math.max(Number(r.value) || 0, 0), mode === 'fixed' ? 1000 : 500), cats = {};
+  Object.keys(x.cats || {}).slice(0, 4000).forEach(id => { if (/^[A-Za-z0-9_-]{1,80}$/.test(id)) cats[id] = { n: String((x.cats[id] && x.cats[id].n) || '').slice(0, 80) }; });
+  return { rule: { mode, value }, cats };
+}
 async function adminIndex(req, env) {
   const b = await req.json().catch(() => null);
   if (!b || !Array.isArray(b.products)) return fail(env, 'Bad data');
@@ -594,7 +676,8 @@ async function adminIndex(req, env) {
   const aa = b.allAccess || {}, w = b.wallets || {};
   await env.ORDERS.put('idx', J({
     storeName: String(b.storeName || ''), products,
-    wallets: { usdt_trc20: String(w.usdt_trc20 || '').trim().slice(0, 120), btc: String(w.btc || '').trim().slice(0, 120) },
+    wallets: { usdt_trc20: String(w.usdt_trc20 || '').trim().slice(0, 120), usdt_bep20: String(w.usdt_bep20 || '').trim().slice(0, 120), btc: String(w.btc || '').trim().slice(0, 120), binancepay: String(w.binancepay || '').trim().slice(0, 160) },
+    sup: cleanSup(b.sup),
     allAccess: { enabled: !!aa.enabled, title: String(aa.title || 'All-Access Pass'), price: Number(aa.price) || 0 }
   }));
   return json(env, { ok: true, products: Object.keys(products).length });
@@ -603,7 +686,7 @@ async function adminOrders(env) {
   const ids = ((await env.ORDERS.get('oidx', 'json')) || []).slice(-100).reverse();
   let list = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
   list = await Promise.all(list.map((o, i) => o.status === 'pending' && i < 8 ? checkOrder(env, o) : (i < 8 ? ensureFulfilled(env, o) : o)));   // refresh waiting orders
-  const orders = list.map(o => ({ id: o.id, email: o.email, title: orderTitle(o), item: o.item || '', amount: fmtAmount(orderCoin(o), o.amount), coin: COINS[orderCoin(o)].short, usd: o.usd || null, status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null, key: o.key, account: o.account || null,
+  const orders = list.map(o => ({ id: o.id, email: o.email, title: orderTitle(o), item: o.item || '', amount: fmtAmount(orderCoin(o), o.amount), coin: COINS[orderCoin(o)].short, usd: o.usd || null, status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null, key: o.key, account: o.account || null, claimed: o.claimed || null,
     fulfil: fulfilState(o), fulfilErr: Object.values(o.fulfil || {}).map(f => f.error).filter(Boolean)[0] || '', cost: round2(supplierLines(o).reduce((a, l) => a + (Number(l.supplier.cost) || 0), 0)) || null }));
   return json(env, { orders });
 }
@@ -664,11 +747,20 @@ async function route(req, env) {
       const cat = await getCatalog(env);
       const prices = {}; if (cat && cat.products) Object.keys(cat.products).forEach(id => { const q = cat.products[id]; prices[id] = { price: q.price, stylePrice: q.stylePrice || 0 }; });
       return json(env, { storeName: cat ? cat.storeName : '', prices, allAccess: cat && cat.allAccess ? { price: cat.allAccess.price } : null, accounts: !!(env.ADMIN_TOKEN || env.SESSION_SECRET),
-        coins: Object.keys(COINS).filter(c => walletFor(env, cat, c)).map(c => ({ id: c, name: COINS[c].name, network: COINS[c].network })) });
+        coins: Object.keys(COINS).filter(c => walletFor(env, cat, c)).map(c => ({ id: c, name: COINS[c].name, network: COINS[c].network, kind: COINS[c].kind || (c === 'btc' ? 'btc' : 'tron'), minutes: COINS[c].minutes })) });
     }
     let pm = path.match(/^\/api\/preview\/([A-Za-z0-9_-]{1,64})\/(\d{1,2})$/);
     if (pm && req.method === 'GET') return await fullPreview(req, env, pm[1], +pm[2]);
+    if (path === '/api/gift/offers' && req.method === 'GET') return await giftRoute(req, env, url);
     if (path === '/api/order' && req.method === 'POST') return await createOrder(req, env, apiBase);
+    let cm = path.match(/^\/api\/order\/([a-f0-9]{32})\/claim$/);
+    if (cm && req.method === 'POST') {
+      if (tooMany(ipHits, 'claim|' + (req.headers.get('cf-connecting-ip') || 'x'), 20, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
+      const o = await env.ORDERS.get('order:' + cm[1], 'json'), b = await req.json().catch(() => ({}));
+      if (!o) return fail(env, 'Order not found', 404);
+      if (o.status === 'pending' && !o.claimed && COINS[orderCoin(o)].kind === 'manual') { o.claimed = { at: Date.now(), ref: String(b.ref || '').slice(0, 80) }; await saveOrder(env, o); }
+      return json(env, publicOrder(env, o, apiBase));
+    }
     let m = path.match(/^\/api\/order\/([a-f0-9]{32})$/);
     if (m && req.method === 'GET') {
       let o = await env.ORDERS.get('order:' + m[1], 'json');
