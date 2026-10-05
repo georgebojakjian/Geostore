@@ -3,165 +3,232 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Geostore Admin Dashboard</title>
+  <title>Geostore Admin</title>
   <meta name="robots" content="noindex,nofollow">
-  <link rel="icon" type="image/svg+xml" href="../site/logo.svg">
+  <link rel="icon" type="image/png" href="../site/favicon.png">
+  <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("geostore_admin_theme")==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
   <style>
-    :root{--bg:#0b0f1a;--panel:#111827;--surface:#151c2c;--border:rgba(148,163,184,.16);--text:#f8fafc;--muted:#94a3b8;--accent:#6366f1;--accent2:#22d3a5;--danger:#f87171;--warn:#fbbf24;--ease:cubic-bezier(.22,.61,.36,1)}
+    :root{--bg:#f3f6f1;--panel:#ffffff;--surface:#ffffff;--surface2:#f0f5ec;--border:#dde6d6;--border2:#c8d5bf;--text:#0f1a0c;--muted:#5b6955;--accent:#3d9a0e;--accent2:#2f7d09;--on:#fff;--soft:rgba(61,154,14,.1);--ring:rgba(61,154,14,.3);--danger:#c0392b;--warn:#a96c0b;--ok:#1f8a3b;--ease:cubic-bezier(.22,.61,.36,1);--shadow:0 1px 2px rgba(15,26,12,.05),0 8px 22px -14px rgba(15,26,12,.2);color-scheme:light}
+    [data-theme=dark]{--bg:#070e09;--panel:#0d1810;--surface:#101d14;--surface2:#16261b;--border:rgba(255,255,255,.09);--border2:rgba(255,255,255,.16);--text:#eef6e9;--muted:#8fa188;--accent:#8cf04d;--accent2:#a6f873;--on:#0b1a00;--soft:rgba(140,240,77,.12);--ring:rgba(140,240,77,.35);--danger:#ff7b6b;--warn:#f0b64d;--ok:#6fe38e;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px -14px rgba(0,0,0,.6);color-scheme:dark}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;min-height:100vh}
+    [hidden]{display:none!important}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased}
     button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer;border:0;background:none}
-    :focus-visible{outline:2px solid var(--accent2);outline-offset:2px;border-radius:6px}
-    .app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
-    aside{position:sticky;top:0;height:100vh;padding:22px 16px;border-right:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;gap:6px}
-    .brand{display:flex;gap:10px;align-items:center;font-weight:800;padding:0 8px 18px}.mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
-    .navb{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;color:var(--muted);text-align:left;width:100%;transition:all .25s var(--ease)}
-    .navb:hover{background:rgba(255,255,255,.05);color:#fff}.navb.on{background:rgba(99,102,241,.16);color:#fff}
-    .lock{margin-top:auto;font-size:.78rem;color:var(--muted);padding:12px;border:1px dashed var(--border);border-radius:12px}
-    main{padding:30px clamp(18px,3vw,40px) 80px;min-width:0}
-    h1{font-size:1.7rem;letter-spacing:-.02em;margin-bottom:4px}.lead{color:var(--muted);margin-bottom:24px}
-    .view{display:none}.view.on{display:block;animation:in .35s var(--ease)}@keyframes in{from{opacity:0;transform:translateY(8px)}}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px}
-    .stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px}.stat small{color:var(--muted)}.stat b{display:block;font-size:1.9rem;letter-spacing:-.03em}
-    .panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:20px}
-    .panel h2{font-size:1.1rem;margin-bottom:12px}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:12px;font-weight:600;font-size:.9rem;transition:transform .25s var(--ease),background .25s,border-color .25s}
-    .btn:hover{transform:translateY(-2px)}.btn-p{background:linear-gradient(135deg,var(--accent),#8b5cf6)}.btn-g{border:1px solid var(--border);background:rgba(255,255,255,.03)}.btn-g:hover{border-color:var(--accent2)}.btn-d{border:1px solid rgba(248,113,113,.4);color:var(--danger)}.btn-d:hover{background:rgba(248,113,113,.1)}.btn-s{padding:6px 12px;font-size:.82rem;border-radius:9px}
-    .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:16px}
-    table{width:100%;border-collapse:collapse;font-size:.92rem}th{color:var(--muted);font-weight:500;text-align:left;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}
+    :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+    .app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+    aside{position:sticky;top:0;height:100vh;padding:20px 14px;border-right:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+    .brand{display:flex;gap:10px;align-items:center;font-weight:800;padding:2px 8px 16px;font-size:1.08rem}.brand img{width:36px;height:36px;border-radius:10px}
+    .grp{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);padding:14px 12px 4px}
+    .navb{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;color:var(--muted);text-align:left;width:100%;font-weight:650;font-size:.95rem;transition:background .2s,color .2s;position:relative}
+    .navb .ico{width:22px;text-align:center;font-size:1.1rem}
+    .navb:hover{background:var(--soft);color:var(--text)}.navb.on{background:var(--soft);color:var(--accent2)}
+    .navb .bdg{margin-left:auto;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--danger);color:#fff;font-size:.72rem;font-weight:800;display:grid;place-items:center}
+    .side-foot{margin-top:auto;display:grid;gap:10px;padding-top:14px}
+    .lock{font-size:.76rem;color:var(--muted);padding:12px;border:1px dashed var(--border2);border-radius:12px}
+    .themebtn{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:12px;border:1px solid var(--border);background:var(--surface);font-weight:650;font-size:.88rem}
+    main{padding:0 clamp(16px,3vw,40px) 90px;min-width:0}
+    .status{position:sticky;top:0;z-index:30;display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:10px 0;margin:0 0 6px;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid transparent}
+    .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:.82rem;font-weight:700;border:1px solid var(--border2);background:var(--surface)}
+    .chip i{width:9px;height:9px;border-radius:50%;background:var(--ok)}.chip.warn{border-color:var(--warn);color:var(--warn)}.chip.warn i{background:var(--warn)}.chip.bad i{background:var(--danger)}
+    .chip button{font-weight:800;color:var(--accent2);text-decoration:underline;margin-left:4px}
+    h1{font-size:1.75rem;letter-spacing:-.03em;margin:18px 0 4px}.lead{color:var(--muted);margin-bottom:22px;max-width:70ch}
+    h2{font-size:1.12rem;letter-spacing:-.01em;margin-bottom:12px}h3{font-size:1rem}
+    .view{display:none}.view.on{display:block;animation:in .3s var(--ease)}@keyframes in{from{opacity:0;transform:translateY(6px)}}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+    .stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}.stat small{color:var(--muted);font-weight:650}.stat b{display:block;font-size:1.8rem;letter-spacing:-.03em}
+    .panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px;margin-bottom:18px;box-shadow:var(--shadow)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 18px;border-radius:999px;font-weight:700;font-size:.9rem;border:1px solid transparent;transition:transform .2s var(--ease),background .2s,border-color .2s;white-space:nowrap}
+    .btn:hover{transform:translateY(-1px)}.btn:active{transform:scale(.97)}
+    .btn-p{background:var(--accent);color:var(--on)}.btn-p:hover{background:var(--accent2)}
+    .btn-g{border-color:var(--border2);background:var(--surface)}.btn-g:hover{border-color:var(--accent)}
+    .btn-d{border-color:rgba(192,57,43,.4);color:var(--danger);background:var(--surface)}
+    .btn-s{min-height:34px;padding:0 14px;font-size:.82rem}.btn[disabled]{opacity:.55;pointer-events:none}
+    .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+    table{width:100%;border-collapse:collapse;font-size:.92rem}th{color:var(--muted);font-weight:700;text-align:left;font-size:.74rem;text-transform:uppercase;letter-spacing:.06em}
     th,td{padding:12px 10px;border-bottom:1px solid var(--border);vertical-align:middle}tr:last-child td{border-bottom:0}
     .tw{overflow-x:auto}.acts{display:flex;gap:6px;flex-wrap:wrap}
-    .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:600;border:1px solid var(--border)}
-    .pill.pending{color:var(--warn);border-color:rgba(251,191,36,.4)}.pill.paid{color:var(--accent2);border-color:rgba(34,211,165,.4)}.pill.delivered{color:#a5b4fc;border-color:rgba(165,180,252,.4)}.pill.off{color:var(--muted)}
+    .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.74rem;font-weight:700;border:1px solid var(--border2);color:var(--muted);background:var(--surface2)}
+    .pill.pending{color:var(--warn);border-color:var(--warn)}.pill.paid,.pill.ok{color:var(--ok);border-color:var(--ok)}.pill.bad{color:var(--danger);border-color:var(--danger)}.pill.off{color:var(--muted)}
     .form{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form .full{grid-column:1/-1}
-    label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:6px}
-    input,select,textarea{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg);outline:0;transition:border-color .25s,box-shadow .25s}
-    input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(99,102,241,.18)}
+    label{display:block;font-size:.82rem;font-weight:650;color:var(--muted);margin-bottom:6px}
+    input,select,textarea{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border2);background:var(--surface);outline:0;transition:border-color .2s,box-shadow .2s}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
     textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.78rem;min-height:210px;resize:vertical;white-space:pre;tab-size:2}
-    select option{background:var(--bg)}input[type=checkbox]{width:auto}
-    .chk{display:flex;gap:10px;align-items:center;color:var(--text);font-size:.92rem;margin:0}
-    iframe.pv{width:100%;height:380px;border:1px solid var(--border);border-radius:12px;background:#0b0f1a}
-    .help{color:var(--muted);font-size:.85rem}.help code,.step code{background:rgba(255,255,255,.07);padding:1px 7px;border-radius:6px;font-size:.82rem}
-    .step{display:grid;grid-template-columns:34px 1fr;gap:14px;margin-bottom:18px}.num{width:34px;height:34px;border-radius:50%;background:rgba(99,102,241,.18);border:1px solid rgba(99,102,241,.4);display:grid;place-items:center;font-weight:700}.step p{color:var(--muted);font-size:.92rem;margin-top:2px}.step h3{font-size:1rem}
-    .warn{border:1px solid rgba(251,191,36,.4);background:rgba(251,191,36,.07);color:#fde68a;padding:14px 16px;border-radius:12px;font-size:.9rem;margin-bottom:18px}
-    .toast{position:fixed;bottom:22px;right:22px;z-index:99;background:#1b2438;border:1px solid var(--accent2);padding:12px 18px;border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.5);opacity:0;transform:translateY(12px);pointer-events:none;transition:all .3s var(--ease)}.toast.show{opacity:1;transform:none}
+    input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--accent)}
+    .chk{display:flex;gap:10px;align-items:center;color:var(--text);font-size:.92rem;margin:0;font-weight:600}
+    iframe.pv{width:100%;height:380px;border:1px solid var(--border);border-radius:12px;background:#fff}
+    .help{color:var(--muted);font-size:.86rem}.help code,.tip code{background:var(--soft);padding:1px 7px;border-radius:6px;font-size:.82rem}
+    .tip{border:1px solid var(--border);background:var(--surface2);border-radius:14px;padding:12px 16px;font-size:.88rem;color:var(--muted);margin:10px 0}
+    .tip b{color:var(--text)}
+    .warn{border:1px solid var(--warn);background:rgba(183,121,31,.08);color:var(--text);padding:14px 16px;border-radius:14px;font-size:.9rem;margin-bottom:18px}
+    .toast{position:fixed;bottom:22px;right:22px;z-index:99;background:var(--text);color:var(--bg);padding:12px 20px;border-radius:999px;font-weight:650;box-shadow:0 14px 40px rgba(0,0,0,.35);opacity:0;transform:translateY(12px);pointer-events:none;transition:all .3s;max-width:90vw}
+    .toast.show{opacity:1;transform:none}
     .empty{text-align:center;color:var(--muted);padding:30px 0}
-    @media(max-width:900px){.app{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;padding:12px;border-right:0;border-bottom:1px solid var(--border)}.brand{padding:0 8px 0 4px;width:100%}.lock{display:none}.navb{width:auto;padding:9px 14px}.stats{grid-template-columns:1fr 1fr}.form{grid-template-columns:1fr}}
+    .seg{display:flex;gap:6px;flex-wrap:wrap}.seg button{height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--border2);background:var(--surface);font-weight:700;font-size:.84rem;color:var(--muted)}.seg button.on{background:var(--text);border-color:var(--text);color:var(--bg)}
+    .search{max-width:340px}
+    .check{display:grid;gap:10px}
+    .ck{display:grid;grid-template-columns:34px 1fr auto;gap:14px;align-items:center;padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:var(--surface2)}
+    .ck .dot{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:var(--border2);color:var(--on)}
+    .ck.done .dot{background:var(--ok)}.ck b{display:block}.ck span{font-size:.85rem;color:var(--muted)}
+    .qa{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+    .qa button{display:flex;gap:12px;align-items:center;padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--surface);text-align:left;font-weight:700;box-shadow:var(--shadow);transition:transform .2s,border-color .2s}.qa button:hover{transform:translateY(-2px);border-color:var(--accent)}.qa .ico{font-size:1.6rem}.qa small{display:block;color:var(--muted);font-weight:500}
+    .pcard{display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:flex-start;padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--surface2);margin-bottom:12px}
+    .pcard .ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:1.2rem}
+    .ic.usdt{background:#26a17b}.ic.bnb{background:#f0b90b;color:#1b1400}.ic.btc{background:#f7931a}.ic.bpay{background:#1e2329;color:#f0b90b}
+    .step{display:grid;grid-template-columns:38px 1fr;gap:14px;margin-bottom:20px}.num{width:38px;height:38px;border-radius:50%;background:var(--soft);color:var(--accent2);display:grid;place-items:center;font-weight:800}.step p{color:var(--muted);font-size:.92rem}
+    .logo-s{width:30px;height:30px;border-radius:8px;background:#fff;border:1px solid var(--border);object-fit:contain;flex:none}
+    .sticky-save{position:sticky;bottom:0;padding:14px 0;background:linear-gradient(transparent,var(--bg) 40%);display:flex;gap:10px}
+    @media(max-width:1000px){.stats{grid-template-columns:1fr 1fr}}
+    @media(max-width:900px){.app{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:10px;border-right:0;border-bottom:1px solid var(--border);gap:6px;align-items:center}.brand{padding:0 8px 0 4px;white-space:nowrap}.brand span{display:none}.grp,.lock{display:none}.navb{width:auto;white-space:nowrap;padding:9px 12px}.navb .bdg{margin-left:4px}.side-foot{margin:0 0 0 auto;padding:0}.themebtn span{display:none}.form{grid-template-columns:1fr}.status{top:0}}
+    @media(max-width:560px){.stats{grid-template-columns:1fr}h1{font-size:1.45rem}}
   </style>
 </head>
 <body>
 <div class="app">
   <aside>
-    <div class="brand"><img src="../site/logo.svg" alt="" width="30" height="30" style="border-radius:9px">Admin</div>
-    <button class="navb on" data-v="dash">📊 Dashboard</button>
-    <button class="navb" data-v="products">📦 Products</button>
-    <button class="navb" data-v="supplier">🎁 Supplier</button>
-    <button class="navb" data-v="orders">🧾 Orders</button>
-    <button class="navb" data-v="customers">👥 Customers</button>
-    <button class="navb" data-v="settings">⚙️ Settings</button>
-    <button class="navb" data-v="publish">🚀 Publish</button>
-    <div class="lock">🔒 Private. Keep this <b>admin</b> folder on your computer — never upload it.</div>
+    <div class="brand"><img src="../site/logo-96.png" alt="" width="36" height="36"><span>Geostore Admin</span></div>
+    <div class="grp">Overview</div>
+    <button class="navb on" data-v="dash"><span class="ico">🏠</span>Home</button>
+    <div class="grp">Sell</div>
+    <button class="navb" data-v="products"><span class="ico">🛍️</span>Products</button>
+    <button class="navb" data-v="supplier"><span class="ico">🎁</span>Gift cards</button>
+    <div class="grp">Manage</div>
+    <button class="navb" data-v="orders"><span class="ico">🧾</span>Orders<span class="bdg" id="ordBadge" hidden>0</span></button>
+    <button class="navb" data-v="customers"><span class="ico">👥</span>Customers</button>
+    <div class="grp">Setup</div>
+    <button class="navb" data-v="settings"><span class="ico">⚙️</span>Settings</button>
+    <button class="navb" data-v="publish"><span class="ico">🚀</span>Publish</button>
+    <div class="side-foot">
+      <button class="themebtn" id="themeBtn" type="button"><span>Dark mode</span><b id="themeIco">🌙</b></button>
+      <div class="lock">🔒 Private. Keep this <b>admin</b> folder on your computer — never upload it.</div>
+    </div>
   </aside>
 
   <main>
-    <!-- DASHBOARD -->
+    <div class="status" id="statusBar">
+      <span class="chip" id="chipSrv"><i></i><span>Server</span></span>
+      <span class="chip" id="chipSite"><i></i><span>Website</span></span>
+    </div>
+
+    <!-- HOME -->
     <section class="view on" id="v-dash">
-      <h1>Dashboard</h1><p class="lead">Your store at a glance.</p>
+      <h1>Welcome back 👋</h1><p class="lead">Everything you need to run your shop, in one place. Follow the checklist, then use the quick actions.</p>
+      <div class="panel"><h2>Setup checklist</h2><div class="check" id="checklist"></div></div>
       <div class="stats">
         <div class="stat"><small>Products</small><b id="sP">0</b></div>
-        <div class="stat"><small>Orders</small><b id="sO">0</b></div>
-        <div class="stat"><small>Waiting for payment check</small><b id="sW">0</b></div>
-        <div class="stat"><small>Revenue (paid)</small><b id="sR">$0</b></div>
+        <div class="stat"><small>Gift card brands</small><b id="sG">0</b></div>
+        <div class="stat"><small>Paid orders (last 100)</small><b id="sO">–</b></div>
+        <div class="stat"><small>Revenue (last 100 orders)</small><b id="sR">–</b></div>
       </div>
-      <div class="panel"><h2>What to do next</h2>
-        <p class="help">1) Add or edit your codes in <b>Products</b>. 2) Fill your email and wallet in <b>Settings</b>. 3) Go to <b>Publish</b> and follow the steps. 4) When a customer emails you an order, record it in <b>Orders</b>, check your wallet, and press <b>Deliver</b>.</p></div>
-      <div class="panel"><h2>Latest orders</h2><div class="tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Item</th><th>Status</th></tr></thead><tbody id="dashOrders"></tbody></table></div></div>
+      <div class="panel" id="attnBox" hidden><h2>⚠ Needs your attention</h2><div id="attn" class="check"></div></div>
+      <div class="panel"><h2>Quick actions</h2>
+        <div class="qa">
+          <button type="button" data-go="products" data-new="1"><span class="ico">➕</span><span>New product<small>Code, website or digital item</small></span></button>
+          <button type="button" data-go="supplier"><span class="ico">🎁</span><span>Import gift cards<small>One click, your margin</small></span></button>
+          <button type="button" id="qaSync"><span class="ico">⬆️</span><span>Sync to server<small>Prices, codes, wallets</small></span></button>
+          <button type="button" id="qaData"><span class="ico">🌐</span><span>Update website<small>Download data.js</small></span></button>
+        </div>
+      </div>
     </section>
 
     <!-- PRODUCTS -->
     <section class="view" id="v-products">
-      <h1>Products</h1><p class="lead">Every code you sell. Customers see the <b>free sample</b>; the <b>full version</b> stays private until they pay.</p>
+      <h1>Products</h1><p class="lead">Website code and your own digital items. Customers see a view-only preview; the full code is only delivered after payment. Gift cards from FazerCards are in the <b>Gift cards</b> tab.</p>
       <div id="plist">
-        <div class="bar"><span class="help" id="pcount"></span><button class="btn btn-p" id="newP">+ New product</button></div>
-        <div class="panel tw"><table><thead><tr><th>Title</th><th>Category</th><th>Price</th><th>Status</th><th></th></tr></thead><tbody id="ptbody"></tbody></table></div>
+        <div class="bar"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="pSearch" type="search" placeholder="Search products…"><div class="seg" id="pFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="code">Code</button><button type="button" data-f="web">Websites</button><button type="button" data-f="digital">Digital</button><button type="button" data-f="hidden">Hidden</button></div></div><button class="btn btn-p" id="newP">+ New product</button></div>
+        <div class="panel tw" style="padding:6px 14px"><table><thead><tr><th>Product</th><th>Category</th><th style="width:120px">Price ($)</th><th>Live</th><th></th></tr></thead><tbody id="ptbody"></tbody></table>
+        <p class="help" id="pcount" style="padding:10px 4px"></p><p style="text-align:center;padding-bottom:10px"><button class="btn btn-g btn-s" id="pMore" hidden>Show more</button></p></div>
+        <p class="help">Tip: change a price right in the table, then press <b>Sync to server</b> — the shop picks up new prices by itself.</p>
       </div>
       <div id="pedit" hidden>
-        <div class="bar"><h2 id="peTitle" style="font-size:1.2rem">Edit product</h2><button class="btn btn-g" id="peBack">← Back to list</button></div>
+        <div class="bar"><h2 id="peTitle" style="font-size:1.25rem;margin:0">Edit product</h2><button class="btn btn-g" id="peBack">← Back to products</button></div>
         <form class="panel form" id="pf" autocomplete="off">
+          <div class="full"><h3>Basics</h3></div>
           <div><label for="fTitle">Title</label><input id="fTitle" required></div>
-          <div><label for="fCat">Category</label><input id="fCat" list="cats" placeholder="Navigation, Hero, Shop…"><datalist id="cats"></datalist></div>
-          <div><label for="fPrice">Price (USD)</label><input id="fPrice" type="number" min="0" step="0.5" required></div>
-          <div><label class="chk" style="margin-top:28px"><input type="checkbox" id="fPub"> Show on the website</label></div>
+          <div><label for="fCat">Category <span class="help">(groups products in the shop)</span></label><input id="fCat" list="cats" placeholder="Navigation, Hero, Shop…"><datalist id="cats"></datalist></div>
           <div class="full"><label for="fTag">One-line description</label><input id="fTag"></div>
-          <div><label for="fStyleP">Price for ONE style only (leave empty = half of the product price)</label><input id="fStyleP" type="number" min="0" step="0.5" placeholder="e.g. 9"></div>
-          <div><label for="fGroup">Shown in</label><select id="fGroup"><option value="">Code snippets section</option><option value="website">Complete websites section</option></select></div>
-          <div><label for="fType">Type</label><select id="fType"><option value="code">Code product (HTML / CSS / JS)</option><option value="digital">Digital item (gift card, licence key…)</option></select></div>
+          <div><label for="fPrice">Price (USD)</label><input id="fPrice" type="number" min="0" step="0.5" required></div>
+          <div><label class="chk" style="margin-top:30px"><input type="checkbox" id="fPub"> Show on the website</label></div>
           <div class="full" id="codeFields">
-            <label>Styles — each style has its own free sample and private full code. Customers who buy get ALL styles.</label>
+            <h3 style="margin-bottom:6px">Styles &amp; code</h3>
+            <p class="help" style="margin-bottom:10px">Each style has a <b>public sample</b> (shown in the product card) and the <b>full code</b> (private — customers see it as a view-only preview and receive it after payment).</p>
             <div class="bar" style="margin:0 0 12px"><div id="vRow" style="display:flex;gap:8px;flex-wrap:wrap"></div><span style="display:flex;gap:8px"><button type="button" class="btn btn-g btn-s" id="vAdd">+ Add style</button><button type="button" class="btn btn-d btn-s" id="vDel">Remove this style</button></span></div>
-            <label for="fGuide">How-to-use guide for the customer (HTML allowed). Shown on the product page and on their delivery page. Explain how to edit the file and connect their own data.</label>
-            <textarea id="fGuide" spellcheck="false" style="min-height:130px;white-space:pre-wrap;margin-bottom:14px"></textarea>
             <label for="vName">Style name</label><input id="vName" style="margin-bottom:12px">
-            <label for="fSample">FREE sample code (shown publicly — a basic complete HTML page)</label><textarea id="fSample" spellcheck="false"></textarea>
-            <label for="fFull" style="margin-top:12px">FULL code (private — sent to the customer after payment)</label><textarea id="fFull" spellcheck="false"></textarea>
-            <div class="bar" style="margin:14px 0 0"><span class="help">Preview what you typed:</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-g btn-s" id="pvS">Preview free sample</button><button type="button" class="btn btn-g btn-s" id="pvF">Preview full code</button></span></div>
+            <label for="fSample">Public sample code (a basic complete HTML page)</label><textarea id="fSample" spellcheck="false"></textarea>
+            <label for="fFull" style="margin-top:12px">FULL code (private — delivered after payment)</label><textarea id="fFull" spellcheck="false"></textarea>
+            <div class="bar" style="margin:14px 0 0"><span class="help">Preview what you typed:</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-g btn-s" id="pvS">Preview public sample</button><button type="button" class="btn btn-g btn-s" id="pvF">Preview full code</button></span></div>
             <iframe class="pv" id="pvFrame" sandbox="allow-scripts allow-forms" title="Preview" style="margin-top:12px"></iframe>
+            <label for="fGuide" style="margin-top:14px">How-to-use guide for the customer (HTML allowed) — shown on the product page and on their order page</label>
+            <textarea id="fGuide" spellcheck="false" style="min-height:130px;white-space:pre-wrap"></textarea>
           </div>
           <div class="full" id="digFields" hidden>
-            <p class="help" id="supNote" hidden></p>
+            <p class="tip" id="supNote" hidden></p>
             <div class="form"><div><label for="fIcon">Card icon (one emoji)</label><input id="fIcon" placeholder="🎁"></div><div><label>In stock</label><div class="help" id="stockCount" style="padding-top:10px"></div></div></div>
             <div id="stockBox"><label for="fStock" style="margin-top:12px">Stock — one code per line (private; each paid order gets the next unused code)</label>
             <textarea id="fStock" spellcheck="false" style="min-height:170px"></textarea>
-            <p class="help" style="margin-top:8px">Only add codes you obtained legitimately and are allowed to resell. After editing stock, press <b>Sync to server</b> on the Publish tab so automatic delivery can use it. <b>Always add new codes at the END of the list and never delete or reorder lines that were already sold.</b></p></div>
+            <p class="tip">Only add codes you obtained legitimately and may resell. After editing stock press <b>Sync to server</b>. <b>Always add new codes at the END and never delete or reorder lines that were already sold.</b></p></div>
           </div>
-          <div class="full" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" type="submit">Save product</button><button type="button" class="btn btn-d" id="delP">Delete</button></div>
+          <div class="full"><details><summary style="cursor:pointer;font-weight:700">More options</summary>
+            <div class="form" style="margin-top:12px">
+              <div><label for="fStyleP">Price for ONE style only <span class="help">(empty = half the product price)</span></label><input id="fStyleP" type="number" min="0" step="0.5" placeholder="e.g. 9"></div>
+              <div><label for="fGroup">Shown in</label><select id="fGroup"><option value="">Code snippets</option><option value="website">Complete websites</option></select></div>
+              <div><label for="fType">Type</label><select id="fType"><option value="code">Code product (HTML / CSS / JS)</option><option value="digital">Digital item (your own codes)</option></select></div>
+            </div></details></div>
+          <div class="full sticky-save"><button class="btn btn-p" type="submit">Save product</button><button type="button" class="btn btn-d" id="delP">Delete</button></div>
         </form>
       </div>
     </section>
 
-    <!-- ORDERS -->
+    <!-- GIFT CARDS (FazerCards) -->
     <section class="view" id="v-supplier">
-      <h1>Supplier — FazerCards</h1><p class="lead">Sell gift cards without holding any stock. Pick a product from FazerCards, set your own price, and when a customer pays you the server buys the code from FazerCards and delivers it. Your profit is your price minus their cost.</p>
-      <div class="panel"><div class="bar"><h2 style="margin:0">Connection</h2><button class="btn btn-g btn-s" id="supCheck">Check connection &amp; balance</button></div>
-        <p class="help" id="supStatus">Add your FazerCards API key to Cloudflare first (see the steps in START-HERE.md → "Selling gift cards"), then press the button.</p>
-        <p class="help">Every sale is paid from your FazerCards balance. Keep it topped up — if it runs low the shop automatically stops offering those items so nobody pays for something you cannot deliver.</p></div>
-      <div class="panel"><h2>Browse the catalog</h2>
-        <div class="bar" style="margin:0 0 10px"><input id="supSearch" placeholder="Search: steam, itunes, roblox, google play…" style="max-width:340px"><span style="display:flex;gap:8px"><button class="btn btn-p btn-s" id="supLoad">Load catalog</button></span></div>
-        <p class="help" id="supCatMsg">Press "Load catalog" (one request), then search.</p>
-        <div class="tw"><table><tbody id="supCats"></tbody></table></div></div>
-      <div class="panel" id="supOffers" hidden></div>
-      <div class="panel"><div class="bar"><h2 style="margin:0">My supplier products</h2><span style="display:flex;gap:8px;align-items:center"><span class="help">My margin %</span><input id="supMargin" type="number" min="1" max="500" style="width:80px"><button class="btn btn-g btn-s" id="supRefresh">↻ Refresh costs</button><button class="btn btn-g btn-s" id="supApply">Apply margin to all prices</button></span></div>
-        <div class="tw"><table><thead><tr><th>Product</th><th>Cost now</th><th>My price</th><th>Profit</th><th>Stock</th><th></th></tr></thead><tbody id="supMine"></tbody></table></div>
-        <p class="help" id="supMineMsg"></p>
-        <p class="help">After changing prices press <b>Publish → Sync to server</b>. Costs change at FazerCards; if the cost rises above your price the shop stops selling that item until you reprice it.</p></div>
+      <h1>Gift cards</h1><p class="lead">Sell gift cards and game credit without holding stock. Choose what to sell, set your profit once, and the shop shows live prices. When a customer pays, the server buys the code from FazerCards and delivers it.</p>
+      <div class="panel"><div class="bar"><h2 style="margin:0">1 · Connection</h2><button class="btn btn-g btn-s" id="supCheck">Check connection &amp; balance</button></div>
+        <p class="help" id="supStatus">Add your FazerCards API key in Cloudflare first (steps in START-HERE.md → “Selling gift cards”), then press the button.</p>
+        <p class="tip">Every sale is paid from your FazerCards balance — keep it topped up. If it runs low the shop automatically hides those items.</p></div>
+      <div class="panel"><h2>2 · Your profit</h2>
+        <div class="form"><div><label>Profit type</label><div class="seg" id="ruleMode"><button type="button" data-m="percent" class="on">Percent (%)</button><button type="button" data-m="fixed">Fixed ($)</button></div></div>
+        <div><label for="ruleVal" id="ruleLbl">Add this % on top of the supplier price</label><input id="ruleVal" type="number" min="0" step="0.5"></div></div>
+        <p class="tip" id="ruleEx"></p></div>
+      <div class="panel"><div class="bar"><h2 style="margin:0">3 · Choose what to sell</h2><button class="btn btn-p btn-s" id="supLoad">Load catalog</button></div>
+        <p class="help" id="supCatMsg">Press “Load catalog” (one request). The brand, country and group are detected automatically — you can fix any of them.</p>
+        <div id="supTools" hidden>
+          <div class="bar" style="margin:12px 0"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="supSearch" type="search" placeholder="Search: steam, itunes, roblox…"><div class="seg" id="supFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="sel">Selected</button><button type="button" data-f="unsel">Not selected</button></div></div>
+            <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-g btn-s" id="supAll">Select all shown</button><button class="btn btn-g btn-s" id="supNone">Clear shown</button></span></div>
+          <div class="tw"><table><thead><tr><th style="width:36px"></th><th>Name</th><th>Brand</th><th style="width:112px">Country</th><th style="width:150px">Group</th></tr></thead><tbody id="supCats"></tbody></table></div>
+          <p style="margin:10px 0"><button class="btn btn-g btn-s" id="supShowMore" hidden>Show more rows</button></p>
+        </div>
+        <div class="bar" style="margin:14px 0 0"><span class="help" id="supSum"></span><button class="btn btn-p" id="supSave">Save selection</button></div>
+        <p class="help">After saving, press <b>Publish → Sync to server</b>, then <b>Download data.js</b> and upload your site folder (the brand list lives in data.js; prices are always live).</p></div>
+      <div class="panel" id="supMineBox" hidden><div class="bar"><h2 style="margin:0">Single-amount products (older way)</h2></div><div class="tw"><table><thead><tr><th>Product</th><th>Cost</th><th>My price</th><th></th></tr></thead><tbody id="supMine"></tbody></table></div></div>
     </section>
 
+    <!-- ORDERS -->
     <section class="view" id="v-orders">
-      <h1>Orders</h1><p class="lead">Automatic orders come from your payment server. Manual orders (if you do not use a server) are recorded below.</p>
-      <div class="panel"><div class="bar"><h2 style="margin:0">Automatic orders (server)</h2><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></div>
-        <p class="help" id="srvMsg">Press Refresh to load orders from your server.</p>
-        <div class="tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Items</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="srvBody"></tbody></table></div></div>
-      <p class="help" style="margin:4px 0 18px">Customer accounts moved to the <b>👥 Customers</b> tab.</p>
-      <h2 style="font-size:1.1rem;margin:26px 0 12px">Manual orders</h2>
-      <form class="panel form" id="of">
-        <div><label for="oEmail">Customer email</label><input id="oEmail" type="email" required></div>
-        <div><label for="oItem">Item</label><select id="oItem"></select></div>
-        <div><label for="oCoin">Coin</label><input id="oCoin" placeholder="USDT"></div>
-        <div><label for="oAmt">Amount received (USD)</label><input id="oAmt" type="number" min="0" step="0.5"></div>
-        <div class="full"><button class="btn btn-p" type="submit">+ Add order</button></div>
-      </form>
-      <div class="panel tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Item</th><th>USD</th><th>Status</th><th></th></tr></thead><tbody id="otbody"></tbody></table></div>
+      <h1>Orders</h1><p class="lead">Every order from your shop. Paid orders are delivered automatically — you only act on the ones marked <b>needs you</b>.</p>
+      <div class="bar"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="oSearch" type="search" placeholder="Search email or item…"><div class="seg" id="oFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="need">Needs you</button><button type="button" data-f="paid">Paid</button><button type="button" data-f="pending">Waiting</button></div></div><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></div>
+      <div class="panel tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Items</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="srvBody"></tbody></table>
+        <p class="help" id="srvMsg">Press Refresh to load orders from your server.</p></div>
+      <details class="panel"><summary style="cursor:pointer;font-weight:700">Old manual orders (only if you do not use the server)</summary>
+        <form class="form" id="of" style="margin-top:14px">
+          <div><label for="oEmail">Customer email</label><input id="oEmail" type="email" required></div>
+          <div><label for="oItem">Item</label><select id="oItem"></select></div>
+          <div><label for="oCoin">Coin</label><input id="oCoin" placeholder="USDT"></div>
+          <div><label for="oAmt">Amount received (USD)</label><input id="oAmt" type="number" min="0" step="0.5"></div>
+          <div class="full"><button class="btn btn-p btn-s" type="submit">+ Add order</button></div>
+        </form>
+        <div class="tw" style="margin-top:14px"><table><thead><tr><th>Date</th><th>Customer</th><th>Item</th><th>USD</th><th>Status</th><th></th></tr></thead><tbody id="otbody"></tbody></table></div>
+      </details>
     </section>
 
     <!-- CUSTOMERS -->
     <section class="view" id="v-customers">
-      <h1>Customers</h1><p class="lead">Everyone who created an account on your shop. Search, open a customer to see their orders, edit their details, disable or delete the account, or set a new password.</p>
+      <h1>Customers</h1><p class="lead">Everyone who created an account. Search, open a customer to see orders, edit details, disable or delete the account, or set a temporary password.</p>
       <div class="stats" style="grid-template-columns:repeat(3,1fr)">
         <div class="stat"><small>Customers</small><b id="cTotal">–</b></div>
         <div class="stat"><small>With orders (loaded)</small><b id="cOrd">–</b></div>
         <div class="stat"><small>Disabled (loaded)</small><b id="cDis">–</b></div>
       </div>
-      <div class="bar"><input id="cSearch" placeholder="Search name, email, phone, country…" style="max-width:360px"><span style="display:flex;gap:8px"><button class="btn btn-g btn-s" id="cRefresh">↻ Refresh</button><button class="btn btn-g btn-s" id="cCsv">⬇ Export CSV</button></span></div>
+      <div class="bar"><input class="search" id="cSearch" type="search" placeholder="Search name, email, phone, country…"><span style="display:flex;gap:8px"><button class="btn btn-g btn-s" id="cRefresh">↻ Refresh</button><button class="btn btn-g btn-s" id="cCsv">⬇ Export CSV</button></span></div>
       <div class="panel tw"><table><thead><tr><th>Joined</th><th>Name</th><th>Email</th><th>Phone</th><th>Country</th><th>Orders</th><th>Status</th><th></th></tr></thead><tbody id="cBody"></tbody></table>
         <p class="help" id="cMsg">Press Refresh to load your customers.</p><p><button class="btn btn-g btn-s" id="cMore" hidden>Load more</button></p></div>
       <div class="panel" id="cDetail" hidden></div>
@@ -169,39 +236,52 @@
 
     <!-- SETTINGS -->
     <section class="view" id="v-settings">
-      <h1>Settings</h1><p class="lead">Your store name, email, crypto wallets and the All-Access pass.</p>
-      <form class="panel form" id="sf">
-        <div><label for="sName">Store name</label><input id="sName"></div>
-        <div><label for="sEmail">Your email (orders arrive here)</label><input id="sEmail" type="email"></div>
-        <div class="full"><label for="sTag">Tagline</label><input id="sTag"></div>
-        <div class="full"><label for="sApi">Payment server URL (public — from Cloudflare, e.g. https://geostore-api.yourname.workers.dev). Leave empty for manual mode.</label><input id="sApi" placeholder="https://geostore-api.yourname.workers.dev"></div>
-        <div class="full"><label for="sTok">Server admin token (private — saved only in this browser, never published)</label><input id="sTok" type="password" autocomplete="off" placeholder="the ADMIN_TOKEN you chose in Cloudflare"></div>
-        <div class="full"><label for="sWalU">USDT wallet — TRON network (TRC20), starts with T. Customers pay this automatically.</label><input id="sWalU" placeholder="T..." autocomplete="off"></div>
-        <div class="full"><label for="sWalB">Bitcoin wallet address (starts with bc1, 1 or 3). Customers pay this automatically.</label><input id="sWalB" placeholder="bc1..." autocomplete="off"></div>
-        <div class="full"><label for="sWal">Other coins (manual mode only — used when no payment server is connected) — one per line, format: <code>Coin name | address</code></label><textarea id="sWal" style="min-height:110px;white-space:pre-wrap" placeholder="USDT (TRC20 network) | TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></textarea></div>
-        <div class="full"><label class="chk"><input type="checkbox" id="sDig"> Show the “Digital items” section on the home page (shows “coming soon” until you add items)</label></div>
-        <div class="full"><label class="chk"><input type="checkbox" id="aaOn"> Sell an All-Access pass (one payment → every code)</label></div>
-        <div><label for="aaTitle">Pass name</label><input id="aaTitle"></div>
-        <div><label for="aaPrice">Pass price (USD) — you choose</label><input id="aaPrice" type="number" min="0" step="1"></div>
-        <div class="full"><label for="aaDesc">Pass description</label><input id="aaDesc"></div>
-        <div class="full"><button class="btn btn-p" type="submit">Save settings</button></div>
+      <h1>Settings</h1><p class="lead">Your store details, where customers pay you, and the connection to your server.</p>
+      <form id="sf">
+        <div class="panel"><h2>Store</h2><div class="form">
+          <div><label for="sName">Store name</label><input id="sName"></div>
+          <div><label for="sEmail">Your email (shown to customers for support)</label><input id="sEmail" type="email"></div>
+          <div class="full"><label for="sTag">Tagline</label><input id="sTag"></div></div></div>
+
+        <div class="panel"><h2>Where customers pay you</h2>
+          <p class="help" style="margin-bottom:14px">Fill the ones you want to accept — each one appears as a payment box at checkout. Leave the others empty.</p>
+          <div class="pcard"><span class="ic usdt">₮</span><div><label for="sWalU">USDT on TRON (TRC20) — address starts with <b>T</b></label><input id="sWalU" placeholder="T…" autocomplete="off"></div></div>
+          <div class="pcard"><span class="ic bnb">₮</span><div><label for="sWalE">USDT on BNB Smart Chain (BEP20) — address starts with <b>0x</b></label><input id="sWalE" placeholder="0x…" autocomplete="off"></div></div>
+          <div class="pcard"><span class="ic btc">₿</span><div><label for="sWalB">Bitcoin address — starts with bc1, 1 or 3</label><input id="sWalB" placeholder="bc1…" autocomplete="off"></div></div>
+          <div class="pcard"><span class="ic bpay">B</span><div><label for="sWalP">Binance Pay ID (digits) — customers pay inside Binance, you confirm by hand</label><input id="sWalP" placeholder="e.g. 123456789" autocomplete="off" inputmode="numeric"></div></div>
+          <div class="tip"><b>Important about Binance deposit addresses:</b> when a customer pays from Binance to <i>another Binance address</i>, Binance often moves the money <b>inside its own system</b> — it never appears on the blockchain, so the shop cannot see it and you would have to press “Mark paid” yourself. For fully automatic payments use a wallet address you control (TronLink, Trust Wallet…) for TRC20/BEP20. The Binance Pay box above is the right choice for customers who pay inside Binance.</div>
+        </div>
+
+        <div class="panel"><h2>Server connection</h2><div class="form">
+          <div class="full"><label for="sApi">Payment server URL (from Cloudflare, e.g. https://geostore-api.yourname.workers.dev). Leave empty for manual mode.</label><input id="sApi" placeholder="https://geostore-api.yourname.workers.dev"></div>
+          <div class="full"><label for="sTok">Admin token (private — saved only in this browser, never published)</label><input id="sTok" type="password" autocomplete="off" placeholder="the ADMIN_TOKEN you chose in Cloudflare"></div>
+          <div class="full"><button type="button" class="btn btn-g btn-s" id="srvTest">Test connection</button> <span class="help" id="srvStatus" style="margin-left:8px"></span></div></div></div>
+
+        <div class="panel"><h2>All-Access pass</h2><div class="form">
+          <div class="full"><label class="chk"><input type="checkbox" id="aaOn"> Sell an All-Access pass (one payment → every code and website)</label></div>
+          <div><label for="aaTitle">Pass name</label><input id="aaTitle"></div>
+          <div><label for="aaPrice">Pass price (USD)</label><input id="aaPrice" type="number" min="0" step="1"></div>
+          <div class="full"><label for="aaDesc">Pass description</label><input id="aaDesc"></div></div></div>
+
+        <div class="panel"><details><summary style="cursor:pointer;font-weight:700">Advanced</summary><div class="form" style="margin-top:14px">
+          <div class="full"><label class="chk"><input type="checkbox" id="sDig"> Show the “Digital items” tiles in the Gift cards tab</label></div>
+          <div class="full"><label for="sWal">Other coins (manual mode only — used when no server is connected) — one per line: <code>Coin name | address</code></label><textarea id="sWal" style="min-height:90px;white-space:pre-wrap" placeholder="USDT (TRC20 network) | TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></textarea></div></div></details></div>
+        <div class="sticky-save"><button class="btn btn-p" type="submit">Save settings</button></div>
       </form>
     </section>
 
     <!-- PUBLISH -->
     <section class="view" id="v-publish">
-      <h1>Publish</h1><p class="lead">Put your store online for free. After every change in Products or Settings, repeat steps 1–3.</p>
-      <div class="warn">⚠️ Never upload this <b>admin</b> folder or <code>private.js</code> to the internet — it contains your paid code.</div>
-      <div class="panel"><h2>Automatic payments</h2>
-        <p class="help" style="margin-bottom:12px">After you change products, prices or the All-Access pass, press <b>Sync</b>. This sends your prices and your private full code to YOUR payment server so it can deliver automatically after payment.</p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" id="srvSync">⬆ Sync to server</button><button class="btn btn-g" id="srvTest">Test connection</button><button class="btn btn-g" id="srvSyncAll" title="Only needed if something looks out of date on the server">Re-upload everything</button></div>
-        <p class="help" id="srvStatus" style="margin-top:12px"></p></div>
-      <div class="panel">
-        <div class="step"><div class="num">1</div><div><h3>Download your public data file</h3><p>This holds your product list and free samples (not the paid code).</p><p style="margin-top:10px"><button class="btn btn-p" id="dlData">⬇ Download data.js</button></p></div></div>
-        <div class="step"><div class="num">2</div><div><h3>Replace the old file</h3><p>Put the downloaded <code>data.js</code> in your <code>site</code> folder, replacing the old one.</p></div></div>
-        <div class="step"><div class="num">3</div><div><h3>Upload the site folder</h3><p>Open <code>app.netlify.com/drop</code> and drag the whole <code>site</code> folder onto it. Your shop is live (free).</p></div></div>
-        <div class="step"><div class="num">4</div><div><h3>Make a backup (important)</h3><p>Your products live in this browser. Download a backup now and then — and keep it safe.</p><p style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-g" id="dlBackup">⬇ Backup everything (.json)</button><label class="btn btn-g" style="margin:0;cursor:pointer">⬆ Restore backup<input type="file" id="restore" accept=".json" hidden></label><button class="btn btn-d" id="resetAll">Reset to original files</button></p></div></div>
-      </div>
+      <h1>Publish</h1><p class="lead">Two things keep your shop up to date: <b>Sync</b> (server: prices, codes, wallets) and <b>Update website</b> (names, images, new products, gift-card brands).</p>
+      <div class="warn">⚠️ Never upload this <b>admin</b> folder or any <code>private*.js</code> file to the internet — they contain your paid code.</div>
+      <div class="panel"><div class="step"><div class="num">1</div><div><h3>Sync to server</h3><p>Sends prices, private codes, wallets and your gift-card choices to your server. <b>Price changes only need this step.</b></p>
+        <p style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" id="srvSync">⬆ Sync to server</button><button class="btn btn-g" id="srvSyncAll" title="Only if something looks out of date on the server">Re-upload everything</button></p>
+        <p class="help" id="srvStatus2" style="margin-top:10px"></p></div></div></div>
+      <div class="panel"><div class="step"><div class="num">2</div><div><h3>Update the website</h3><p>Needed when you add or remove products, change names, descriptions, images or gift-card brands.</p>
+        <p style="margin-top:12px"><button class="btn btn-p" id="dlData">⬇ Download data.js</button></p>
+        <p style="margin-top:12px">Put the file in your <code>site</code> folder (replace the old one), then upload the <b>whole site folder</b> to Netlify (Deploys → drag the folder).</p></div></div></div>
+      <div class="panel"><div class="step"><div class="num">3</div><div><h3>Back up (important)</h3><p>Your products live in this browser. Download a backup now and then and keep it safe.</p>
+        <p style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-g" id="dlBackup">⬇ Backup everything (.json)</button><label class="btn btn-g" style="margin:0;cursor:pointer">⬆ Restore backup<input type="file" id="restore" accept=".json" hidden></label><button class="btn btn-d" id="resetAll">Reset to original files</button></p></div></div></div>
     </section>
   </main>
 </div>
@@ -218,14 +298,25 @@
   'use strict';
   var KEY = 'geostore_admin_v1';
   var $ = function(id){ return document.getElementById(id); };
+  var $$ = function(sel, root){ return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-  function money(n){ return '$' + (Math.round((+n||0)*100)/100); }
+  function money(n){ n = Math.round((+n||0)*100)/100; return '$' + (n % 1 === 0 ? n : n.toFixed(2)); }
   function uid(){ return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
-  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(function(){t.classList.remove('show');},2400); }
+  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(function(){t.classList.remove('show');},2800); }
+  function safeUrl(u){ u = String(u || ''); return /^https:\/\/[^\s"'<>]+$/.test(u) ? u : ''; }
+  function slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0, 60) || 'x'; }
+
+  /* ---------- theme ---------- */
+  (function(){
+    var root = document.documentElement;
+    function paint(){ $('themeIco').textContent = root.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'; $('themeBtn').firstChild.textContent = root.getAttribute('data-theme') === 'dark' ? 'Light mode' : 'Dark mode'; }
+    $('themeBtn').addEventListener('click', function(){ var n = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; root.setAttribute('data-theme', n); try { localStorage.setItem('geostore_admin_theme', n); } catch(e) {} paint(); });
+    paint();
+  })();
 
   /* ---------- state ---------- */
   function clone(x){ return JSON.parse(JSON.stringify(x)); }
-  var WAL = {usdt_trc20:/^T[1-9A-HJ-NP-Za-km-z]{33}$/, btc:/^(bc1[a-z0-9]{25,87}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})$/};
+  var WAL = {usdt_trc20:/^T[1-9A-HJ-NP-Za-km-z]{33}$/, usdt_bep20:/^0x[a-fA-F0-9]{40}$/, btc:/^(bc1[a-z0-9]{25,87}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})$/, binancepay:/^[0-9]{5,20}$/};
   // add products from the shipped packs that this state does not have (never re-adds ones you deleted)
   function addPacks(d){
     var have = {}; d.products.forEach(function(p){ have[p.id] = 1; });
@@ -248,6 +339,9 @@
       Object.keys(d.settings.wallets).forEach(function(k){ var v = String(d.settings.wallets[k] || '').trim();
         if (WAL.usdt_trc20.test(v)) d.settings.autoWallets.usdt_trc20 = v; else if (WAL.btc.test(v)) d.settings.autoWallets.btc = v; });
     }
+    d.settings.autoWallets.usdt_bep20 = d.settings.autoWallets.usdt_bep20 || ''; d.settings.autoWallets.binancepay = d.settings.autoWallets.binancepay || '';
+    d.settings.sup = d.settings.sup || {rule:{mode:'percent', value:15}, cats:{}};
+    d.settings.sup.rule = d.settings.sup.rule || {mode:'percent', value:15}; d.settings.sup.cats = d.settings.sup.cats || {};
     addPacks(d);
     d.products.forEach(function(p){
       if (!p.variants || !p.variants.length) p.variants = [{name:'Standard', sample:p.sample || '', full:p.full || ''}];
@@ -255,6 +349,8 @@
       p.type = p.type === 'digital' ? 'digital' : 'code';
       p.stock = p.stock || []; p.used = p.used || 0;
     });
+    if (d.dirtySync === undefined) d.dirtySync = true;
+    if (d.dirtySite === undefined) d.dirtySite = true;
     return d;
   }
   function seed(){
@@ -266,68 +362,121 @@
   var state;
   try { state = JSON.parse(localStorage.getItem(KEY)); } catch(e) { state = null; }
   state = (state && state.products) ? migrate(state) : seed();
-  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) { toast('Browser storage is blocked — use Backup on the Publish tab'); } }
+  // save(true) = a real change (marks the server and website as "needs update"); save() = bookkeeping only
+  function save(changed){
+    if (changed){ state.dirtySync = true; state.dirtySite = true; }
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) { toast('Browser storage is blocked — use Backup on the Publish tab'); }
+    paintStatus();
+  }
+  function supCount(){ return Object.keys(state.settings.sup.cats).length; }
+  function brandCount(){ var b = {}; Object.keys(state.settings.sup.cats).forEach(function(k){ var c = state.settings.sup.cats[k]; b[(c.brand || c.n || '').toLowerCase()] = 1; }); return Object.keys(b).length; }
 
-  save();
+  function paintStatus(){
+    var s = $('chipSrv'), w = $('chipSite');
+    var hasSrv = !!(state.settings.apiUrl);
+    s.className = 'chip' + (!hasSrv ? ' bad' : state.dirtySync ? ' warn' : '');
+    s.innerHTML = '<i></i><span>' + (!hasSrv ? 'Server not connected' : state.dirtySync ? 'Server needs a Sync' : 'Server up to date') + '</span>' + (hasSrv && state.dirtySync ? '<button type="button" data-act="sync">Sync now</button>' : (!hasSrv ? '<button type="button" data-go="settings">Connect</button>' : ''));
+    w.className = 'chip' + (state.dirtySite ? ' warn' : '');
+    w.innerHTML = '<i></i><span>' + (state.dirtySite ? 'Website needs updating' : 'Website up to date') + '</span>' + (state.dirtySite ? '<button type="button" data-act="data">Download data.js</button>' : '');
+  }
+  $('statusBar').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.act === 'sync'){ show('publish'); runSync(false); }
+    if (b.dataset.act === 'data'){ downloadData(); }
+    if (b.dataset.go) show(b.dataset.go);
+  });
 
   /* ---------- navigation ---------- */
   function show(v){
-    Array.prototype.forEach.call(document.querySelectorAll('.view'), function(s){ s.classList.toggle('on', s.id==='v-'+v); });
-    Array.prototype.forEach.call(document.querySelectorAll('.navb'), function(b){ b.classList.toggle('on', b.dataset.v===v); });
-    if (v==='dash') renderDash(); if (v==='products') { backToList(); } if (v==='orders') { renderOrders(); if (base()) loadServerOrders(); } if (v==='settings') renderSettings(); if (v==='supplier') renderSupMine(); if (v==='customers' && base() && !custs.length) loadCustomers(false);
+    $$('.view').forEach(function(s){ s.classList.toggle('on', s.id==='v-'+v); });
+    $$('.navb').forEach(function(b){ b.classList.toggle('on', b.dataset.v===v); });
+    if (v==='dash') renderHome(); if (v==='products') { backToList(); } if (v==='orders') { renderOrders(); if (base()) loadServerOrders(); } if (v==='settings') renderSettings(); if (v==='supplier') renderSupplier(); if (v==='customers' && base() && !custs.length) loadCustomers(false);
     window.scrollTo(0,0);
   }
-  Array.prototype.forEach.call(document.querySelectorAll('.navb'), function(b){ b.addEventListener('click', function(){ show(b.dataset.v); }); });
+  $$('.navb').forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.v); }); });
+  document.addEventListener('click', function(e){
+    var g = e.target.closest('[data-go]'); if (!g || g.closest('#statusBar')) return;
+    show(g.dataset.go); if (g.dataset.new) $('newP').click();
+  });
 
-  /* ---------- dashboard ---------- */
-  function itemName(id){ if (id==='ALL') return (state.settings.allAccess.title||'All-Access'); var p=state.products.filter(function(x){return x.id===id;})[0]; return p?p.title:'(deleted)'; }
-  function renderDash(){
-    var paid = state.orders.filter(function(o){ return o.status!=='pending'; });
-    $('sP').textContent = state.products.length;
-    $('sO').textContent = state.orders.length;
-    $('sW').textContent = state.orders.filter(function(o){ return o.status==='pending'; }).length;
-    $('sR').textContent = money(paid.reduce(function(a,o){ return a + (+o.amount||0); }, 0));
-    var last = state.orders.slice().reverse().slice(0,5);
-    $('dashOrders').innerHTML = last.length ? last.map(function(o){
-      return '<tr><td>'+esc(o.date)+'</td><td>'+esc(o.email)+'</td><td>'+esc(itemName(o.item))+'</td><td><span class="pill '+o.status+'">'+o.status+'</span></td></tr>';
-    }).join('') : '<tr><td colspan="4" class="empty">No orders yet.</td></tr>';
+  /* ---------- home ---------- */
+  var lastOrders = [];
+  function checklist(){
+    var s = state.settings, w = s.autoWallets || {}, anyW = !!(w.usdt_trc20 || w.usdt_bep20 || w.btc || w.binancepay);
+    var items = [
+      {ok: !!s.apiUrl && !!token(), t:'Connect your server', d:'Settings → Server connection (URL + admin token), then Test connection.', go:'settings', b:'Open Settings'},
+      {ok: anyW, t:'Add where customers pay you', d:'Settings → at least one wallet address (a wallet you control is best).', go:'settings', b:'Add wallet'},
+      {ok: !state.dirtySync && !!s.apiUrl, t:'Sync your products to the server', d:'Publish → Sync to server (prices, private codes, wallets).', go:'publish', b:'Sync now'},
+      {ok: !state.dirtySite, t:'Publish the website', d:'Publish → Download data.js, then upload your site folder to Netlify.', go:'publish', b:'Update website'},
+      {ok: brandCount() > 0 || true, t:'Optional: sell gift cards', d: brandCount() ? brandCount() + ' brand(s) selected.' : 'Gift cards tab → connect FazerCards and choose brands.', go:'supplier', b:'Gift cards', opt:true}
+    ];
+    $('checklist').innerHTML = items.map(function(i, n){
+      return '<div class="ck ' + (i.ok && !i.opt ? 'done' : '') + '"><span class="dot">' + (i.ok && !i.opt ? '✓' : n + 1) + '</span><div><b>' + esc(i.t) + (i.opt ? ' <span class="pill">optional</span>' : '') + '</b><span>' + esc(i.d) + '</span></div>' + (i.ok && !i.opt ? '<span class="pill ok">done</span>' : '<button class="btn btn-g btn-s" data-go="' + i.go + '">' + esc(i.b) + '</button>') + '</div>';
+    }).join('');
   }
+  function renderHome(){
+    checklist(); paintStatus();
+    $('sP').textContent = state.products.length; $('sG').textContent = brandCount();
+    if (base() && token()) api('/api/admin/orders').then(function(r){ lastOrders = r.orders; homeOrders(); }).catch(function(){ $('sO').textContent = '–'; });
+  }
+  function needsYou(o){ return (o.status === 'pending' && o.claimed) || o.fulfil === 'stuck' || (o.fulfil === 'wait' && o.status === 'paid' && Date.now() - o.paidAt > 10*60000); }
+  function homeOrders(){
+    var paid = lastOrders.filter(function(o){ return o.status === 'paid'; });
+    $('sO').textContent = paid.length; $('sR').textContent = money(paid.reduce(function(a, o){ return a + (+o.usd || 0); }, 0));
+    var need = lastOrders.filter(needsYou), bd = $('ordBadge'); bd.hidden = !need.length; bd.textContent = need.length;
+    $('attnBox').hidden = !need.length;
+    $('attn').innerHTML = need.map(function(o){ return '<div class="ck"><span class="dot" style="background:var(--warn)">!</span><div><b>' + esc(o.title) + ' — ' + esc(o.email) + '</b><span>' + (o.claimed ? 'Customer says they paid with Binance Pay' + (o.claimed.ref ? ' (ref ' + esc(o.claimed.ref) + ')' : '') + '. Check Binance, then Mark paid.' : esc(o.fulfilErr || 'Supplier delivery needs a retry')) + '</span></div><button class="btn btn-p btn-s" data-go="orders">Open orders</button></div>'; }).join('');
+  }
+  $('qaSync').addEventListener('click', function(){ show('publish'); runSync(false); });
+  $('qaData').addEventListener('click', function(){ downloadData(); });
 
   /* ---------- products ---------- */
-  var editing = null;
+  var editing = null, pf = 'all', pshown = 40;
+  function ptype(p){ return p.type === 'digital' ? 'digital' : (p.group === 'website' ? 'web' : 'code'); }
   function renderProducts(){
-    $('pcount').textContent = state.products.length + ' product(s)';
-    $('ptbody').innerHTML = state.products.length ? state.products.map(function(p){
-      var extra = p.supplier ? ' <span class="pill">supplier · cost $'+(Math.round(p.supplier.cost*100)/100)+'</span>' : p.type==='digital' ? ' <span class="pill">digital · '+(p.stock.length-p.used)+' left</span>' : (p.variants.length>1 ? ' <span class="pill">'+p.variants.length+' styles</span>' : '');
-      return '<tr><td><b>'+esc(p.title)+'</b>'+extra+'<div class="help">'+esc(p.tagline||'')+'</div></td><td>'+esc(p.category||'')+'</td><td>'+money(p.price)+'</td><td><span class="pill '+(p.published!==false?'paid':'off')+'">'+(p.published!==false?'Live':'Hidden')+'</span></td>' +
+    var q = $('pSearch').value.trim().toLowerCase();
+    var list = state.products.filter(function(p){
+      if (pf === 'hidden' ? p.published !== false : (pf !== 'all' && ptype(p) !== pf)) return false;
+      return !q || (p.title + ' ' + (p.category || '') + ' ' + (p.tagline || '')).toLowerCase().indexOf(q) > -1;
+    });
+    $('pcount').textContent = list.length + ' of ' + state.products.length + ' product(s)';
+    $('pMore').hidden = list.length <= pshown; $('pMore').textContent = 'Show more (' + (list.length - pshown) + ')';
+    $('ptbody').innerHTML = list.length ? list.slice(0, pshown).map(function(p){
+      var extra = p.supplier ? ' <span class="pill">supplier</span>' : p.type==='digital' ? ' <span class="pill">digital · '+(p.stock.length-p.used)+' left</span>' : (p.group==='website' ? ' <span class="pill">website</span>' : '') + (p.variants.length>1 ? ' <span class="pill">'+p.variants.length+' styles</span>' : '');
+      return '<tr><td><b>'+esc(p.title)+'</b>'+extra+'<div class="help">'+esc(p.tagline||'')+'</div></td><td>'+esc(p.category||'')+'</td>' +
+        '<td><input type="number" min="0" step="0.5" value="'+esc(p.price)+'" data-price="'+esc(p.id)+'" aria-label="Price" style="padding:7px 10px"></td>' +
+        '<td><label class="chk" style="margin:0"><input type="checkbox" data-live="'+esc(p.id)+'"'+(p.published!==false?' checked':'')+'><span class="help">'+(p.published!==false?'Live':'Hidden')+'</span></label></td>' +
         '<td><div class="acts"><button class="btn btn-g btn-s" data-edit="'+esc(p.id)+'">Edit</button><button class="btn btn-g btn-s" data-dup="'+esc(p.id)+'">Duplicate</button></div></td></tr>';
-    }).join('') : '<tr><td colspan="5" class="empty">No products yet. Click "New product".</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="empty">No products match. Click “New product”.</td></tr>';
     var cats = {}; state.products.forEach(function(p){ if (p.category) cats[p.category]=1; });
     $('cats').innerHTML = Object.keys(cats).map(function(c){ return '<option value="'+esc(c)+'">'; }).join('');
   }
   function backToList(){ editing=null; $('pedit').hidden=true; $('plist').hidden=false; renderProducts(); }
+  $('pSearch').addEventListener('input', function(){ pshown = 40; renderProducts(); });
+  $('pFilter').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; pf = b.dataset.f; pshown = 40; $$('#pFilter button').forEach(function(x){ x.classList.toggle('on', x === b); }); renderProducts(); });
+  $('pMore').addEventListener('click', function(){ pshown += 40; renderProducts(); });
   var draft = null, vi = 0;
   var TPL = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>New code</title>\n<style>\n body{font-family:system-ui,sans-serif;background:#0b0f1a;color:#fff;margin:0}\n</style>\n</head>\n<body>\n<!-- your code here -->\n</body>\n</html>\n';
 
   /* ---- demo guard: links/forms inside a live preview must never leave the preview ---- */
-    function guardFn(){
-      var t;
-      function note(m){var n=document.getElementById('__dm');if(!n){n=document.createElement('div');n.id='__dm';n.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;background:#111;color:#fff;border:1px solid #c5f442;padding:10px 16px;border-radius:99px;font:600 13px system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:92vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none';document.body.appendChild(n)}n.textContent=m;n.style.opacity=1;clearTimeout(t);t=setTimeout(function(){n.style.opacity=0},2800)}
-      document.addEventListener('click',function(e){
-        var a=e.target.closest&&e.target.closest('a[href]');if(!a)return;
-        var h=a.getAttribute('href')||'';
-        if(h.length>1&&h.charAt(0)==='#'){e.preventDefault();var el=document.getElementById(h.slice(1));if(el)el.scrollIntoView({behavior:'smooth'});else note('Demo: this link has no page in the preview');return}
-        e.preventDefault();
-        note(h==='#'||h===''?'Demo link — in your real site this goes to your own page':'Demo: this link goes to another page ('+h.slice(0,40)+') that you add in your real site');
-      },true);
-      document.addEventListener('submit',function(e){if(!e.defaultPrevented){e.preventDefault();note('Demo form — connect it to your email or server in your real site')}});
-      window.open=function(u){note('Demo: this would open '+String(u||'a new page').slice(0,50)+' in your real site');return null};
-    }
-    function guard(html){
-      html = String(html || '');
-      var g = '<script>(' + guardFn.toString() + ')()<\/script>', i = html.lastIndexOf('</body>');
-      return i < 0 ? html + g : html.slice(0, i) + g + html.slice(i);
-    }
+  function guardFn(){
+    var t;
+    function note(m){var n=document.getElementById('__dm');if(!n){n=document.createElement('div');n.id='__dm';n.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;background:#111;color:#fff;border:1px solid #8cf04d;padding:10px 16px;border-radius:99px;font:600 13px system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:92vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none';document.body.appendChild(n)}n.textContent=m;n.style.opacity=1;clearTimeout(t);t=setTimeout(function(){n.style.opacity=0},2800)}
+    document.addEventListener('click',function(e){
+      var a=e.target.closest&&e.target.closest('a[href]');if(!a)return;
+      var h=a.getAttribute('href')||'';
+      if(h.length>1&&h.charAt(0)==='#'){e.preventDefault();var el=document.getElementById(h.slice(1));if(el)el.scrollIntoView({behavior:'smooth'});else note('Demo: this link has no page in the preview');return}
+      e.preventDefault();
+      note(h==='#'||h===''?'Demo link — in your real site this goes to your own page':'Demo: this link goes to another page ('+h.slice(0,40)+') that you add in your real site');
+    },true);
+    document.addEventListener('submit',function(e){if(!e.defaultPrevented){e.preventDefault();note('Demo form — connect it to your email or server in your real site')}});
+    window.open=function(u){note('Demo: this would open '+String(u||'a new page').slice(0,50)+' in your real site');return null};
+  }
+  function guard(html){
+    html = String(html || '');
+    var g = '<script>(' + guardFn.toString() + ')()<\/script>', i = html.lastIndexOf('</body>');
+    return i < 0 ? html + g : html.slice(0, i) + g + html.slice(i);
+  }
 
   function saveVariantFields(){
     if (!draft || draft.type !== 'code') return;
@@ -345,8 +494,8 @@
     $('fStyleP').parentNode.hidden = dg; $('fGroup').parentNode.hidden = dg;
     if (dg){ $('fIcon').value = draft.icon || ''; $('fStock').value = (draft.stock || []).join('\n'); stockCount(); }
     var sup = !!draft.supplier; $('supNote').hidden = !sup; $('stockBox').hidden = sup; $('fType').disabled = sup;
-    if (sup) $('supNote').innerHTML = '🎁 <b>Supplied automatically by FazerCards.</b> Cost now: <b>$' + (Math.round(draft.supplier.cost*100)/100) + '</b>. Change <b>My price</b> above; there is no stock to manage — the code is bought the moment a customer pays.';
-    else renderVariants();
+    if (sup) $('supNote').innerHTML = '🎁 <b>Supplied automatically by FazerCards.</b> Cost when added: <b>$' + (Math.round(draft.supplier.cost*100)/100) + '</b>. Change the price above; there is no stock to manage — the code is bought the moment a customer pays.';
+    if (!dg) renderVariants();
   }
   function openEditor(p){
     editing = p; draft = clone(p); vi = 0; $('plist').hidden = true; $('pedit').hidden = false;
@@ -369,7 +518,12 @@
   $('ptbody').addEventListener('click', function(e){
     var ed = e.target.closest('[data-edit]'), du = e.target.closest('[data-dup]');
     if (ed) openEditor(state.products.filter(function(p){return p.id===ed.dataset.edit;})[0]);
-    if (du){ var src = state.products.filter(function(p){return p.id===du.dataset.dup;})[0]; var c = clone(src); c.id = uid(); c.title += ' (copy)'; c.used = 0; state.products.push(c); save(); renderProducts(); toast('Duplicated'); }
+    if (du){ var src = state.products.filter(function(p){return p.id===du.dataset.dup;})[0]; var c = clone(src); c.id = uid(); c.title += ' (copy)'; c.used = 0; state.products.push(c); save(true); renderProducts(); toast('Duplicated'); }
+  });
+  $('ptbody').addEventListener('change', function(e){
+    var pr = e.target.closest('[data-price]'), lv = e.target.closest('[data-live]');
+    if (pr){ var p = state.products.filter(function(x){ return x.id === pr.dataset.price; })[0]; var v = +pr.value; if (p && v >= 0){ p.price = v; save(true); toast('Price saved — press Sync to update the shop'); } }
+    if (lv){ var p2 = state.products.filter(function(x){ return x.id === lv.dataset.live; })[0]; if (p2){ p2.published = lv.checked; save(true); lv.nextElementSibling.textContent = lv.checked ? 'Live' : 'Hidden'; } }
   });
   $('peBack').addEventListener('click', backToList);
   $('pvS').addEventListener('click', function(){ $('pvFrame').srcdoc = guard($('fSample').value); });
@@ -390,17 +544,18 @@
     var isNew = p._new; delete draft._new;
     if (isNew) state.products.push(draft);
     else { var i = state.products.indexOf(p); state.products[i] = draft; }
-    save(); toast('Product saved'); backToList();
+    save(true); toast('Product saved'); backToList();
   });
   $('delP').addEventListener('click', function(){
     if (!editing || editing._new) return;
     if (!confirm('Delete "' + editing.title + '"? This cannot be undone (make a backup first).')) return;
     state.removed.push(editing.id);
     state.products = state.products.filter(function(p){ return p.id !== editing.id; });
-    save(); toast('Deleted'); backToList();
+    save(true); toast('Deleted'); backToList();
   });
 
-  /* ---------- orders ---------- */
+  /* ---------- old manual orders ---------- */
+  function itemName(id){ if (id==='ALL') return (state.settings.allAccess.title||'All-Access'); var p=state.products.filter(function(x){return x.id===id;})[0]; return p?p.title:'(deleted)'; }
   function fillItems(){
     var o = state.products.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.title)+' — '+money(p.price)+'</option>'; });
     var aa = state.settings.allAccess; if (aa && aa.enabled) o.unshift('<option value="ALL">'+esc(aa.title)+' — '+money(aa.price)+'</option>');
@@ -408,23 +563,21 @@
   }
   $('oItem').addEventListener('change', function(){ $('oAmt').value = priceOf(this.value); });
   function priceOf(id){ if (id==='ALL') return state.settings.allAccess.price; var p=state.products.filter(function(x){return x.id===id;})[0]; return p?p.price:''; }
-  function renderOrders(){
+  function renderManual(){
     fillItems(); $('oAmt').value = priceOf($('oItem').value);
     $('otbody').innerHTML = state.orders.length ? state.orders.slice().reverse().map(function(o){
       return '<tr><td>'+esc(o.date)+'</td><td>'+esc(o.email)+'<div class="help">'+esc(o.coin||'')+'</div></td><td>'+esc(itemName(o.item))+'</td><td>'+money(o.amount)+'</td>' +
         '<td><select data-st="'+o.id+'"><option value="pending"'+(o.status==='pending'?' selected':'')+'>Waiting</option><option value="paid"'+(o.status==='paid'?' selected':'')+'>Paid</option><option value="delivered"'+(o.status==='delivered'?' selected':'')+'>Delivered</option></select></td>' +
         '<td><div class="acts"><button class="btn btn-p btn-s" data-del="'+o.id+'">⬇ Deliver</button><button class="btn btn-g btn-s" data-mail="'+o.id+'">✉ Email</button><button class="btn btn-d btn-s" data-rm="'+o.id+'">✕</button></div></td></tr>';
-    }).join('') : '<tr><td colspan="6" class="empty">No orders yet.</td></tr>';
+    }).join('') : '<tr><td colspan="6" class="empty">No manual orders.</td></tr>';
   }
   $('of').addEventListener('submit', function(e){
     e.preventDefault();
     state.orders.push({id:uid(), date:new Date().toISOString().slice(0,10), email:$('oEmail').value.trim(), item:$('oItem').value, coin:$('oCoin').value.trim(), amount:+$('oAmt').value||0, status:'pending'});
-    save(); $('oEmail').value=''; renderOrders(); toast('Order added');
+    save(); $('oEmail').value=''; renderManual(); toast('Order added');
   });
   function order(id){ return state.orders.filter(function(o){return o.id===id;})[0]; }
-  $('otbody').addEventListener('change', function(e){
-    var s = e.target.closest('[data-st]'); if (!s) return; order(s.dataset.st).status = s.value; save();
-  });
+  $('otbody').addEventListener('change', function(e){ var s = e.target.closest('[data-st]'); if (!s) return; order(s.dataset.st).status = s.value; save(); });
   $('otbody').addEventListener('click', function(e){
     var d=e.target.closest('[data-del]'), m=e.target.closest('[data-mail]'), r=e.target.closest('[data-rm]');
     if (d){
@@ -433,7 +586,7 @@
       var missing = list.filter(function(p){ return p.type==='code' && p.variants.some(function(v){ return !v.full; }); }); if (missing.length && !confirm('Some styles have no FULL code yet. Deliver anyway?')) return;
       var codes = {};
       for (var k = 0; k < list.length; k++){ var pp = list[k]; if (pp.type==='digital'){ var c = pp.stock[pp.used || 0]; if (!c){ toast('"' + pp.title + '" is out of stock — add more codes in Products'); return; } codes[pp.id] = c; pp.used = (pp.used || 0) + 1; } }
-      download(safeName(o.email) + '-codes.html', bundle(list, o, codes)); o.status = 'delivered'; save(); renderOrders();
+      download(safeName(o.email) + '-codes.html', bundle(list, o, codes)); o.status = 'delivered'; save(true); renderManual();
       toast('Downloaded — now attach this file to an email to the customer');
     }
     if (m){
@@ -441,14 +594,14 @@
       var body = 'Hi,\n\nThank you for your purchase of "' + itemName(o2.item) + '"!\n\nYour code file is attached. Open it in your browser: every code has a live preview and a Copy button.\n\nIf you need any help, just reply to this email.\n\n' + (state.settings.storeName||'');
       location.href = 'mailto:' + o2.email + '?subject=' + encodeURIComponent('Your ' + (state.settings.storeName||'') + ' order') + '&body=' + encodeURIComponent(body);
     }
-    if (r && confirm('Remove this order record?')){ state.orders = state.orders.filter(function(x){return x.id!==r.dataset.rm;}); save(); renderOrders(); }
+    if (r && confirm('Remove this order record?')){ state.orders = state.orders.filter(function(x){return x.id!==r.dataset.rm;}); save(); renderManual(); }
   });
   function safeName(s){ return String(s).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'customer'; }
   function download(name, text, type){
     var a = document.createElement('a'), u = URL.createObjectURL(new Blob([text], {type:type||'text/html'}));
     a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 1500);
   }
-  /* The delivery file the customer receives: one page, live preview + copy button for each code */
+  /* The delivery file for manual orders: one page, live preview + copy button for each code */
   function bundle(list, o, codes){
     var n = 0; codes = codes || {};
     var items = list.map(function(p){
@@ -462,35 +615,38 @@
       }).join('') + '</section>';
     }).join('');
     return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your codes — '+esc(state.settings.storeName||'')+'</title><style>' +
-      'body{margin:0;font-family:system-ui,sans-serif;background:#0b0f1a;color:#f8fafc;line-height:1.6}.w{max-width:960px;margin:auto;padding:30px 18px 80px}h1{margin-bottom:4px}.d{color:#94a3b8}' +
-      'section{margin-top:36px;padding:22px;border:1px solid #243049;border-radius:16px;background:#111827}iframe{width:100%;height:380px;border:1px solid #243049;border-radius:12px;background:#0b0f1a;margin:10px 0}' +
-      '.bar{display:flex;justify-content:space-between;align-items:center;margin:8px 0}button{background:#c5f442;color:#0a1000;border:0;padding:9px 18px;border-radius:10px;font-weight:600;cursor:pointer}' +
-      'pre{max-height:360px;overflow:auto;background:#070a12;border:1px solid #243049;border-radius:12px;padding:14px;font-size:.78rem;color:#c7d2fe}</style></head><body><div class="w">' +
-      '<h1><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="34" height="34" style="vertical-align:middle;margin-right:10px"><rect width="32" height="32" rx="9" fill="#c5f442"/><path d="M16 6.2l8.6 4.9-8.6 4.9-8.6-4.9z" fill="#0a1000"/><path d="M7.4 12.9l8.6 4.9v8.6l-8.6-4.9z" fill="#0a1000" fill-opacity=".72"/><path d="M24.6 12.9l-8.6 4.9v8.6l8.6-4.9z" fill="#0a1000" fill-opacity=".42"/></svg>Thank you! 🎉</h1><p class="d">Order for '+esc(o.email)+' · '+esc(o.date)+'. Each code below has a live preview and a copy button. Paste the code into a file named <b>index.html</b> and open it.</p>' + items +
+      'body{margin:0;font-family:system-ui,sans-serif;background:#f3f7ef;color:#0e1a0b;line-height:1.6}.w{max-width:900px;margin:auto;padding:30px 18px 80px}h1{margin-bottom:4px}.d{color:#586651}' +
+      'section{margin-top:30px;padding:22px;border:1px solid #dbe5d4;border-radius:18px;background:#fff}iframe{width:100%;height:380px;border:1px solid #dbe5d4;border-radius:12px;background:#fff;margin:10px 0}' +
+      '.bar{display:flex;justify-content:space-between;align-items:center;margin:8px 0}button{background:#3d9a0e;color:#fff;border:0;padding:9px 18px;border-radius:999px;font-weight:700;cursor:pointer}' +
+      'pre{max-height:360px;overflow:auto;background:#f0f5ec;border:1px solid #dbe5d4;border-radius:12px;padding:14px;font-size:.78rem;white-space:pre-wrap}</style></head><body><div class="w">' +
+      '<h1>Thank you! 🎉</h1><p class="d">Order for '+esc(o.email)+' · '+esc(o.date)+'. Each code below has a live preview and a copy button. Paste the code into a file named <b>index.html</b> and open it.</p>' + items +
       '<p class="d" style="margin-top:40px">Licence: you may use these codes in your own and your clients\' projects. You may not resell or share the code files themselves.</p></div>' +
       '<script>function cp(i,b){var t=document.getElementById("c"+i).textContent;function d(){b.textContent="Copied!";setTimeout(function(){b.textContent="Copy code"},1500)}if(navigator.clipboard){navigator.clipboard.writeText(t).then(d,d)}else{d()}}<\/script></body></html>';
   }
 
   /* ---------- settings ---------- */
   function renderSettings(){
-    var s = state.settings, aa = s.allAccess;
-    $('sWalU').value = (s.autoWallets||{}).usdt_trc20||''; $('sWalB').value = (s.autoWallets||{}).btc||''; $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
+    var s = state.settings, aa = s.allAccess, w = s.autoWallets || {};
+    $('sWalU').value = w.usdt_trc20||''; $('sWalE').value = w.usdt_bep20||''; $('sWalB').value = w.btc||''; $('sWalP').value = w.binancepay||'';
+    $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
     $('sWal').value = Object.keys(s.wallets||{}).map(function(k){ return k + ' | ' + s.wallets[k]; }).join('\n');
     $('sDig').checked = s.digitalSection !== false; $('aaOn').checked = !!aa.enabled; $('aaTitle').value = aa.title||''; $('aaPrice').value = aa.price==null?'':aa.price; $('aaDesc').value = aa.description||'';
   }
   $('sf').addEventListener('submit', function(e){
     e.preventDefault();
     var s = state.settings;
-    s.apiUrl = $('sApi').value.trim().replace(/\/+$/,''); try { localStorage.setItem('geostore_admin_token', $('sTok').value.trim()); } catch(e) {} s.storeName = $('sName').value.trim(); s.email = $('sEmail').value.trim(); s.tagline = $('sTag').value.trim();
-    var w = {}; $('sWal').value.split('\n').forEach(function(line){ var i = line.indexOf('|'); if (i>0){ var k = line.slice(0,i).trim(), v = line.slice(i+1).trim(); if (k && v) w[k]=v; } });
-    s.wallets = w;
-    var wu = $('sWalU').value.trim(), wb = $('sWalB').value.trim();
-    if (wu && !WAL.usdt_trc20.test(wu)){ toast('The USDT address does not look right (TRON addresses start with T and have 34 characters)'); return; }
+    var wu = $('sWalU').value.trim(), we = $('sWalE').value.trim(), wb = $('sWalB').value.trim(), wp = $('sWalP').value.trim();
+    if (wu && !WAL.usdt_trc20.test(wu)){ toast('The USDT TRC20 address does not look right (starts with T, 34 characters)'); return; }
+    if (we && !WAL.usdt_bep20.test(we)){ toast('The USDT BEP20 address does not look right (starts with 0x, 42 characters)'); return; }
     if (wb && !WAL.btc.test(wb)){ toast('The Bitcoin address does not look right'); return; }
-    s.autoWallets = {usdt_trc20: wu, btc: wb};
+    if (wp && !WAL.binancepay.test(wp)){ toast('The Binance Pay ID should be digits only'); return; }
+    s.apiUrl = $('sApi').value.trim().replace(/\/+$/,''); try { localStorage.setItem('geostore_admin_token', $('sTok').value.trim()); } catch(er) {}
+    s.storeName = $('sName').value.trim(); s.email = $('sEmail').value.trim(); s.tagline = $('sTag').value.trim();
+    var w = {}; $('sWal').value.split('\n').forEach(function(line){ var i = line.indexOf('|'); if (i>0){ var k = line.slice(0,i).trim(), v = line.slice(i+1).trim(); if (k && v) w[k]=v; } });
+    s.wallets = w; s.autoWallets = {usdt_trc20: wu, usdt_bep20: we, btc: wb, binancepay: wp};
     s.digitalSection = $('sDig').checked;
     s.allAccess = {enabled:$('aaOn').checked, title:$('aaTitle').value.trim()||'All-Access Pass', price:+$('aaPrice').value||0, description:$('aaDesc').value.trim()};
-    save(); toast('Settings saved — now go to Publish');
+    save(true); toast('Settings saved — now Sync on the Publish tab');
   });
 
   /* ---------- payment server (Cloudflare Worker) ---------- */
@@ -510,22 +666,24 @@
     return m + ' → This is Cloudflare\'s FREE daily limit. It resets by itself at ' + next.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' your local time (00:00 UTC). Nothing is broken — try again after that.';
   }
   var NOREACH = 'Could not reach the server. Open YOUR-URL/api/health in a new browser tab — if it does not show {"ok":true…}, the URL is wrong or the Worker is not deployed. If it does, re-paste the latest worker.js into Cloudflare and press Deploy.';
-  function srvStatus(t, bad){ var e = $('srvStatus'); e.textContent = t; e.style.color = bad ? 'var(--danger)' : 'var(--accent2)'; }
+  function srvStatus(t, bad){ ['srvStatus','srvStatus2'].forEach(function(id){ var e = $(id); e.textContent = t; e.style.color = bad ? 'var(--danger)' : 'var(--ok)'; }); }
   $('srvTest').addEventListener('click', function(){
+    // use what is typed in the form (not yet saved)
+    var url = $('sApi').value.trim().replace(/\/+$/,''), tk = $('sTok').value.trim();
     srvStatus('Testing…');
-    if (!base()) return srvStatus('Enter your Payment server URL in Settings first.', true);
-    if (!/^https:\/\/[^\s]+$/.test(base())) return srvStatus('The Payment server URL must start with https:// — check it in Settings.', true);
-    fetch(base() + '/api/health').then(function(r){ return r.json(); }, function(){ throw new Error(NOREACH); }).then(function(h){
+    if (!url) return srvStatus('Enter your Payment server URL first.', true);
+    if (!/^https:\/\/[^\s]+$/.test(url)) return srvStatus('The Payment server URL must start with https://', true);
+    fetch(url + '/api/health').then(function(r){ return r.json(); }, function(){ throw new Error(NOREACH); }).then(function(h){
       var miss = []; if (!h.kv) miss.push('storage (KV binding ORDERS)'); if (!h.admin) miss.push('ADMIN_TOKEN');
       if (miss.length) return srvStatus('Server reachable, but missing: ' + miss.join(', '), true);
-      return api('/api/admin/ping').then(function(){ srvStatus('✅ Everything is connected and your admin token works.' + (h.wallet ? '' : ' (No wallet yet — add it in Settings, then press Sync.)')); });
+      return fetch(url + '/api/admin/ping', {headers:{authorization:'Bearer ' + tk}}).then(function(r){ if (!r.ok) throw new Error('Wrong or missing admin token'); }, function(){ throw new Error(NOREACH); }).then(function(){ srvStatus('✅ Connected and your admin token works. Server version ' + (h.version || '?') + (h.supplier ? ' · FazerCards key found' : '') + (h.wallet ? '' : ' (no wallet yet — add one above, save, then Sync)')); });
     }).catch(function(e){ srvStatus('❌ ' + e.message, true); });
   });
   // Sync = upload each CHANGED product on its own (small requests), then one small index.
-  // This is gentle on Cloudflare's free plan and fast: unchanged products are skipped.
   function hash(str){ var h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (var i = 0, c; i < str.length; i++){ c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); } h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909); h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909); return (h2>>>0).toString(16) + (h1>>>0).toString(16); }
   function srvProduct(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, guide:p.guide||'', type:p.type, published:p.published!==false,
     variants:p.type==='code' ? p.variants.map(function(v){ return {name:v.name, full:v.full}; }) : [], stock:p.type==='digital' ? p.stock : []}; }
+  function supForServer(){ var s = state.settings.sup, cats = {}; Object.keys(s.cats).forEach(function(id){ cats[id] = {n: s.cats[id].n}; }); return {rule: s.rule, cats: cats}; }
   var syncing = false;
   function runSync(force){
     if (syncing) return; syncing = true;
@@ -544,30 +702,53 @@
       var aa = state.settings.allAccess || {}, removed = (state.removed || []).filter(function(id){ return state.sync['gone:' + id] !== 1; });
       srvStatus('Finishing…');
       api('/api/admin/index', {method:'POST', body: JSON.stringify({
-        storeName: state.settings.storeName, wallets: state.settings.autoWallets || {}, remove: removed,
+        storeName: state.settings.storeName, wallets: state.settings.autoWallets || {}, remove: removed, sup: supForServer(),
         allAccess: {enabled: !!aa.enabled, title: aa.title, price: aa.price},
         products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, type:p.type, published:p.published!==false, supplier:p.supplier ? {cat:p.supplier.cat, card:p.supplier.card} : undefined, variants:p.type==='code' ? p.variants.map(function(v){ return v.name; }) : [], stockN:p.type==='digital' ? p.stock.length : 0}; })
-      })}).then(function(r){ removed.forEach(function(id){ state.sync['gone:' + id] = 1; }); save(); finish('✅ Synced: ' + total + ' product(s) uploaded, ' + (r.products - total) + ' unchanged. Everything is up to date.'); })
+      })}).then(function(r){ removed.forEach(function(id){ state.sync['gone:' + id] = 1; }); state.dirtySync = false; save(); finish('✅ Synced: ' + total + ' product(s) uploaded, ' + (r.products - total) + ' unchanged. The server is up to date.'); })
         .catch(function(e){ finish('❌ ' + e.message, true); });
     }
     srvStatus('Starting…'); next();
   }
   $('srvSync').addEventListener('click', function(){ runSync(false); });
   $('srvSyncAll').addEventListener('click', function(){ if (confirm('Re-upload every product? This uses more of Cloudflare\'s free daily writes (about 1 per product).')) runSync(true); });
+
+  /* ---------- orders from the server ---------- */
+  var of = 'all';
+  function dstr2(ms){ return new Date(ms).toISOString().slice(0,16).replace('T',' '); }
   function loadServerOrders(){
     $('srvMsg').textContent = 'Loading…';
-    api('/api/admin/orders').then(function(r){
-      $('srvMsg').textContent = r.orders.length ? r.orders.length + ' order(s)' : 'No automatic orders yet.';
-      $('srvBody').innerHTML = r.orders.map(function(o){
-        var link = base() + '/api/delivery/' + o.id + '?k=' + o.key;
-        return '<tr><td>' + esc(new Date(o.createdAt).toISOString().slice(0,16).replace('T',' ')) + '</td><td>' + esc(o.email) + '</td><td>' + esc(o.title) + '</td><td>' + (o.usd ? '$' + esc(o.usd) + '<div class="help">' : '<div class="help">') + esc(o.amount) + ' ' + esc(o.coin || 'USDT') + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span></td><td><div class="acts">' +
-          (o.fulfil ? '<div class="help" style="width:100%">' + (o.fulfil==='ok' ? '🎁 supplier code delivered · cost $' + esc(o.cost) + ' · profit $' + esc(Math.round((o.usd - o.cost)*100)/100) : o.fulfil==='wait' ? '⏳ buying from supplier… ' + esc(o.fulfilErr) : '⚠ NEEDS YOU: ' + esc(o.fulfilErr || 'supplier problem')) + '</div>' + (o.fulfil!=='ok' && o.status==='paid' ? '<button class="btn btn-p btn-s" data-retry="' + esc(o.id) + '">Retry supplier purchase</button>' : '') : '') +
-          (o.status==='paid' ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(link) + '">Open codes</a>' : '') +
-          (o.status!=='paid' ? '<button class="btn btn-g btn-s" data-mp="' + esc(o.id) + '">Mark paid</button>' : '') + '</div></td></tr>';
-      }).join('');
-    }).catch(function(e){ $('srvMsg').textContent = '❌ ' + e.message; $('srvBody').innerHTML = ''; });
+    api('/api/admin/orders').then(function(r){ lastOrders = r.orders; homeOrders(); drawOrders(); }).catch(function(e){ $('srvMsg').textContent = '❌ ' + e.message; $('srvBody').innerHTML = ''; });
   }
+  function drawOrders(){
+    var q = $('oSearch').value.trim().toLowerCase();
+    var list = lastOrders.filter(function(o){
+      if (of === 'need' && !needsYou(o)) return false; if (of === 'paid' && o.status !== 'paid') return false; if (of === 'pending' && o.status !== 'pending') return false;
+      return !q || (o.email + ' ' + o.title).toLowerCase().indexOf(q) > -1;
+    });
+    $('srvMsg').textContent = lastOrders.length ? list.length + ' of ' + lastOrders.length + ' order(s)' : 'No orders yet.';
+    $('srvBody').innerHTML = list.map(function(o){
+      var link = base() + '/api/delivery/' + o.id + '?k=' + o.key, need = needsYou(o);
+      return '<tr' + (need ? ' style="background:rgba(183,121,31,.08)"' : '') + '><td>' + esc(dstr2(o.createdAt)) + '</td><td>' + esc(o.email) + '</td><td>' + esc(o.title) + '</td><td>' + (o.usd ? '$' + esc(o.usd) : '') + '<div class="help">' + esc(o.amount) + ' ' + esc(o.coin || 'USDT') + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span>' + (need ? ' <span class="pill bad">needs you</span>' : '') +
+        (o.claimed ? '<div class="help">Customer says paid' + (o.claimed.ref ? ' · ref ' + esc(o.claimed.ref) : '') + '</div>' : '') +
+        (o.fulfil ? '<div class="help">' + (o.fulfil==='ok' ? '🎁 delivered · cost $' + esc(o.cost) + ' · profit $' + esc(Math.round((o.usd - o.cost)*100)/100) : o.fulfil==='wait' ? '⏳ buying from supplier… ' + esc(o.fulfilErr) : '⚠ ' + esc(o.fulfilErr || 'supplier problem')) + '</div>' : '') + '</td><td><div class="acts">' +
+        (o.fulfil && o.fulfil!=='ok' && o.status==='paid' ? '<button class="btn btn-p btn-s" data-retry="' + esc(o.id) + '">Retry delivery</button>' : '') +
+        (o.status==='paid' ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(link) + '">Open order</a>' : '') +
+        (o.status!=='paid' ? '<button class="btn btn-g btn-s" data-mp="' + esc(o.id) + '">Mark paid</button>' : '') + '</div></td></tr>';
+    }).join('');
+  }
+  function renderOrders(){ renderManual(); }
   $('srvRefresh').addEventListener('click', loadServerOrders);
+  $('oSearch').addEventListener('input', drawOrders);
+  $('oFilter').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; of = b.dataset.f; $$('#oFilter button').forEach(function(x){ x.classList.toggle('on', x === b); }); drawOrders(); });
+  $('srvBody').addEventListener('click', function(e){
+    var rb = e.target.closest('[data-retry]');
+    if (rb){ rb.disabled = true; api('/api/admin/retry', {method:'POST', body: JSON.stringify({id: rb.dataset.retry})}).then(function(r){ toast(r.fulfil === 'ok' ? 'Delivered ✅' : 'Still not delivered: ' + (r.error || 'supplier problem')); loadServerOrders(); }).catch(function(er){ toast(er.message); rb.disabled = false; }); return; }
+    var b = e.target.closest('[data-mp]'); if (!b) return;
+    if (!confirm('Mark this order as paid? Only do this after you saw the money in your wallet / Binance.')) return;
+    api('/api/admin/markpaid', {method:'POST', body: JSON.stringify({id:b.dataset.mp})}).then(function(){ toast('Marked as paid — delivery is automatic'); loadServerOrders(); }).catch(function(er){ toast(er.message); });
+  });
+
   /* ---------- customers (accounts stored on your server) ---------- */
   var custs = [], custNext = null, custTotal = 0;
   function dstr(ms){ return ms ? new Date(ms).toISOString().slice(0,10) : ''; }
@@ -604,7 +785,7 @@
         '<p class="help">' + esc(p.email) + ' · member since ' + esc(dstr(p.createdAt)) + ' · ' + r.orders.length + ' order(s) · total paid <b>$' + esc(r.spent) + '</b></p>' +
         '<form class="form" id="cdForm" style="margin:14px 0"><div><label>Name</label><input id="cdName" value="' + esc(p.name) + '"></div><div><label>Phone</label><input id="cdPhone" value="' + esc(p.phone) + '"></div><div><label>Country</label><input id="cdCountry" value="' + esc(p.country) + '"></div><div><label>Private note (only you can see it)</label><input id="cdNote" value="' + esc(p.note) + '"></div><div class="full" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p btn-s" type="submit">Save details</button><button class="btn btn-g btn-s" type="button" id="cdToggle">' + (p.disabled ? 'Enable account' : 'Disable account') + '</button><button class="btn btn-g btn-s" type="button" id="cdPw">Set a new password…</button><button class="btn btn-d btn-s" type="button" id="cdDel">Delete account</button></div></form>' +
         '<h2 style="font-size:1rem">Orders</h2><div class="tw"><table><thead><tr><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>' +
-        (r.orders.map(function(o){ return '<tr><td>' + esc(dstr(o.createdAt)) + '</td><td>' + esc(o.title) + '</td><td>$' + esc(o.usd) + '<div class="help">' + esc(o.amount) + ' ' + esc(o.coinName.split(' ')[0]) + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span></td><td>' + (o.deliveryUrl ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(o.deliveryUrl) + '">Open codes</a>' : '') + '</td></tr>'; }).join('') || '<tr><td colspan="5" class="empty">No orders yet.</td></tr>') + '</tbody></table></div>';
+        (r.orders.map(function(o){ return '<tr><td>' + esc(dstr(o.createdAt)) + '</td><td>' + esc(o.title) + '</td><td>$' + esc(o.usd) + '<div class="help">' + esc(o.amount) + ' ' + esc(o.coinName.split(' ')[0]) + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span></td><td>' + (o.deliveryUrl ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(o.deliveryUrl) + '">Open order</a>' : '') + '</td></tr>'; }).join('') || '<tr><td colspan="5" class="empty">No orders yet.</td></tr>') + '</tbody></table></div>';
       function act(body, ok, reload){ body.email = email; return api('/api/admin/customer', {method:'POST', body: JSON.stringify(body)}).then(function(){ toast(ok); reload(); }).catch(function(e){ toast(e.message); }); }
       $('cdClose').onclick = function(){ box.hidden = true; };
       $('cdForm').onsubmit = function(e){ e.preventDefault(); act({action:'profile', name:$('cdName').value, phone:$('cdPhone').value, country:$('cdCountry').value, note:$('cdNote').value}, 'Saved', function(){ loadCustomers(false); openCustomer(email); }); };
@@ -614,24 +795,66 @@
     }).catch(function(e){ box.innerHTML = '<p class="help">❌ ' + esc(e.message) + '</p>'; });
   }
   $('cBody').addEventListener('click', function(e){ var b = e.target.closest('[data-cv]'); if (b) openCustomer(b.dataset.cv); });
-  $('srvBody').addEventListener('click', function(e){
-    var rb = e.target.closest('[data-retry]');
-    if (rb){ rb.disabled = true; api('/api/admin/retry', {method:'POST', body: JSON.stringify({id: rb.dataset.retry})}).then(function(r){ toast(r.fulfil === 'ok' ? 'Delivered ✅' : 'Still not delivered: ' + (r.error || 'supplier problem')); loadServerOrders(); }).catch(function(er){ toast(er.message); rb.disabled = false; }); return; }
-    var b = e.target.closest('[data-mp]'); if (!b) return;
-    if (!confirm('Mark this order as paid? Only do this after you saw the money in your wallet.')) return;
-    api('/api/admin/markpaid', {method:'POST', body: JSON.stringify({id:b.dataset.mp})}).then(function(){ toast('Marked as paid'); loadServerOrders(); }).catch(function(e){ toast(e.message); });
-  });
 
-  /* ---------- supplier (FazerCards) ---------- */
-  var supCats = [], supOpen = null;
-  function supMargin(){ var m = +$('supMargin').value; return m > 0 ? m : 15; }
-  function suggest(cost){ return Math.ceil(cost * (1 + supMargin()/100) * 100) / 100; }
-  function supProducts(){ return state.products.filter(function(p){ return p.supplier; }); }
-  function renderCats(){
+  /* ---------- gift cards (FazerCards): choose categories, set profit ---------- */
+  var REG = [['US',['USA','US','United States','America']],['GB',['UK','United Kingdom','Britain','England']],['CA',['Canada']],['AU',['Australia']],['NZ',['New Zealand']],['DE',['Germany','Deutschland']],['FR',['France']],['ES',['Spain']],['IT',['Italy']],['NL',['Netherlands','Holland']],['BE',['Belgium']],['AT',['Austria']],['CH',['Switzerland']],['SE',['Sweden']],['NO',['Norway']],['DK',['Denmark']],['FI',['Finland']],['IE',['Ireland']],['PT',['Portugal']],['PL',['Poland']],['CZ',['Czech','Czech Republic']],['RO',['Romania']],['GR',['Greece']],['HU',['Hungary']],['TR',['Turkey','Türkiye','Turkiye']],['SA',['Saudi Arabia','Saudi','KSA']],['AE',['UAE','United Arab Emirates','Emirates']],['KW',['Kuwait']],['QA',['Qatar']],['BH',['Bahrain']],['OM',['Oman']],['EG',['Egypt']],['JO',['Jordan']],['LB',['Lebanon']],['IQ',['Iraq']],['MA',['Morocco']],['DZ',['Algeria']],['TN',['Tunisia']],['ZA',['South Africa']],['NG',['Nigeria']],['KE',['Kenya']],['IN',['India']],['PK',['Pakistan']],['BD',['Bangladesh']],['ID',['Indonesia']],['MY',['Malaysia']],['SG',['Singapore']],['TH',['Thailand']],['VN',['Vietnam']],['PH',['Philippines']],['JP',['Japan']],['KR',['South Korea','Korea']],['CN',['China']],['HK',['Hong Kong']],['TW',['Taiwan']],['BR',['Brazil','Brasil']],['MX',['Mexico']],['AR',['Argentina']],['CL',['Chile']],['CO',['Colombia']],['PE',['Peru']],['RU',['Russia']],['UA',['Ukraine']],['IL',['Israel']],['EU',['Europe','European','EU']]];
+  var GROUPS = ['Gaming','Entertainment','Apps & stores','Shopping','Mobile & telecom','Prepaid & finance','Other'];
+  var GRP_KW = {Gaming:['steam','playstation','psn','xbox','nintendo','roblox','fortnite','v-bucks','pubg','free fire','garena','razer','riot','valorant','league of legends','minecraft','blizzard','battle.net','epic games','ea play','origin','ubisoft','mobile legends','genshin','apex','call of duty','warzone','supercell','clash','robux','uc ','diamonds','honor of kings','tarkov','wow','world of warcraft','nexon','gameloft','zepeto'],
+    Entertainment:['netflix','spotify','disney','hbo','hulu','youtube','deezer','crunchyroll','prime video','paramount','twitch','discord','tidal','audible','shahid','anghami'],
+    'Apps & stores':['itunes','apple','google play','playstore','microsoft','windows','office','app store','huawei','samsung'],
+    Shopping:['amazon','ebay','walmart','target','ikea','zalando','nike','adidas','sephora','noon','jumia','aliexpress','best buy','starbucks','uber','airbnb','booking','carrefour','h&m','zara','mcdonald'],
+    'Mobile & telecom':['vodafone','orange','stc','zain','mobily','top-up','topup','recharge','etisalat','turkcell','telcel','airtel','mtn','giffgaff'],
+    'Prepaid & finance':['binance','paysafecard','neosurf','visa','mastercard','paypal','jeton','astropay','perfect money','skrill','neteller','bitcoin','crypto']};
+  function detect(name){
+    var n = String(name || ''), region = '', brand = n;
+    for (var i = 0; i < REG.length && !region; i++){
+      for (var j = 0; j < REG[i][1].length; j++){
+        var tok = REG[i][1][j], short = tok.length <= 3, re = new RegExp('(^|[^A-Za-z0-9])' + tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Za-z0-9])', short ? '' : 'i');
+        if (re.test(n)){ region = REG[i][0]; brand = n.replace(re, function(m, p1){ return p1; }); break; }
+      }
+    }
+    if (!region && /\b(global|international|worldwide)\b/i.test(n)){ region = 'GLOBAL'; brand = n.replace(/\b(global|international|worldwide)\b/ig, ''); }
+    brand = brand.replace(/[()\[\]]/g, ' ').replace(/\s*[-–—|·:,]\s*$/g, '').replace(/^\s*[-–—|·:,]\s*/g, '').replace(/\s{2,}/g, ' ').trim() || n;
+    var low = n.toLowerCase(), group = 'Other';
+    for (var g in GRP_KW){ if (GRP_KW[g].some(function(k){ return low.indexOf(k) > -1; })){ group = g; break; } }
+    return {brand: brand, region: region || 'GLOBAL', group: group};
+  }
+  var supCats = [], supSel = {}, supEdit = {}, supShown = 100, supF = 'all', supInit = false;
+  function supRule(){ return state.settings.sup.rule; }
+  function sellPrice(cost){ var r = supRule(), v = +r.value || 0, x = r.mode === 'fixed' ? cost + v : cost * (1 + v / 100); return Math.max(Math.ceil(x * 100 - 1e-7) / 100, Math.round((cost + .01) * 100) / 100); }
+  function renderRule(){
+    var r = supRule(); $$('#ruleMode button').forEach(function(b){ b.classList.toggle('on', b.dataset.m === r.mode); });
+    $('ruleVal').value = r.value; $('ruleLbl').textContent = r.mode === 'fixed' ? 'Add this many dollars on top of the supplier price' : 'Add this % on top of the supplier price';
+    var p = sellPrice(10); $('ruleEx').innerHTML = 'Example: a card that costs you <b>$10</b> will sell for <b>' + money(p) + '</b> — you earn <b>' + money(p - 10) + '</b> on each.';
+  }
+  $('ruleMode').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; supRule().mode = b.dataset.m; save(true); renderRule(); });
+  $('ruleVal').addEventListener('input', function(){ supRule().value = Math.max(0, +this.value || 0); save(true); renderRule(); });
+  function entry(c){ var d = detect(c.name), e = supEdit[c.category_id] || {}; return {brand: e.brand != null ? e.brand : d.brand, region: e.region != null ? e.region : d.region, group: e.group != null ? e.group : d.group}; }
+  function renderSupplier(){
+    renderRule();
+    // restore the previous selection into the working set
+    if (!supInit){ supInit = true; Object.keys(state.settings.sup.cats).forEach(function(id){ supSel[id] = true; var c = state.settings.sup.cats[id]; supEdit[id] = supEdit[id] || {brand:c.brand, region:c.region, group:c.group}; }); }
+    var m = state.products.filter(function(p){ return p.supplier; });
+    $('supMineBox').hidden = !m.length;
+    $('supMine').innerHTML = m.map(function(p){ return '<tr><td><b>' + esc(p.title) + '</b></td><td>$' + esc(Math.round(p.supplier.cost*100)/100) + '</td><td>' + money(p.price) + '</td><td><button class="btn btn-g btn-s" data-se="' + esc(p.id) + '">Edit</button></td></tr>'; }).join('');
+    drawSup(); sumSup();
+  }
+  function sumSup(){ var n = Object.keys(supSel).filter(function(k){ return supSel[k]; }).length; $('supSum').textContent = n + ' categor' + (n === 1 ? 'y' : 'ies') + ' selected · saved: ' + supCount() + ' (' + brandCount() + ' brands)'; }
+  function drawSup(){
+    $('supTools').hidden = !supCats.length; if (!supCats.length) return;
     var q = $('supSearch').value.trim().toLowerCase();
-    var list = supCats.filter(function(c){ return !q || (c.name||'').toLowerCase().indexOf(q) > -1; });
-    $('supCatMsg').textContent = supCats.length ? (list.length + ' of ' + supCats.length + ' categories' + (list.length > 80 ? ' (showing the first 80 — type to narrow down)' : '')) : $('supCatMsg').textContent;
-    $('supCats').innerHTML = list.slice(0, 80).map(function(c){ return '<tr><td><b>' + esc(c.name) + '</b>' + (c.note ? '<div class="help">' + esc(c.note) + '</div>' : '') + '</td><td style="text-align:right"><button class="btn btn-g btn-s" data-sc="' + esc(c.category_id) + '">View offers</button></td></tr>'; }).join('');
+    var list = supCats.filter(function(c){
+      if (supF === 'sel' && !supSel[c.category_id]) return false; if (supF === 'unsel' && supSel[c.category_id]) return false;
+      return !q || (c.name || '').toLowerCase().indexOf(q) > -1;
+    });
+    $('supCatMsg').textContent = list.length + ' of ' + supCats.length + ' categories shown.';
+    $('supShowMore').hidden = list.length <= supShown; $('supShowMore').textContent = 'Show more rows (' + (list.length - supShown) + ' more)';
+    var gopts = function(sel){ return GROUPS.map(function(g){ return '<option' + (g === sel ? ' selected' : '') + '>' + esc(g) + '</option>'; }).join(''); };
+    $('supCats').innerHTML = list.slice(0, supShown).map(function(c){
+      var e = entry(c), id = esc(c.category_id), logo = safeUrl(c.imageurl);
+      return '<tr><td><input type="checkbox" data-s="' + id + '"' + (supSel[c.category_id] ? ' checked' : '') + ' aria-label="Select"></td><td><div style="display:flex;gap:10px;align-items:center">' + (logo ? '<img class="logo-s" loading="lazy" referrerpolicy="no-referrer" src="' + esc(logo) + '" alt="">' : '<span class="logo-s" style="display:grid;place-items:center;font-weight:800;color:#3d9a0e">' + esc((c.name || '?').charAt(0)) + '</span>') + '<span><b>' + esc(c.name) + '</b>' + (c.note ? '<div class="help">' + esc(c.note) + '</div>' : '') + '</span></div></td>' +
+        '<td><input data-b="' + id + '" value="' + esc(e.brand) + '" style="padding:7px 10px"></td><td><input data-r="' + id + '" value="' + esc(e.region) + '" maxlength="6" style="padding:7px 10px;text-transform:uppercase"></td><td><select data-g="' + id + '" style="padding:7px 10px">' + gopts(e.group) + '</select></td></tr>';
+    }).join('') || '<tr><td colspan="5" class="empty">Nothing matches.</td></tr>';
   }
   $('supCheck').addEventListener('click', function(){
     $('supStatus').textContent = 'Checking…';
@@ -639,98 +862,74 @@
       .catch(function(e){ $('supStatus').textContent = '❌ ' + e.message; });
   });
   $('supLoad').addEventListener('click', function(){
-    supCats = []; $('supCatMsg').textContent = 'Loading…';
+    supCats = []; $('supCatMsg').textContent = 'Loading…'; var b = this; b.disabled = true;
     (function page(cur, n){
       api('/api/admin/supplier/categories' + (cur ? '?cursor=' + encodeURIComponent(cur) : '')).then(function(r){
         supCats = supCats.concat(r.items || []);
-        if (r.meta && r.meta.has_more && r.meta.next_cursor && n < 12) return page(r.meta.next_cursor, n + 1);
-        $('supCatMsg').textContent = supCats.length + ' categories loaded.'; renderCats();
-      }).catch(function(e){ $('supCatMsg').textContent = '❌ ' + e.message; });
+        if (r.meta && r.meta.has_more && r.meta.next_cursor && n < 20){ $('supCatMsg').textContent = 'Loading… ' + supCats.length; return page(r.meta.next_cursor, n + 1); }
+        supCats.sort(function(x, y){ return String(x.name).localeCompare(String(y.name)); }); b.disabled = false; supShown = 100; drawSup(); sumSup();
+      }).catch(function(e){ b.disabled = false; $('supCatMsg').textContent = '❌ ' + e.message; });
     })(null, 0);
   });
-  $('supSearch').addEventListener('input', renderCats);
-  $('supCats').addEventListener('click', function(e){
-    var b = e.target.closest('[data-sc]'); if (!b) return;
-    var box = $('supOffers'); box.hidden = false; box.innerHTML = '<p class="help">Loading offers…</p>';
-    api('/api/admin/supplier/offers?category_id=' + encodeURIComponent(b.dataset.sc)).then(function(r){
-      supOpen = {cat: b.dataset.sc, name: r.name || b.dataset.sc, offers: r.offers || []};
-      renderOffers();
-    }).catch(function(er){ box.innerHTML = '<p class="help">❌ ' + esc(er.message) + '</p>'; });
-    box.scrollIntoView({behavior:'smooth'});
+  $('supSearch').addEventListener('input', function(){ supShown = 100; drawSup(); });
+  $('supFilter').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; supF = b.dataset.f; supShown = 100; $$('#supFilter button').forEach(function(x){ x.classList.toggle('on', x === b); }); drawSup(); });
+  $('supShowMore').addEventListener('click', function(){ supShown += 100; drawSup(); });
+  function shownIds(){ var q = $('supSearch').value.trim().toLowerCase(); return supCats.filter(function(c){ if (supF === 'sel' && !supSel[c.category_id]) return false; if (supF === 'unsel' && supSel[c.category_id]) return false; return !q || (c.name || '').toLowerCase().indexOf(q) > -1; }).map(function(c){ return c.category_id; }); }
+  $('supAll').addEventListener('click', function(){ shownIds().forEach(function(id){ supSel[id] = true; }); drawSup(); sumSup(); });
+  $('supNone').addEventListener('click', function(){ shownIds().forEach(function(id){ delete supSel[id]; }); drawSup(); sumSup(); });
+  $('supCats').addEventListener('change', function(e){
+    var t = e.target, id;
+    if (t.dataset.s){ if (t.checked) supSel[t.dataset.s] = true; else delete supSel[t.dataset.s]; sumSup(); return; }
+    if (t.dataset.b){ id = t.dataset.b; (supEdit[id] = supEdit[id] || {}).brand = t.value.trim(); }
+    if (t.dataset.r){ id = t.dataset.r; (supEdit[id] = supEdit[id] || {}).region = t.value.trim().toUpperCase(); }
+    if (t.dataset.g){ id = t.dataset.g; (supEdit[id] = supEdit[id] || {}).group = t.value; }
   });
-  function renderOffers(){
-    if (!supOpen) return;
-    var rows = supOpen.offers.map(function(o, i){
-      var cost = +o.price_usd, have = state.products.some(function(p){ return p.supplier && p.supplier.cat === supOpen.cat && String(p.supplier.card) === String(o.card_id); });
-      var bad = +o.min_order_quantity > 1;
-      return '<tr><td>' + esc(o.name) + '</td><td>$' + esc(cost) + '</td><td>' + (o.stock == null ? '–' : esc(o.stock)) + '</td>' +
-        '<td>' + (have ? '✓ already in my shop' : bad ? '<span class="help">needs quantity ≥ ' + esc(o.min_order_quantity) + ' — not supported</span>' : '$ <input type="number" step="0.01" min="0.01" style="width:90px" data-op="' + i + '" value="' + suggest(cost) + '">') + '</td>' +
-        '<td>' + (have || bad ? '' : '<button class="btn btn-p btn-s" data-add="' + i + '">Add to my shop</button>') + '</td></tr>';
-    }).join('');
-    $('supOffers').innerHTML = '<div class="bar"><h2 style="margin:0">' + esc(supOpen.name) + '</h2><button class="btn btn-g btn-s" id="supClose">Close</button></div><p class="help">Prices below are suggestions using your margin (' + supMargin() + '%). Change any price before adding.</p>' +
-      '<div class="tw"><table><thead><tr><th>Offer</th><th>Your cost</th><th>In stock</th><th>Your price</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
-  }
-  $('supOffers').addEventListener('click', function(e){
-    if (e.target.id === 'supClose'){ $('supOffers').hidden = true; return; }
-    var b = e.target.closest('[data-add]'); if (!b || !supOpen) return;
-    var o = supOpen.offers[+b.dataset.add], price = +($('supOffers').querySelector('[data-op="' + b.dataset.add + '"]').value);
-    if (!(price > +o.price_usd)){ toast('Your price must be higher than your cost ($' + o.price_usd + ')'); return; }
-    state.products.push({id: uid(), title: supOpen.name + ' — ' + o.name, category: 'Gift cards', price: Math.round(price*100)/100, tagline: 'Instant delivery by code', type: 'digital', icon: '🎁', variants: [{name:'Standard', sample:'', full:''}], stock: [], used: 0, published: true,
-      supplier: {kind:'giftcard', cat: supOpen.cat, card: String(o.card_id), cost: +o.price_usd}});
-    save(); toast('Added — press Sync to server on the Publish tab'); renderOffers(); renderSupMine();
+  $('supSave').addEventListener('click', function(){
+    var cats = {}, byId = {}; supCats.forEach(function(c){ byId[c.category_id] = c; });
+    Object.keys(supSel).forEach(function(id){
+      if (!supSel[id]) return; var c = byId[id], old = state.settings.sup.cats[id];
+      if (c){ var e = entry(c); cats[id] = {n: c.name, brand: e.brand || c.name, region: e.region || 'GLOBAL', group: e.group || 'Other', logo: safeUrl(c.imageurl) || (old && old.logo) || ''}; }
+      else if (old) cats[id] = old;                         // selected earlier, catalog not loaded now: keep as is
+    });
+    state.settings.sup.cats = cats; save(true); sumSup(); toast('Saved ' + Object.keys(cats).length + ' categories — now Sync, then Download data.js');
   });
-  function renderSupMine(){
-    $('supMargin').value = state.settings.supMargin || 15;
-    var list = supProducts();
-    $('supMine').innerHTML = list.length ? list.map(function(p){
-      var c = +p.supplier.cost, pr = +p.price, prof = pr - c, bad = !(prof > 0);
-      return '<tr><td><b>' + esc(p.title) + '</b></td><td>$' + esc(Math.round(c*100)/100) + '</td><td>' + money(pr) + '</td><td>' + (bad ? '<span class="pill pending">loss / none</span>' : '$' + (Math.round(prof*100)/100) + ' <span class="help">(' + Math.round(prof / c * 100) + '%)</span>') + '</td><td>' + (p.supplier.stock == null ? '–' : esc(p.supplier.stock)) + '</td><td><button class="btn btn-g btn-s" data-se="' + esc(p.id) + '">Edit</button></td></tr>';
-    }).join('') : '<tr><td colspan="6" class="empty">Nothing yet — browse the catalog above and add products.</td></tr>';
-  }
-  $('supMargin').addEventListener('change', function(){ state.settings.supMargin = supMargin(); save(); renderOffers(); });
   $('supMine').addEventListener('click', function(e){ var b = e.target.closest('[data-se]'); if (!b) return; show('products'); openEditor(state.products.filter(function(p){ return p.id === b.dataset.se; })[0]); });
-  $('supRefresh').addEventListener('click', function(){
-    var list = supProducts(); if (!list.length){ toast('No supplier products yet'); return; }
-    $('supMineMsg').textContent = 'Checking current costs…'; var chunks = [], i = 0, n = 0;
-    for (; i < list.length; i += 50) chunks.push(list.slice(i, i + 50));
-    (function next(){
-      if (!chunks.length){ save(); renderSupMine(); $('supMineMsg').textContent = '✅ Costs updated for ' + n + ' product(s).' + (list.some(function(p){ return !(p.price > p.supplier.cost); }) ? ' ⚠ Some items now cost more than you charge — reprice them.' : ''); return; }
-      var ch = chunks.shift();
-      api('/api/admin/supplier/costs', {method:'POST', body: JSON.stringify({items: ch.map(function(p){ return {cat:p.supplier.cat, card:p.supplier.card}; })})}).then(function(r){
-        ch.forEach(function(p){ var c = r.costs[p.supplier.cat + '|' + p.supplier.card]; if (c){ p.supplier.cost = c.cost; p.supplier.stock = c.stock; n++; } else p.supplier.stock = 0; });
-        next();
-      }).catch(function(e){ $('supMineMsg').textContent = '❌ ' + e.message; });
-    })();
-  });
-  $('supApply').addEventListener('click', function(){
-    var list = supProducts(); if (!list.length) return;
-    if (!confirm('Set every supplier product price to its latest cost + ' + supMargin() + '%? (Press "Refresh costs" first so costs are current.)')) return;
-    list.forEach(function(p){ p.price = suggest(+p.supplier.cost); }); save(); renderSupMine(); toast('Prices updated — press Sync to server');
-  });
 
   /* ---------- publish / backup ---------- */
-  $('dlData').addEventListener('click', function(){
-    var pub = {settings: state.settings, products: state.products.map(function(p){
+  function giftData(){
+    var cats = state.settings.sup.cats, by = {};
+    Object.keys(cats).forEach(function(id){
+      var c = cats[id], name = c.brand || c.n, key = name.toLowerCase();
+      var b = by[key] || (by[key] = {id: slug(name), name: name, cat: c.group || 'Gift cards', logo: '', regions: []});
+      if (!b.logo && c.logo) b.logo = c.logo;
+      b.regions.push({cat: id, region: c.region || 'GLOBAL'});
+    });
+    return {brands: Object.keys(by).map(function(k){ return by[k]; })};
+  }
+  function downloadData(){
+    var s = state.settings, pubSettings = {storeName:s.storeName, tagline:s.tagline, email:s.email, apiUrl:s.apiUrl || '', allAccess:s.allAccess, digitalSection:s.digitalSection, wallets:s.wallets};
+    var pub = {settings: pubSettings, gift: giftData(), products: state.products.map(function(p){
       var q = {id:p.id, title:p.title, category:p.category, price:p.price, stylePrice:p.stylePrice||0, group:p.group||'', guide:p.guide||'', tagline:p.tagline, type:p.type, published:p.published!==false};
       if (p.type === 'digital') q.icon = p.icon || '';
       else q.variants = p.variants.map(function(v){ return {name:v.name, sample:v.sample}; });
       return q;
     })};
     download('data.js', '/* Geostore public data — generated by the admin dashboard. Upload this file with your site. */\nwindow.GEOSTORE_DATA = ' + JSON.stringify(pub, null, 1) + ';\n', 'text/javascript');
-    toast('data.js downloaded — put it in your site folder');
-  });
+    state.dirtySite = false; save(); toast('data.js downloaded — put it in your site folder and upload the folder');
+  }
+  $('dlData').addEventListener('click', downloadData);
   $('dlBackup').addEventListener('click', function(){ download('geostore-backup-' + new Date().toISOString().slice(0,10) + '.json', JSON.stringify(state), 'application/json'); });
   $('restore').addEventListener('change', function(){
     var f = this.files[0]; if (!f) return; var r = new FileReader();
-    r.onload = function(){ try { var d = JSON.parse(r.result); if (!d.products || !d.settings) throw 0; state = migrate(d); state.sync = {}; save(); toast('Backup restored'); show('dash'); } catch(e){ toast('That file is not a valid backup'); } };
+    r.onload = function(){ try { var d = JSON.parse(r.result); if (!d.products || !d.settings) throw 0; state = migrate(d); state.sync = {}; state.dirtySync = true; state.dirtySite = true; save(); toast('Backup restored'); show('dash'); } catch(e){ toast('That file is not a valid backup'); } };
     r.readAsText(f); this.value = '';
   });
   $('resetAll').addEventListener('click', function(){
     if (!confirm('Reset everything (products, settings, orders) back to the original files? Make a backup first.')) return;
-    state = seed(); save(); toast('Reset done'); show('dash');
+    state = seed(); save(true); toast('Reset done'); show('dash');
   });
 
-  show('dash');
+  save(); show('dash');
 })();
 </script>
 </body>
