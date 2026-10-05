@@ -94,7 +94,10 @@ Game top-ups (which need the player's ID) are the next step and are not in this 
 1. In Telegram open **@BotFather** → send `/newbot` → choose a name → copy the **token** it gives you.
 2. Cloudflare → your Worker → **Settings → Variables and Secrets → Add** → **Secret**, name `TELEGRAM_BOT_TOKEN`, value = the token → **Deploy**.
 3. Dashboard → **Settings → Contact & alerts**: type your **WhatsApp number** (country code, digits only — e.g. `963912345678`) and, if you like, your Telegram username → **Save settings** → **Publish → Sync**, then **Download data.js** and upload the site folder.
-4. Settings → **Connect Telegram** → press **Open Telegram and press START** → come back and press **Refresh status** (you want ✅ Connected). **Send test alert** to check.
+4. Settings → **Connect Telegram** → press **Open Telegram and press START**. The bot answers **“✅ Connected!”** in Telegram. The dashboard checks by itself and can take **up to a minute** to show ✅ Connected (Cloudflare storage is slow to update between countries) — if Telegram already said Connected, it worked. Then press **Send test alert**.
+   - If Telegram shows **no START button** (you used the bot before), send the bot the exact message the dashboard shows, like `/start AbCd123xyz`.
+   - If the dashboard says *“Telegram could not reach your server”*, the Worker address is wrong or the Worker was not re-deployed with the newest `worker.js`.
+   - To switch to another Telegram account: **Disconnect** first, then connect again.
 
 **Answering a chat:** in Telegram, long-press the customer's message → **Reply**. Your answer appears in their chat window within seconds. (WhatsApp messages come to your normal WhatsApp.)
 

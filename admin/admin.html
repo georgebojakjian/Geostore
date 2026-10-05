@@ -1010,19 +1010,27 @@
   $('supMine').addEventListener('click', function(e){ var b = e.target.closest('[data-se]'); if (!b) return; show('products'); openEditor(state.products.filter(function(p){ return p.id === b.dataset.se; })[0]); });
 
   /* ---------- telegram (alerts + live chat) ---------- */
-  function tgState(){
-    var box = $('tgStatus'); box.textContent = 'Checking Telegram…';
-    api('/api/admin/telegram/status').then(function(r){
+  var tgTimer = null;
+  function tgState(keep){
+    var box = $('tgStatus'); if (!keep) box.textContent = 'Checking Telegram…';
+    return api('/api/admin/telegram/status').then(function(r){
+      var wh = r.webhook, bad = wh && wh.error ? '<br>⚠ Telegram could not reach your server: <b>' + esc(wh.error) + '</b>' : '';
       if (!r.token) box.innerHTML = '⚪ Not set up. Add the <code>TELEGRAM_BOT_TOKEN</code> secret in Cloudflare (steps above), Deploy, then press <b>Refresh status</b>.';
       else if (r.error) box.innerHTML = '❌ Telegram says: ' + esc(r.error) + ' — check the token.';
-      else if (r.connected) box.innerHTML = '✅ <b>Connected</b> to @' + esc(r.bot) + '. Every order and chat message reaches you in Telegram. To answer a customer, long-press their message in Telegram and choose <b>Reply</b>.';
-      else box.innerHTML = '🟡 Bot found (@' + esc(r.bot) + ') but not connected yet. Press <b>Connect Telegram</b>.';
+      else if (r.connected){ box.innerHTML = '✅ <b>Connected</b> to @' + esc(r.bot) + '. Every order and chat message reaches you in Telegram. To answer a customer, long-press their message in Telegram and choose <b>Reply</b>.' + bad; clearInterval(tgTimer); tgTimer = null; }
+      else if (!keep) box.innerHTML = '🟡 Bot found (@' + esc(r.bot) + ') but not connected yet. Press <b>Connect Telegram</b>.' + bad;
+      return r;
     }).catch(function(e){ box.textContent = '❌ ' + e.message; });
   }
-  $('tgRefresh').addEventListener('click', tgState);
+  $('tgRefresh').addEventListener('click', function(){ tgState(false); });
   $('tgConnect').addEventListener('click', function(){
     api('/api/admin/telegram/connect', {method:'POST', body:'{}'}).then(function(r){
-      $('tgStatus').innerHTML = '1️⃣ <a class="btn btn-p btn-s" target="_blank" rel="noopener" href="' + esc(r.link) + '">Open Telegram and press START</a> &nbsp; 2️⃣ come back here and press <b>Refresh status</b>. (The link works for 15 minutes.)';
+      var box = $('tgStatus'), left = 24;
+      box.innerHTML = '1️⃣ <a class="btn btn-p btn-s" target="_blank" rel="noopener" href="' + esc(r.link) + '">Open Telegram and press START</a><br>2️⃣ If Telegram shows no START button (you already used this bot before), send the bot this exact message: <code>/start ' + esc(r.code) + '</code><br>3️⃣ Wait — this page checks by itself. It can take up to a minute to show “Connected”. <span class="help" id="tgWait"></span>';
+      clearInterval(tgTimer); tgTimer = setInterval(function(){
+        if (--left < 0){ clearInterval(tgTimer); tgTimer = null; var w = $('tgWait'); if (w) w.textContent = 'Still waiting — if Telegram replied “✅ Connected!”, just press Refresh status in a minute.'; return; }
+        tgState(true).then(function(st){ var w = $('tgWait'); if (w && st && st.webhook && st.webhook.error) w.textContent = 'Telegram error: ' + st.webhook.error; });
+      }, 5000);
     }).catch(function(e){ toast(e.message); });
   });
   $('tgTest').addEventListener('click', function(){ api('/api/admin/telegram/test', {method:'POST', body:'{}'}).then(function(){ toast('Test alert sent — check Telegram'); }).catch(function(e){ toast(e.message); }); });

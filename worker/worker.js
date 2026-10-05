@@ -421,12 +421,16 @@ async function tg(env, method, body) {
 async function tgOwner(env) {
   if (env.TELEGRAM_CHAT_ID) return String(env.TELEGRAM_CHAT_ID);
   if (tgMem.owner && Date.now() - tgMem.t < 60000) return tgMem.owner;
-  const v = await env.ORDERS.get('tg:owner'); tgMem.owner = v || ''; tgMem.t = Date.now(); return v || '';
+  const v = await env.ORDERS.get('tg:owner', { cacheTtl: 30 }); tgMem.owner = v || ''; tgMem.t = Date.now(); return v || '';
 }
 function notify(env, text) {
   if (!env.TELEGRAM_BOT_TOKEN) return;
   bg(env, (async () => { const chat = await tgOwner(env); if (chat) await tg(env, 'sendMessage', { chat_id: chat, text, parse_mode: 'HTML', disable_web_page_preview: true }); })());
 }
+// The connect code is derived from your secret + the current 15-minute window, so it needs no storage
+// (storage updates can take a minute to appear in other locations, which made pairing fail when you pressed START quickly).
+const pairCode = async (env, back) => (await sign(env, 'tg-pair:' + (Math.floor(Date.now() / 900000) - (back || 0)))).replace(/[^A-Za-z0-9]/g, '').slice(0, 10);
+const pairOk = async (env, c) => safeEqual(String(c), await pairCode(env, 0)) || safeEqual(String(c), await pairCode(env, 1));
 const tgSecret = async env => (await sign(env, 'tg-webhook')).replace(/[^A-Za-z0-9]/g, '').slice(0, 32);
 const chatHits = new Map(), pollHits = new Map();
 const SID = /^[a-f0-9]{16,32}$/;
@@ -454,13 +458,15 @@ async function telegramHook(req, env, secretInPath) {
   const chat = String(m.chat.id), text = String(m.text || '');
   const start = text.match(/^\/start(?:@\w+)?\s+([A-Za-z0-9_-]{6,40})/);
   if (start) {
-    const code = await env.ORDERS.get('tg:pair');
-    if (code && safeEqual(start[1], code)) {
-      await env.ORDERS.put('tg:owner', chat); await env.ORDERS.delete('tg:pair'); tgMem.owner = chat; tgMem.t = Date.now();
-      await tg(env, 'sendMessage', { chat_id: chat, text: '✅ Connected! You will now get an alert for every order and every chat message. To answer a customer, use Telegram’s “Reply” on their message.' });
-    } else await tg(env, 'sendMessage', { chat_id: chat, text: 'That connect code is wrong or expired. Press “Connect Telegram” in your dashboard again.' });
+    const cur = await tgOwner(env);
+    if (await pairOk(env, start[1]) && cur && cur !== chat) await tg(env, 'sendMessage', { chat_id: chat, text: 'This shop is already connected to another Telegram account. Press “Disconnect” in the dashboard first, then connect again.' });
+    else if (await pairOk(env, start[1])) {
+      await env.ORDERS.put('tg:owner', chat); tgMem.owner = chat; tgMem.t = Date.now();
+      await tg(env, 'sendMessage', { chat_id: chat, text: '✅ Connected! You will now get an alert for every order and every chat message. To answer a customer, use Telegram’s “Reply” on their message.\n\n(The dashboard can take up to a minute to show “Connected”.)' });
+    } else await tg(env, 'sendMessage', { chat_id: chat, text: 'That connect code is wrong or expired. Press “Connect Telegram” in your dashboard again, then use the new link.' });
     return json(env, { ok: true });
   }
+  if (/^\/start(@\w+)?\s*$/.test(text) && !(await tgOwner(env))) { await tg(env, 'sendMessage', { chat_id: chat, text: 'Hi! To connect me to your shop, press “Connect Telegram” in your dashboard and open the link it gives you (it contains your connect code).\n\nYour Telegram chat ID is ' + chat + ' — only needed if you prefer to set it manually as the Cloudflare variable TELEGRAM_CHAT_ID.' }).catch(() => {}); return json(env, { ok: true }); }
   const owner = await tgOwner(env);
   if (!owner || chat !== owner) { await tg(env, 'sendMessage', { chat_id: chat, text: 'This is a private shop assistant bot.' }).catch(() => {}); return json(env, { ok: true }); }
   const rt = m.reply_to_message && String(m.reply_to_message.text || ''), sid = rt && (rt.match(/#sid:([a-f0-9]{16,32})/) || [])[1];
@@ -988,14 +994,14 @@ async function route(req, env) {
       if (path === '/api/admin/telegram/status') {
         if (!env.TELEGRAM_BOT_TOKEN) return json(env, { ok: true, token: false });
         let bot = ''; try { bot = (await tg(env, 'getMe')).username; } catch (e) { return json(env, { ok: true, token: true, error: String(e.message || e) }); }
-        return json(env, { ok: true, token: true, bot, connected: !!(await tgOwner(env)) });
+        let wh = null; try { const w = await tg(env, 'getWebhookInfo'); wh = { set: !!w.url, pending: w.pending_update_count || 0, error: w.last_error_message || '', errorAt: w.last_error_date ? w.last_error_date * 1000 : 0 }; } catch (e) { /* optional */ }
+        return json(env, { ok: true, token: true, bot, connected: !!(await tgOwner(env)), webhook: wh });
       }
       if (path === '/api/admin/telegram/connect' && req.method === 'POST') {
         if (!env.TELEGRAM_BOT_TOKEN) return fail(env, 'TELEGRAM_BOT_TOKEN is not set in Cloudflare (Worker → Settings → Variables and Secrets)');
-        const me = await tg(env, 'getMe'), code = hex(6);
-        await env.ORDERS.put('tg:pair', code, { expirationTtl: 900 });
+        const me = await tg(env, 'getMe'), code = await pairCode(env, 0);
         await tg(env, 'setWebhook', { url: apiBase + '/api/telegram/' + (await tgSecret(env)), allowed_updates: ['message'], drop_pending_updates: true });
-        return json(env, { ok: true, bot: me.username, link: 'https://t.me/' + me.username + '?start=' + code });
+        return json(env, { ok: true, bot: me.username, code, link: 'https://t.me/' + me.username + '?start=' + code });
       }
       if (path === '/api/admin/telegram/test' && req.method === 'POST') {
         if (!(await tgOwner(env))) return fail(env, 'Telegram is not connected yet');
