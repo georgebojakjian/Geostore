@@ -518,10 +518,10 @@ async function createOrder(req, env, apiBase) {
 
   const now = Date.now();
   const fromBinance = !!b.fromBinance && !!(cat.binanceAddr && cat.binanceAddr[coin]);
-  const o = { id: hex(16), key: hex(16), fromBinance, email, items: priced.lines, usd: priced.usd, coin, amount, amtKey, wallet, status: 'pending', createdAt: now, expiresAt: now + C.minutes * 60000, account: acct ? acct.email : null };
+  const o = { id: hex(16), key: hex(16), fromBinance, email, items: priced.lines, usd: priced.usd, coin, amount, amtKey, wallet, status: 'pending', createdAt: now, expiresAt: now + (fromBinance ? Math.max(C.minutes, 180) : C.minutes) * 60000, account: acct ? acct.email : null };
   await saveOrder(env, o, 7 * 86400);
   // the "amt:" key both reserves the amount AND is the list of open orders the cron job checks
-  await env.ORDERS.put(amtKey, o.id, { expirationTtl: (C.minutes + C.graceMs / 60000 + 5) * 60 });
+  await env.ORDERS.put(amtKey, o.id, { expirationTtl: ((fromBinance ? Math.max(C.minutes, 180) : C.minutes) + C.graceMs / 60000 + 5) * 60 });
   await pushIndex(env, 'oidx', o.id, 400);
   if (acct) { acct.orders = (acct.orders || []).concat(o.id).slice(-200); await env.ORDERS.put('acct:' + acct.email, JSON.stringify(acct)); }
   notify(env, '🛒 <b>New order</b> #' + o.id.slice(0, 8).toUpperCase() + '\n$' + o.usd + ' · ' + esc(C.name) + (fromBinance ? ' · 🟡 paying from Binance' : '') + '\n' + esc(orderTitle(o)) + '\n' + esc(email) + '\n⏳ waiting for payment');
@@ -735,7 +735,8 @@ window.__render=function(d,app){
   d.sections.forEach(function(s,idx){
     var sec=el("section","card");var hd=el("div","ch");hd.appendChild(el("h2","",s.title));if(s.tagline)hd.appendChild(el("p","d",s.tagline));sec.appendChild(hd);
     if(s.code!==undefined){
-      if(s.code){sec.appendChild(scratchCard(s.title,s.code,d.order.id+"_"+idx));sec.appendChild(el("p","d tiny","Scratch the silver area (or press Reveal). Keep your code private — whoever has it can use it."))}
+      var list=(s.codes&&s.codes.length)?s.codes:(s.code?[s.code]:[]);
+      if(list.length){list.forEach(function(c,ci){if(list.length>1){var lb=el("p","d","Code "+(ci+1)+" of "+list.length);lb.style.cssText="margin:14px 0 0;font-weight:700";sec.appendChild(lb)}sec.appendChild(scratchCard(s.title,c,d.order.id+"_"+idx+"_"+ci))});sec.appendChild(el("p","d tiny","Scratch the silver area (or press Reveal). Keep your codes private — whoever has them can use them."))}
       else{var w=el("div","wait");w.appendChild(el("span","spin"));w.appendChild(el("span","","Preparing your code… this takes a few seconds. If it does not appear within a few minutes, contact us with "+(inv.no||d.order.id)+"."));sec.appendChild(w)}
     }else{
       if(s.guide){var det=el("details","gd");det.open=true;det.appendChild(el("summary","","How to use & connect your data"));var gb=el("div","gb");gb.innerHTML=s.guide;det.appendChild(gb);sec.appendChild(det)}

@@ -47,6 +47,7 @@
     lastFocus = from || document.activeElement;
     if (!m.classList.contains('open')){ m.classList.add('open'); lockScroll(); }
     m.setAttribute('aria-hidden', 'false');
+    if (m.id === 'cartM') { tabOver = 'cart'; if (typeof tabShow === 'function') tabShow(); } else if (m.id === 'acctM') { tabOver = 'acct'; if (typeof tabShow === 'function') tabShow(); }
     var sh = m.querySelector('.sheet'); if (sh) sh.scrollTop = 0;
   }
   function closeModal(m){
@@ -54,6 +55,7 @@
     m.classList.remove('open'); m.setAttribute('aria-hidden', 'true'); unlockScroll();
     if (m.id === 'pm'){ demoSeq++; $('pmDemo').srcdoc = ''; fullCache = {}; $('demoWrap').classList.remove('fs'); }
     if (onClose[m.id]) onClose[m.id]();
+    if (m.id === 'cartM' || m.id === 'acctM'){ tabOver = null; if (typeof tabShow === 'function') tabShow(); }
     if (lastFocus && lastFocus.focus) try { lastFocus.focus({preventScroll:true}); } catch(e) {}
   }
   $$('.modal').forEach(function(m){ m.addEventListener('click', function(e){ if (e.target === m || e.target.closest('[data-close]')) closeModal(m); }); });
@@ -67,10 +69,46 @@
     paint();
   })();
 
-  /* header + bottom bar state */
+  /* header + liquid bottom bar */
+  var tabBase = 'home', tabOver = null, reduceMotion = false;
+  try { reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e) {}
+  var Tab = (function(){
+    var bar = $('tabbar'), bg = $('tbPath'), bub = $('tbBubble'), ico = $('tbIco'), items = $$('.tb-it');
+    var ICON = {home:'i-home', shop:'i-shop', cart:'i-bag', acct:'i-user'}, IDX = {home:0, shop:1, cart:2, acct:3};
+    var W = 0, cx = 0, v = 0, target = 0, raf = 0, key = 'home';
+    function path(x){
+      var H = bar.clientHeight + 14, top = 14, R = 36, depth = 46;
+      x = Math.max(R + 20, Math.min(W - R - 20, x));
+      return 'M0,' + top + ' L' + (x - R - 22) + ',' + top +
+        ' C' + (x - R - 4) + ',' + top + ' ' + (x - R + 2) + ',' + (top + depth * .15) + ' ' + (x - R + 5) + ',' + (top + depth * .45) +
+        ' C' + (x - R + 8) + ',' + (top + depth * .95) + ' ' + (x - 18) + ',' + (top + depth + 2) + ' ' + x + ',' + (top + depth + 2) +
+        ' C' + (x + 18) + ',' + (top + depth + 2) + ' ' + (x + R - 8) + ',' + (top + depth * .95) + ' ' + (x + R - 5) + ',' + (top + depth * .45) +
+        ' C' + (x + R - 2) + ',' + (top + depth * .15) + ' ' + (x + R + 4) + ',' + top + ' ' + (x + R + 22) + ',' + top +
+        ' L' + W + ',' + top + ' L' + W + ',' + H + ' L0,' + H + ' Z';
+    }
+    function draw(){ bg.setAttribute('d', path(cx)); bub.style.transform = 'translate3d(' + cx + 'px,0,0)'; }
+    function step(){
+      var dx = target - cx; v += dx * .13; v *= .70; cx += v; draw();
+      if (Math.abs(dx) < .4 && Math.abs(v) < .4){ cx = target; v = 0; draw(); raf = 0; return; }
+      raf = requestAnimationFrame(step);
+    }
+    function measure(){ W = bar.clientWidth; target = (IDX[key] + .5) * W / 5; if (!raf){ cx = target; draw(); } }
+    function set(k){
+      if (!(k in IDX)) return; var changed = k !== key; key = k;
+      items.forEach(function(b){ b.classList.toggle('on', b.dataset.k === k); });
+      ico.setAttribute('href', '#' + ICON[k]);
+      if (changed){ bub.classList.remove('pop'); void bub.offsetWidth; bub.classList.add('pop'); }
+      W = bar.clientWidth; if (!W) return; target = (IDX[k] + .5) * W / 5;
+      if (reduceMotion || !changed){ cx = target; draw(); } else if (!raf) raf = requestAnimationFrame(step);
+    }
+    window.addEventListener('resize', measure); window.addEventListener('orientationchange', function(){ setTimeout(measure, 120); });
+    setTimeout(function(){ measure(); set('home'); }, 0);
+    return {set: set};
+  })();
+  function tabShow(){ Tab.set(tabOver || tabBase); }
   (function(){
-    var hdr = $('hdr'), shop = $('shop'), home = $('tbHome'), sh = $('tbShop'), tick = false;
-    function upd(){ tick = false; var y = window.pageYOffset; hdr.classList.toggle('scrolled', y > 8); var inShop = y > shop.offsetTop - 160; home.classList.toggle('on', !inShop); sh.classList.toggle('on', inShop); }
+    var hdr = $('hdr'), shop = $('shop'), tick = false;
+    function upd(){ tick = false; var y = window.pageYOffset; hdr.classList.toggle('scrolled', y > 8); var nb = y > shop.offsetTop - 160 ? 'shop' : 'home'; if (nb !== tabBase){ tabBase = nb; tabShow(); } }
     window.addEventListener('scroll', function(){ if (!tick){ tick = true; requestAnimationFrame(upd); } }, {passive:true}); upd();
   })();
 
@@ -343,19 +381,25 @@
       if (gr !== r) return;
       var off = (j.offers || []).slice().sort(function(a, b){ return a.price - b.price; });
       $('gmAmts').innerHTML = off.length ? '<div class="amounts">' + off.map(function(o){
-        var id = 'g:' + r.cat + ':' + o.card, on = cart.some(function(i){ return i.id === id; });
-        return '<button type="button" class="amt' + (on ? ' added' : '') + '" data-gid="' + esc(id) + '" data-gt="' + esc(j.name + ' — ' + o.name) + '" data-gp="' + o.price + '"' + (o.inStock ? '' : ' disabled') + '><b>' + esc(o.name) + '</b><span class="p">' + money(o.price) + '</span><small>' + (o.inStock ? (on ? '✓ in your cart' : 'Instant delivery') : 'Out of stock') + '</small></button>';
+        var id = 'g:' + r.cat + ':' + o.card, ci = cart.filter(function(i){ return i.id === id; })[0], mx = Math.max(1, o.max || 10), q0 = ci ? Math.min(ci.q || 1, mx) : 1;
+        return '<div class="amt' + (ci ? ' added' : '') + (o.inStock ? '' : ' off') + '" data-gid="' + esc(id) + '" data-gt="' + esc(j.name + ' — ' + o.name) + '" data-gp="' + o.price + '" data-gm="' + mx + '"><b>' + esc(o.name) + '</b><span class="p">' + money(o.price) + '</span><small>' + (o.inStock ? (ci ? '✓ in your cart ×' + ci.q : 'Instant delivery') : 'Out of stock') + '</small>' +
+          (o.inStock ? '<div class="qrow"><span class="qty"><button type="button" data-qd aria-label="Fewer">−</button><b data-qv>' + q0 + '</b><button type="button" data-qu aria-label="More">+</button></span><button type="button" class="addb" data-add>' + (ci ? 'Update' : 'Add') + '</button></div>' : '') + '</div>';
       }).join('') + '</div>' : '<p class="empty">No amounts available right now. Please check back soon.</p>';
     }).catch(function(er){ if (gr !== r) return; $('gmAmts').innerHTML = '<p class="empty">' + esc(er.message || 'Could not load amounts.') + '<br><br><button type="button" class="btn btn-ghost btn-sm" data-retry>Try again</button></p>'; });
   }
   function syncGiftCart(){ var b = $('gmCart'); if (!b) return; var n = lines().length; b.hidden = !n; b.textContent = 'View cart (' + n + ')'; }
   $('gmBody').addEventListener('click', function(e){
-    var r = e.target.closest('[data-r]'), bk = e.target.closest('[data-back]'), a = e.target.closest('[data-gid]'), rt = e.target.closest('[data-retry]');
+    var r = e.target.closest('[data-r]'), bk = e.target.closest('[data-back]'), rt = e.target.closest('[data-retry]'), card = e.target.closest('.amt');
     if (r) showAmounts(gb._regs[+r.dataset.r]);
     if (bk) showRegions();
     if (rt && gr) showAmounts(gr);
-    if (a && !a.disabled){
-      addGift(a.dataset.gid, a.dataset.gt, +a.dataset.gp); a.classList.add('added'); a.querySelector('small').textContent = '✓ in your cart'; syncGiftCart();
+    if (card && !card.classList.contains('off')){
+      var qv = card.querySelector('[data-qv]'), mx = +card.dataset.gm || 10, q = +qv.textContent || 1;
+      if (e.target.closest('[data-qd]')) qv.textContent = Math.max(1, q - 1);
+      if (e.target.closest('[data-qu]')){ if (q >= mx) toast('Maximum ' + mx + ' at a time'); qv.textContent = Math.min(mx, q + 1); }
+      if (e.target.closest('[data-add]')){
+        addGift(card.dataset.gid, card.dataset.gt, +card.dataset.gp, q, mx); card.classList.add('added'); card.querySelector('small').textContent = '✓ in your cart ×' + q; card.querySelector('[data-add]').textContent = 'Update'; syncGiftCart();
+      }
     }
     if (e.target.id === 'gmCart'){ closeModal($('gm')); openCart(); }
   });
@@ -365,16 +409,18 @@
   if (!Array.isArray(cart)) cart = [];
   cart = cart.filter(function(i){ return i && typeof i.id === 'string'; });
   function saveCart(){ store('geostore_cart', cart); var n = lines().length; $$('[data-cartcount]').forEach(function(e){ e.textContent = n; e.hidden = !n; }); }
-  function addGift(id, title, price){
-    if (!cart.some(function(i){ return i.id === id; })) cart.push({id:id, v:'all', t:String(title).slice(0, 120), p:price});
-    saveCart(); toast('Added to cart');
+  function addGift(id, title, price, q, max){
+    q = Math.max(1, Math.min(10, Math.floor(q) || 1));
+    var ex = cart.filter(function(i){ return i.id === id; })[0];
+    if (ex){ ex.q = q; ex.p = price; ex.m = max || 10; } else cart.push({id:id, v:'all', t:String(title).slice(0, 120), p:price, q:q, m:max || 10});
+    saveCart(); toast(ex ? 'Cart updated' : 'Added to cart');
   }
   function addToCart(id, v, quiet){
     var p = id === 'ALL' ? null : byId(id);
     if (id !== 'ALL' && !p) return;
     if (id === 'ALL'){ cart = cart.filter(function(i){ var q2 = byId(i.id); return i.id.indexOf('g:') === 0 || (q2 && q2.type === 'digital'); }); cart.push({id:'ALL', v:'all'}); }
     else if (cart.some(function(i){ return i.id === 'ALL'; }) && p.type !== 'digital'){ if (!quiet) toast('Already included in your All-Access pass'); return; }
-    else if (p.type === 'digital'){ if (!cart.some(function(i){ return i.id === id; })) cart.push({id:id, v:'all'}); }
+    else if (p.type === 'digital'){ var dx = cart.filter(function(i){ return i.id === id; })[0]; if (dx) dx.q = Math.min(10, (dx.q || 1) + 1); else cart.push({id:id, v:'all', q:1}); }
     else if (v === 'all'){ cart = cart.filter(function(i){ return i.id !== id; }); cart.push({id:id, v:'all'}); }
     else if (!cart.some(function(i){ return i.id === id && (i.v === 'all' || i.v === v); })) cart.push({id:id, v:v});
     saveCart(); if (!quiet) toast('Added to cart');
@@ -384,7 +430,7 @@
     var out = [], hasAll = cart.some(function(i){ return i.id === 'ALL'; }), by = {}, order = [];
     cart.forEach(function(i){
       if (i.id === 'ALL') return;
-      if (i.id.indexOf('g:') === 0){ out.push({id:i.id, title:i.t || 'Gift card', price:+i.p || 0}); return; }
+      if (i.id.indexOf('g:') === 0){ var gq = Math.max(1, Math.min(10, i.q || 1)); out.push({id:i.id, title:i.t || 'Gift card', unit:+i.p || 0, qty:gq, max:i.m || 10, price:round2((+i.p || 0) * gq)}); return; }
       var p = byId(i.id); if (!p) return;
       if (!by[i.id]){ by[i.id] = {p:p, all:false, st:[]}; order.push(i.id); }
       var g = by[i.id];
@@ -394,7 +440,7 @@
     if (hasAll && AA && AA.enabled) res.push({id:'ALL', title:AA.title || 'All-Access Pass', price:+AA.price});
     order.forEach(function(id){
       var g = by[id], p = g.p, n = p.variants.length;
-      if (p.type === 'digital'){ res.push({id:id, title:p.title, price:+p.price}); return; }
+      if (p.type === 'digital'){ var dq = Math.max(1, Math.min(10, (cart.filter(function(i){ return i.id === id; })[0] || {}).q || 1)); res.push({id:id, title:p.title, unit:+p.price, qty:dq, max:10, price:round2(+p.price * dq)}); return; }
       if (hasAll) return;
       if (n < 2 || g.all || g.st.length >= n || g.st.length * sp(p) >= p.price) res.push({id:id, title:p.title + (n > 1 ? ' (all ' + n + ' styles)' : ''), price:+p.price});
       else { g.st.sort(); res.push({id:id, title:p.title + ' — ' + g.st.map(function(k){ return p.variants[k].name; }).join(', '), price:round2(g.st.length * sp(p))}); }
@@ -405,7 +451,7 @@
 
   /* ---------------- checkout + payment ---------------- */
   var token = store('geostore_token') || '', me = store('geostore_me') || null, poll = null, tick = null, curOrder = null;
-  var coins = [], coinSel = null, view = 'cart';
+  var coins = [], coinSel = null, view = 'cart', fromBinance = false, CFG = {};
   function authH(){ var h = {'content-type':'application/json'}; if (token) h.authorization = 'Bearer ' + token; return h; }
   function apiCall(path, body, method){
     if (!API) return Promise.reject(new Error('The shop is not connected to its payment server yet.'));
@@ -421,7 +467,7 @@
   };
   if (API){
     coins = [{id:'usdt_trc20', name:'USDT (TRC20)', network:'TRON (TRC20)', kind:'tron'}];
-    fetch(API + '/api/config').then(function(r){ return r.json(); }).then(function(c){ if (c && c.coins && c.coins.length){ coins = c.coins; if (!coins.some(function(x){ return x.id === coinSel; })) coinSel = null; if (view === 'method') renderMethods(); } livePrices(c); }).catch(function(){});
+    fetch(API + '/api/config').then(function(r){ return r.json(); }).then(function(c){ CFG = c || {}; if (typeof chatInit === 'function') chatInit(); if (c && c.coins && c.coins.length){ coins = c.coins; if (!coins.some(function(x){ return x.id === coinSel; })) coinSel = null; if (view === 'method') renderMethods(); } livePrices(c); }).catch(function(){});
   }
   function stopTimers(){ clearInterval(poll); clearInterval(tick); poll = tick = null; }
   onClose.cartM = stopTimers;
@@ -432,7 +478,7 @@
   function renderCart(){
     var L = lines(), total = totalOf(L), b = $('cartBody');
     if (!L.length){ b.innerHTML = '<div class="empty" style="padding:30px 0">Your cart is empty.<br>Pick a gift card, a website or a code to get started.</div>'; saveCart(); return; }
-    b.innerHTML = L.map(function(l){ return '<div class="cl"><span>' + esc(l.title) + '</span><b>' + money(l.price) + '</b><button type="button" class="rm" data-rm="' + esc(l.id) + '" aria-label="Remove">×</button></div>'; }).join('') +
+    b.innerHTML = L.map(function(l){ return '<div class="cl"><span>' + esc(l.title) + '</span>' + (l.qty ? '<span class="qty"><button type="button" data-cqd="' + esc(l.id) + '" aria-label="Fewer">−</button><b>' + l.qty + '</b><button type="button" data-cqu="' + esc(l.id) + '" aria-label="More">+</button></span>' : '<span></span>') + '<b>' + money(l.price) + '</b><button type="button" class="rm" data-rm="' + esc(l.id) + '" aria-label="Remove">×</button></div>'; }).join('') +
       '<div class="total"><span>Total</span><span>' + money(total) + '</span></div>' +
       (me ? '<p class="note" style="margin:0 0 12px">Signed in as <b>' + esc(me.email) + '</b> — this order is saved to your account.</p>' : '<div class="field"><label for="coEmail">Your email (your order is saved to it)</label><input id="coEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"></div>') +
       '<button type="button" class="btn btn-primary btn-block" id="coNext">' + (API ? 'Continue to payment' : "I've paid — confirm order") + '</button><p class="msg" id="coMsg"></p>' +
@@ -449,14 +495,29 @@
         var u = METHOD_UI[c.id] || {cls:'usdt', glyph:'●', badge:'', note:c.network || ''};
         return '<button type="button" class="method' + (c.id === coinSel ? ' on' : '') + '" data-coin="' + esc(c.id) + '">' + (u.badge ? '<span class="bd">' + esc(u.badge) + '</span>' : '') + '<span class="ic ' + u.cls + '">' + esc(u.glyph) + '</span><b>' + esc(c.name) + '</b><small>' + esc(u.note) + '</small><span class="ck">✓</span></button>';
       }).join('') + '</div>' +
-      '<button type="button" class="btn btn-primary btn-block" id="coPay">Pay ' + money(total) + '</button><p class="msg" id="coMsg"></p><button type="button" class="back" style="margin-top:10px" data-tocart>← Back to cart</button>';
-    view = 'method';
+      '<div id="fromBox"></div><button type="button" class="btn btn-primary btn-block" id="coPay">Pay ' + money(total) + '</button><p class="msg" id="coMsg"></p><button type="button" class="back" style="margin-top:10px" data-tocart>← Back to cart</button>';
+    view = 'method'; drawFrom();
   }
   var pendingEmail = '';
+  function selCoin(){ return coins.filter(function(c){ return c.id === coinSel; })[0] || {}; }
+  function binanceNotice(){
+    return '<div class="notice"><span class="ico">⏳</span><div><b>Paying from your Binance account?</b><br>A transfer from Binance to our Binance address is an <b>internal transfer</b>, so it can take a while to be confirmed. <b>If your order is not confirmed within 1 hour, please contact us</b> with your order number and we will confirm it right away.' + contactRow() + '</div></div>';
+  }
+  function drawFrom(){
+    var box = $('fromBox'); if (!box) return;
+    if (!selCoin().binance){ fromBinance = false; box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="field" style="margin:0 0 6px"><label>Where are you paying from?</label><div class="from-seg"><button type="button" data-from="no" class="' + (fromBinance ? '' : 'on') + '">Another wallet or exchange</button><button type="button" data-from="yes" class="' + (fromBinance ? 'on' : '') + '">Binance app</button></div></div>' + (fromBinance ? binanceNotice() : '');
+  }
   $('cartBody').addEventListener('click', function(e){
     var rm = e.target.closest('[data-rm]'), m = e.target.closest('[data-coin]');
     if (rm){ cart = cart.filter(function(i){ return i.id !== rm.dataset.rm; }); renderCart(); }
-    if (m){ coinSel = m.dataset.coin; $$('#cartBody .method').forEach(function(x){ x.classList.toggle('on', x === m); }); }
+    var qd = e.target.closest('[data-cqd]'), qu = e.target.closest('[data-cqu]');
+    if (qd || qu){
+      var cid = (qd || qu).dataset.cqd || (qd || qu).dataset.cqu, it = cart.filter(function(i){ return i.id === cid; })[0];
+      if (it){ var mx = it.m || 10; it.q = Math.max(1, Math.min(mx, (it.q || 1) + (qu ? 1 : -1))); if (qu && (it.q || 1) >= mx) toast('Maximum ' + mx + ' at a time'); renderCart(); }
+    }
+    if (m){ coinSel = m.dataset.coin; $$('#cartBody .method').forEach(function(x){ x.classList.toggle('on', x === m); }); drawFrom(); }
+    var fb = e.target.closest('[data-from]'); if (fb){ fromBinance = fb.dataset.from === 'yes'; drawFrom(); }
     if (e.target.id === 'cartSignin'){ e.preventDefault(); closeModal($('cartM')); openAccount(); }
     if (e.target.closest('[data-tocart]')){ view = 'cart'; setCartTitle('Your cart'); renderCart(); }
     if (e.target.id === 'coNext') goCheckout();
@@ -481,7 +542,7 @@
   }
   function createOrder(){
     var msg = $('coMsg'), btn = $('coPay'); if (btn) btn.disabled = true; msg.classList.remove('err'); msg.textContent = 'Creating your order…';
-    apiCall('/api/order', {email: pendingEmail, coin: coinSel || 'usdt_trc20', items: cart.map(function(i){ return {id:i.id, v:i.v}; })})
+    apiCall('/api/order', {email: pendingEmail, coin: coinSel || 'usdt_trc20', fromBinance: !!(fromBinance && selCoin().binance), items: cart.map(function(i){ return {id:i.id, v:i.v, q:i.q || 1}; })})
       .then(function(o){ rememberOrder(o.id); cart = []; saveCart(); showPay(o); })
       .catch(function(er){ if (btn) btn.disabled = false; var m2 = $('coMsg'); if (m2){ m2.classList.add('err'); m2.textContent = er.message || 'Could not create the order. Please try again.'; } });
   }
@@ -496,7 +557,7 @@
     curOrder = o; stopTimers(); view = 'pay'; $('toast').classList.remove('show'); openModal($('cartM'));
     setCartTitle('Pay with ' + o.coinName);
     var manual = o.kind === 'manual', isBtc = o.kind === 'btc';
-    var rows = (o.items || []).map(function(i){ return '<div><span>' + esc(i.title) + '</span><span>' + money(i.price) + '</span></div>'; }).join('') + '<div><span>Total</span><span>' + money(o.usd) + '</span></div>';
+    var rows = (o.items || []).map(function(i){ return '<div><span>' + esc(i.title) + (i.qty > 1 ? ' ×' + i.qty : '') + '</span><span>' + money(i.price) + '</span></div>'; }).join('') + '<div><span>Total</span><span>' + money(o.usd) + '</span></div>';
     var warns = manual ?
       '<div><span>①</span><span>Open <b>Binance → Pay → Send</b> and enter the Pay ID below.</span></div><div><span>②</span><span>Send exactly <b>' + esc(o.amount) + ' USDT</b>, then press “I have paid”.</span></div><div><span>③</span><span>We check it by hand. You will see your order here as soon as it is confirmed.</span></div>' :
       '<div><span>①</span><span>Send <b>only ' + esc(o.coinName) + '</b> on the <b>' + esc(o.network) + '</b> network. Other networks are lost.</span></div>' +
@@ -511,8 +572,8 @@
       '<div class="sumrows">' + rows + '</div><div class="warns">' + warns + '</div>' +
       (manual ? '<div class="field"><label for="payRef">Binance Pay order ID or note (optional)</label><input id="payRef" maxlength="80" placeholder="e.g. from the payment receipt"></div><button type="button" class="btn btn-primary btn-block" id="payClaim">I have paid</button>' : '') +
       '<div class="pstatus" id="payStatus" style="margin-top:12px"><span class="spin"></span><span id="payStatusTxt">Waiting for your payment…</span></div></div>' +
-      '<div id="payDone" hidden></div>' +
-      '<p class="note" style="text-align:center">Problem with your payment? <a class="link" href="mailto:' + esc(S.email || '') + '?subject=' + encodeURIComponent('Order ' + o.id.slice(0, 8).toUpperCase()) + '">Contact us</a> with order ID <span class="mono">' + esc(o.id.slice(0, 8).toUpperCase()) + '</span>.</p>';
+      '<div id="payDone" hidden></div>' + (o.fromBinance ? binanceNotice() : '') +
+      '<p class="note" style="text-align:center">Problem with your payment? <a class="link" href="mailto:' + esc(S.email || '') + '?subject=' + encodeURIComponent('Order ' + o.id.slice(0, 8).toUpperCase()) + '">Contact us</a> with order number <span class="mono">' + esc(o.id.slice(0, 8).toUpperCase()) + '</span>.</p>' + '<div class="contact-row" style="justify-content:center">' + contactBtns() + '</div>';
     if (!manual) drawQR(o.wallet);
     renderPay(o);
     if (o.status === 'pending'){
@@ -633,8 +694,69 @@
     }); });
   })();
 
+  /* ---------------- contact + live chat ---------------- */
+  function digits(x){ return String(x || '').replace(/\D/g, ''); }
+  function waLink(text){ var n = digits(S.whatsapp); return n ? 'https://wa.me/' + n + (text ? '?text=' + encodeURIComponent(text) : '') : ''; }
+  function tgLink(){ var u = String(S.telegram || '').replace(/^@/, '').replace(/[^A-Za-z0-9_]/g, ''); return u ? 'https://t.me/' + u : ''; }
+  function orderRef(){ return curOrder && curOrder.id ? curOrder.id.slice(0, 8).toUpperCase() : ''; }
+  function contactBtns(){
+    var ref = orderRef(), h = '';
+    if (waLink()) h += '<a class="wa" target="_blank" rel="noopener" href="' + esc(waLink('Hi! I need help' + (ref ? ' with order #' + ref : '') + '.')) + '">WhatsApp</a>';
+    if (CFG.chat) h += '<button type="button" data-chat>💬 Live chat</button>';
+    if (tgLink()) h += '<a target="_blank" rel="noopener" href="' + esc(tgLink()) + '">Telegram</a>';
+    if (S.email) h += '<a href="mailto:' + esc(S.email) + '">Email</a>';
+    return h;
+  }
+  function contactRow(){ var b = contactBtns(); return b ? '<div class="contact-row">' + b + '</div>' : ''; }
+  var CH = {sid: store('geostore_chat_sid'), log: store('geostore_chat_log') || [], after: 0, open: false, timer: null, lastSent: 0, unread: 0};
+  if (!CH.sid || !/^[a-f0-9]{16,32}$/.test(CH.sid)){ var ra = new Uint8Array(12); (window.crypto || window.msCrypto).getRandomValues(ra); CH.sid = Array.prototype.map.call(ra, function(b){ return ('0' + b.toString(16)).slice(-2); }).join(''); store('geostore_chat_sid', CH.sid); }
+  if (!Array.isArray(CH.log)) CH.log = [];
+  CH.log.forEach(function(m){ if (m.t > CH.after && m.k === 'them') CH.after = m.t; });
+  function chatSave(){ store('geostore_chat_log', CH.log.slice(-40)); }
+  function chatDraw(){
+    var box = $('chatLog'), html = '';
+    if (!CFG.chat) html = '<div class="msg-b sys">Live chat is offline right now.<br>Please message us on WhatsApp or by email — we answer fast.</div>';
+    else {
+      if (!CH.log.length) html += '<div class="msg-b sys">👋 Hi! Ask us anything about your order or a product. We reply here.</div>';
+      html += CH.log.map(function(m){ return '<div class="msg-b ' + (m.k === 'me' ? 'me' : m.k === 'them' ? 'them' : 'sys') + '">' + esc(m.text) + '</div>'; }).join('');
+    }
+    box.innerHTML = html; box.scrollTop = box.scrollHeight;
+    $('chatForm').hidden = !CFG.chat;
+    $('chatSub').textContent = CFG.chat ? 'We usually reply within minutes' : 'Offline — use WhatsApp or email';
+  }
+  function chatLinks(){ var b = contactBtns().replace(/<button[^>]*data-chat[^>]*>[^<]*<\/button>/, ''); $('chatLinks').innerHTML = b; $('chatLinks').hidden = !b; }
+  function chatFab(){ $('chatFab').hidden = !(CFG.chat || waLink() || tgLink() || S.email); }
+  function chatBadge(){ var b = $('chatBadge'); b.hidden = !CH.unread; b.textContent = CH.unread; }
+  function chatPoll(){
+    clearTimeout(CH.timer); CH.timer = null;
+    var recent = Date.now() - CH.lastSent < 30 * 60000, every = CH.open ? 5000 : (recent ? 20000 : 0);
+    if (!CFG.chat || !API || !every) return;
+    CH.timer = setTimeout(function(){
+      if (document.hidden){ chatPoll(); return; }
+      fetch(API + '/api/chat/poll?sid=' + CH.sid + '&after=' + CH.after).then(function(r){ return r.json(); }).then(function(j){
+        var n = 0; (j.msgs || []).forEach(function(m){ if (m.t > CH.after){ CH.after = m.t; CH.log.push({k:'them', t:m.t, text:String(m.text || '')}); n++; } });
+        if (n){ chatSave(); if (CH.open) chatDraw(); else { CH.unread += n; chatBadge(); } }
+      }).catch(function(){}).then(chatPoll);
+    }, every);
+  }
+  function chatOpen(){
+    CH.open = true; CH.unread = 0; chatBadge(); chatLinks(); chatDraw(); $('chatBox').hidden = false; $('chatFab').setAttribute('aria-expanded', 'true'); chatPoll();
+    if (CFG.chat) setTimeout(function(){ try { $('chatTxt').focus({preventScroll:true}); } catch(e) {} }, 60);
+  }
+  function chatClose(){ CH.open = false; $('chatBox').hidden = true; $('chatFab').setAttribute('aria-expanded', 'false'); chatPoll(); }
+  function chatInit(){ chatFab(); if ($('chatBox').hidden === false){ chatLinks(); chatDraw(); } chatPoll(); }
+  $('chatFab').addEventListener('click', function(){ CH.open ? chatClose() : chatOpen(); });
+  $('chatClose').addEventListener('click', chatClose);
+  document.addEventListener('click', function(e){ if (e.target.closest('[data-chat]')) chatOpen(); });
+  $('chatForm').addEventListener('submit', function(e){
+    e.preventDefault(); var inp = $('chatTxt'), text = inp.value.trim(); if (!text) return;
+    inp.value = ''; CH.log.push({k:'me', t:Date.now(), text:text}); CH.lastSent = Date.now(); chatSave(); chatDraw();
+    apiCall('/api/chat/send', {sid: CH.sid, text: text, name: me && me.name ? me.name : '', order: orderRef()}).catch(function(er){ CH.log.push({k:'sys', t:Date.now(), text:'⚠ ' + (er.message || 'Could not send') + ' — please try WhatsApp or email.'}); chatSave(); chatDraw(); });
+    chatPoll();
+  });
+
   /* ---------------- start ---------------- */
-  updateNav(); saveCart();
+  updateNav(); saveCart(); chatInit();
   if (tabs.length) showTab(tabs[0].id);
   else { $('shop').querySelector('.wrap').innerHTML = '<p class="empty" style="padding:60px 0">The shop is being stocked. Please check back soon.</p>'; }
 })();
