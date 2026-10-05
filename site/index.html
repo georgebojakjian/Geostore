@@ -2,1098 +2,181 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Geostore Codes — Ready-made Website Code for Navbars, Heroes, Product Grids &amp; More</title>
-  <meta name="description" content="Copy-paste website code built for freelancers, shop owners and anyone building a site. Live previews, free samples, pay with USDT and get your code automatically.">
-  <meta name="theme-color" content="#040605">
-  <script>try{var _t=localStorage.getItem("geostore_theme");if(_t==="light"||_t==="dark")document.documentElement.setAttribute("data-theme",_t)}catch(e){}</script>
-  <link rel="icon" type="image/svg+xml" href="logo.svg">
-  <style>
-    :root{--bg:#040605;--bg-soft:#0a0e0b;--surface:rgba(255,255,255,.035);--surface-2:rgba(255,255,255,.06);--border:rgba(255,255,255,.09);--text:#f2f5ee;--muted:#8d968a;--accent:#c5f442;--accent-2:#c5f442;--on-accent:#0a1000;--glow:rgba(197,244,66,.35);--radius:20px;--ease:cubic-bezier(.22,.61,.36,1);
-      --font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;--serif:"Instrument Serif","Iowan Old Style","Palatino Linotype",Georgia,"Times New Roman",serif;--mono:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Consolas,monospace}
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    [hidden]{display:none!important}
-    html{scroll-behavior:smooth;scroll-padding-top:90px;overflow-x:clip}
-    body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:clip;-webkit-font-smoothing:antialiased}
-    a{color:inherit;text-decoration:none;transition:color .3s var(--ease),opacity .3s}
-    button,input,select{font:inherit;color:inherit}button{cursor:pointer;border:0;background:none}
-    :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
-    img{display:block;max-width:100%}
-    .container{width:min(1180px,100% - 40px);margin-inline:auto}
-    .mono{font-family:var(--mono);font-size:.78rem;letter-spacing:.04em;color:var(--muted)}
-    em.s,.s{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.01em}
-    .eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.76rem;color:var(--muted);padding:5px 12px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.02);margin-bottom:18px}
-    .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
-
-    /* background */
-    #bg3d{position:fixed;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none}
-    .glow{position:fixed;inset:0;z-index:-3;pointer-events:none;background:radial-gradient(700px 520px at var(--gx,75%) var(--gy,20%),rgba(197,244,66,.12),transparent 65%),radial-gradient(800px 600px at calc(100% - var(--gx,75%)) calc(100% - var(--gy,20%)),rgba(60,140,110,.12),transparent 65%),var(--bg)}
-    .dots{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.35;background-image:radial-gradient(rgba(255,255,255,.18) 1px,transparent 1px);background-size:34px 34px;-webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 20%,#000 10%,transparent 70%);mask-image:radial-gradient(ellipse 80% 60% at 50% 20%,#000 10%,transparent 70%)}
-    .progress{position:fixed;top:0;left:0;height:2px;width:100%;transform-origin:0 50%;transform:scaleX(var(--sp,0));background:var(--accent);z-index:300}
-    .cursor{position:fixed;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;border:1.5px solid var(--accent);border-radius:50%;pointer-events:none;z-index:400;opacity:0;transition:opacity .3s,width .25s var(--ease),height .25s var(--ease),margin .25s var(--ease),background .25s;mix-blend-mode:normal}
-    .cursor.on{opacity:.85}.cursor.big{width:54px;height:54px;margin:-27px 0 0 -27px;background:rgba(197,244,66,.08)}
-
-    /* buttons */
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:12px 24px;border-radius:999px;font-weight:600;font-size:.93rem;white-space:nowrap;transition:transform .3s var(--ease),box-shadow .3s var(--ease),background .3s,border-color .3s,color .3s}
-    .btn-primary{background:var(--accent);color:var(--on-accent);box-shadow:0 10px 30px -10px var(--glow)}
-    .btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 36px -10px var(--glow)}
-    .btn-ghost{border:1px solid var(--border);background:rgba(255,255,255,.04);backdrop-filter:blur(8px)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-3px)}
-    .btn-block{width:100%}.btn-lg{padding:15px 30px;font-size:1rem}
-    .btn-dark{background:var(--on-accent);color:var(--accent)}.btn-dark:hover{transform:translateY(-3px);box-shadow:0 14px 30px -10px rgba(0,0,0,.5)}
-
-    /* header */
-    header{position:fixed;top:0;left:0;right:0;z-index:100;transition:background .3s,border-color .3s,backdrop-filter .3s;border-bottom:1px solid transparent}
-    header.scrolled{background:rgba(4,6,5,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-color:var(--border)}
-    .nav{width:min(1180px,100% - 40px);margin-inline:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;height:72px}
-    .logo{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em}.logo img{width:30px;height:30px;transition:transform .5s var(--ease)}.logo:hover img{transform:rotate(-14deg) scale(1.1)}
-    .nav-mid{display:flex;gap:6px}.nav-mid a{padding:8px 16px;border-radius:999px;color:var(--muted);font-size:.9rem}.nav-mid a:hover{color:var(--text);background:rgba(255,255,255,.05)}
-    .nav-right{display:flex;align-items:center;gap:12px}
-    .status{display:inline-flex;align-items:center;gap:9px;padding:7px 15px;border:1px solid var(--border);border-radius:999px;font-family:var(--mono);font-size:.78rem;background:rgba(255,255,255,.03)}.status i{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
-    .nav-right .btn{padding:9px 20px}
-    @media(max-width:900px){.nav-mid{display:none}}@media(max-width:560px){.status{display:none}}
-
-    /* hero */
-    .hero{position:relative;padding:clamp(120px,13vw,170px) 0 80px}
-    .hero .container{display:grid;grid-template-columns:1fr 1.08fr;gap:46px;align-items:center}
-    .hero h1{font-size:clamp(2.5rem,6vw,4.7rem);line-height:1.04;letter-spacing:-.04em;font-weight:600;margin:6px 0 22px;background:linear-gradient(180deg,#fff 30%,#a9b3a4);-webkit-background-clip:text;background-clip:text;color:transparent}
-    .hero h1 .s{font-size:1.08em;color:#e8efe1;-webkit-text-fill-color:#e8efe1}
-    .hero .lead{color:var(--muted);font-size:clamp(1rem,1.7vw,1.15rem);max-width:480px;margin-bottom:30px}
-    .cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:22px}
-    .micro{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
-    .win{position:relative;border-radius:22px;border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:14px;box-shadow:0 50px 100px -40px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.08);cursor:pointer}
-    .win-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 6px 12px;font-family:var(--mono);font-size:.78rem}
-    .win-top b{color:var(--text);font-weight:500}.win-top span{color:var(--accent)}
-    .screen{position:relative;aspect-ratio:16/10.5;border-radius:14px;overflow:hidden;background:#05070a;border:1px solid var(--border)}
-    .screen iframe{position:absolute;top:0;left:0;width:1000px;border:0;transform-origin:0 0;pointer-events:none}
-    .win-bot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 6px 2px;font-family:var(--mono);font-size:.75rem;color:var(--muted)}
-    .dotsnav{display:flex;gap:7px}.dotsnav button{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .3s}.dotsnav button.on{width:22px;border-radius:6px;background:var(--accent)}
-    .badge-float{position:absolute;z-index:3;padding:8px 14px;border-radius:12px;border:1px solid var(--border);background:rgba(10,14,11,.85);backdrop-filter:blur(10px);font-family:var(--mono);font-size:.75rem;box-shadow:0 20px 40px -20px #000}
-    .badge-float.a{top:-18px;right:24px;color:var(--accent)}.badge-float.b{bottom:46px;left:-22px}
-    .badge-float{animation:bob 6s ease-in-out infinite}.badge-float.b{animation-delay:-3s}
-    @keyframes bob{50%{translate:0 -10px}}
-
-    /* sections */
-    .section{padding:clamp(60px,9vw,110px) 0}
-    .head{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:end;margin-bottom:clamp(30px,5vw,54px)}
-    .head h2{font-size:clamp(1.9rem,4.4vw,3.2rem);line-height:1.1;letter-spacing:-.035em;font-weight:600}
-    .head h2 .s{font-size:1.08em}.head p{color:var(--muted);font-size:1.02rem;max-width:420px;justify-self:end}
-    .scene{perspective:1200px}
-    .r3d{opacity:0;transform:perspective(1000px) rotateX(36deg) translateY(70px) translateZ(-80px) scale(.95);transform-origin:50% 100%;transition:opacity .9s var(--ease),transform .9s var(--ease);transition-delay:var(--d,0s)}
-    .r3d.in{opacity:1;transform:perspective(1000px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(0) translateZ(0) scale(1)}
-    .r3d.in.live{transition:transform .18s ease-out,border-color .4s var(--ease),box-shadow .4s var(--ease);transition-delay:0s}
-    .card.r3d.in:hover,.val.r3d.in:hover{transform:perspective(1000px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-10px) translateZ(26px)}
-    .glass{border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:var(--radius)}
-    .values{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-    .val{padding:30px 28px;min-height:220px;display:flex;flex-direction:column;transition:border-color .4s,box-shadow .4s}
-    .val:hover{border-color:rgba(197,244,66,.45);box-shadow:0 30px 70px -34px var(--glow)}
-    .val .n{font-family:var(--mono);font-size:.78rem;color:var(--accent);margin-bottom:auto}
-    .val h3{font-size:1.25rem;letter-spacing:-.02em;margin:34px 0 8px}.val p{color:var(--muted);font-size:.95rem}
-
-    .lime{padding:0 0 clamp(60px,8vw,100px)}
-    .lime-panel{position:relative;overflow:hidden;border-radius:30px;background:var(--accent);color:var(--on-accent);text-align:center;padding:clamp(44px,8vw,100px) clamp(22px,6vw,90px)}
-    .lime-panel::before{content:"";position:absolute;inset:0;opacity:.35;background-image:radial-gradient(rgba(10,16,0,.4) 1px,transparent 1px);background-size:26px 26px}
-    .lime-panel .mono{color:rgba(10,16,0,.6);position:relative}
-    .rw{position:relative;font-size:clamp(1.7rem,4.6vw,3.4rem);line-height:1.15;letter-spacing:-.035em;font-weight:600;max-width:880px;margin:22px auto 34px}
-    .rw .w{transition:opacity .15s linear}.rw .s{font-size:1.08em}
-    .lime-panel img{margin:0 auto;width:64px;height:64px;border-radius:18px;position:relative;box-shadow:0 20px 40px -15px rgba(0,0,0,.5);animation:spin 9s linear infinite}
-    @keyframes spin{to{transform:rotateY(360deg)}}
-
-    .tools{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin:0 0 28px}
-    .chips{display:flex;flex-wrap:wrap;gap:8px}
-    .chip{border:1px solid var(--border);padding:8px 18px;border-radius:999px;color:var(--muted);font-size:.88rem;background:rgba(255,255,255,.02);transition:all .3s var(--ease)}.chip:hover{color:var(--text);border-color:rgba(197,244,66,.5)}.chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
-    .search{flex:1;min-width:200px;max-width:320px;padding:11px 18px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);outline:0;transition:border-color .3s,box-shadow .3s}.search:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(197,244,66,.12)}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
-    .card{display:flex;flex-direction:column;overflow:hidden;border-radius:var(--radius);border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.015));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:border-color .4s,box-shadow .4s}
-    .card:hover{border-color:rgba(197,244,66,.45);box-shadow:0 30px 70px -34px var(--glow)}
-    .prev{position:relative;height:210px;overflow:hidden;background:#05070a;border-bottom:1px solid var(--border);cursor:pointer}
-    .prev iframe{position:absolute;top:0;left:0;width:800px;border:0;transform-origin:0 0;pointer-events:none;background:#05070a}
-    .tag{position:absolute;top:12px;left:12px;z-index:2;background:rgba(4,6,5,.82);border:1px solid var(--border);color:var(--accent);font-family:var(--mono);font-size:.7rem;padding:3px 11px;border-radius:8px}
-    .body{display:flex;flex-direction:column;gap:6px;padding:20px 22px 22px;flex:1}
-    .body h3{font-size:1.1rem;letter-spacing:-.015em}.body p{color:var(--muted);font-size:.9rem;flex:1}
-    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}.price{font-size:1.5rem;font-weight:700;letter-spacing:-.03em}.row .btn{padding:10px 18px}
-    .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:60px 0}
-    .pass{margin-top:24px;display:grid;grid-template-columns:1.4fr auto;gap:24px;align-items:center;padding:clamp(26px,4vw,44px);border-radius:26px;border:1px solid rgba(197,244,66,.35);background:radial-gradient(500px circle at 0% 0%,rgba(197,244,66,.14),transparent 60%),rgba(255,255,255,.03)}
-    .pass h2{font-size:clamp(1.5rem,3vw,2.1rem);letter-spacing:-.03em;margin-bottom:6px}.pass p{color:var(--muted);max-width:520px}.pass .big{font-size:2.6rem;font-weight:700;letter-spacing:-.04em;margin-bottom:10px;text-align:right}.pass .side{text-align:right}
-
-    .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-    .step{padding:26px 22px 24px;min-height:190px}.step .n{font-family:var(--mono);font-size:.78rem;color:var(--accent)}.step h3{font-size:1.1rem;margin:30px 0 6px;letter-spacing:-.015em}.step p{color:var(--muted);font-size:.9rem}
-    .faq{max-width:820px;margin:0 auto;display:grid;gap:12px}
-    .fq{border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.03);transition:border-color .3s,background .3s}.fq:hover{border-color:rgba(197,244,66,.35)}.fq.open{border-color:rgba(197,244,66,.6);background:rgba(255,255,255,.05)}
-    .fq>button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:18px;text-align:left;padding:20px 24px;font-weight:600;font-size:1.02rem}
-    .fq .pl{flex:none;width:28px;height:28px;border-radius:50%;border:1px solid var(--border);position:relative;transition:transform .4s var(--ease),background .3s}
-    .fq .pl::before,.fq .pl::after{content:"";position:absolute;top:50%;left:50%;width:11px;height:2px;background:var(--text);border-radius:2px;transform:translate(-50%,-50%);transition:transform .4s var(--ease),background .3s}.fq .pl::after{transform:translate(-50%,-50%) rotate(90deg)}
-    .fq.open .pl{background:var(--accent);border-color:var(--accent);transform:rotate(180deg)}.fq.open .pl::before,.fq.open .pl::after{background:var(--on-accent)}.fq.open .pl::after{transform:translate(-50%,-50%) rotate(0)}
-    .fq .an{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--ease)}.fq.open .an{grid-template-rows:1fr}.fq .an>div{overflow:hidden}.fq .an p{padding:0 24px 22px;color:var(--muted)}
-    .final .lime-panel{padding:clamp(44px,7vw,80px) 24px}.final h2{position:relative;font-size:clamp(1.8rem,4.4vw,3.2rem);letter-spacing:-.035em;line-height:1.1;margin-bottom:26px}.final h2 .s{font-size:1.08em}
-
-    footer{margin-top:20px;border-top:1px solid var(--border);padding:44px 0 30px;color:var(--muted);font-size:.9rem;background:rgba(4,6,5,.7)}
-    .foot{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:flex-start}.foot .links{display:flex;gap:22px;flex-wrap:wrap}.foot .links a:hover{color:var(--accent)}.foot p.blurb{max-width:340px;margin-top:12px}
-    .copy{margin-top:28px;padding-top:20px;border-top:1px solid var(--border);font-family:var(--mono);font-size:.78rem}
-
-    /* modals */
-    .modal{position:fixed;inset:0;z-index:500;display:grid;place-items:center;padding:16px;background:rgba(2,3,2,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility .3s}
-    .modal.open{opacity:1;visibility:visible}
-    .box{position:relative;width:min(960px,100%);max-height:calc(100vh - 32px);overflow-y:auto;border-radius:24px;border:1px solid var(--border);background:#0b100c;padding:28px;transform:translateY(20px) scale(.97);transition:transform .35s var(--ease)}
-    .modal.open .box{transform:none}.box.small{width:min(480px,100%)}
-    .x{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;font-size:1.4rem;line-height:1;color:var(--muted);transition:background .3s,color .3s}.x:hover{background:rgba(255,255,255,.08);color:#fff}
-    .box h3{font-size:1.4rem;padding-right:40px;letter-spacing:-.02em}.box .sub{color:var(--muted);margin:4px 0 16px}
-    .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}.tab{padding:8px 18px;border-radius:999px;border:1px solid var(--border);color:var(--muted);font-size:.9rem;transition:all .3s}.tab.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
-    .demo{width:100%;height:min(440px,52vh);border:1px solid var(--border);border-radius:14px;background:#05070a}
-    pre{max-height:min(440px,52vh);overflow:auto;background:#050806;border:1px solid var(--border);border-radius:14px;padding:16px;font-family:var(--mono);font-size:.78rem;line-height:1.55;color:#d6e8b0;white-space:pre;tab-size:2}
-    .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:16px}.hint{color:var(--muted);font-size:.85rem;flex:1;min-width:200px}
-    .field{margin-bottom:14px}.field label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:6px}
-    .field input,.field select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#05070a;outline:0;transition:border-color .3s,box-shadow .3s}.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(197,244,66,.12)}.field select option{background:#05070a}
-    .addr{display:flex;gap:8px}.addr code{flex:1;min-width:0;padding:12px 14px;border-radius:12px;border:1px dashed rgba(197,244,66,.6);background:#05070a;font-family:var(--mono);font-size:.8rem;word-break:break-all;color:#d6e8b0}.addr .btn{padding:0 18px}
-    .note{font-size:.8rem;color:var(--muted);margin:12px 0 18px}.msg{font-size:.85rem;min-height:22px;margin-top:10px;color:var(--accent)}.msg.err{color:#ff8a8a}
-    .sum b{color:var(--accent)}
-
-    .vtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.vt{border:1px solid var(--border);border-radius:10px;padding:7px 14px;font-size:.82rem;color:var(--muted);background:rgba(255,255,255,.03);transition:all .3s}.vt:hover{color:var(--text);border-color:rgba(197,244,66,.5)}.vt.on{border-color:var(--accent);color:var(--accent);background:rgba(197,244,66,.08)}
-    .dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-    .dcard{display:flex;flex-direction:column;overflow:hidden;border-radius:var(--radius);border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.015));transition:border-color .4s,box-shadow .4s}
-    .dcard:hover{border-color:rgba(197,244,66,.45);box-shadow:0 30px 70px -34px var(--glow)}
-    .dart{height:120px;display:grid;place-items:center;font-size:3rem;background:radial-gradient(circle at 30% 20%,rgba(197,244,66,.22),transparent 60%),#07100a;border-bottom:1px solid var(--border)}
-    .dcard .body{padding:16px 18px 18px}.dcard .price{font-size:1.3rem}
-    .soon{border:1px dashed rgba(197,244,66,.4);border-radius:26px;padding:clamp(30px,5vw,56px);text-align:center;background:radial-gradient(500px circle at 50% 0%,rgba(197,244,66,.08),transparent 60%)}
-    .soon h3{font-size:1.5rem;letter-spacing:-.02em;margin:10px 0 6px}.soon p{color:var(--muted);max-width:520px;margin:0 auto}.soon .ico{font-size:2.4rem}
-    @media(max-width:1000px){.dgrid{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.dgrid{grid-template-columns:1fr}}
-
-    .logo span,.navbtn,.nav-mid a,.status{white-space:nowrap}
-    @media(max-width:1280px){.status{display:none}}
-    @media(max-width:1120px){.nav-mid a:nth-child(n+4){display:none}}
-    .navbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-size:.86rem;color:var(--text);transition:all .3s}.navbtn:hover{border-color:var(--accent);color:var(--accent)}
-    .cc{min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:var(--accent);color:var(--on-accent);font-size:.72rem;font-weight:800;display:inline-grid;place-items:center}
-    @media(max-width:700px){.cartfab{display:inline-flex}.hide-m{display:none}.navbtn{padding:8px 11px}}
-    .cartfab{position:fixed;right:14px;bottom:14px;z-index:150;display:none;align-items:center;gap:8px;padding:12px 18px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:.9rem;box-shadow:0 14px 34px -10px var(--glow);transition:transform .25s var(--ease)}.cartfab:hover{transform:translateY(-3px)}.cartfab .cc{background:var(--on-accent);color:var(--accent)}
-    @media(max-width:700px){.cartfab{display:inline-flex}}
-    .from{font-size:.68rem;font-weight:500;color:var(--muted);letter-spacing:0}
-    .wgrid{grid-template-columns:repeat(2,1fr)}.wcard .prev{height:260px}
-    .demo.tall{height:min(560px,60vh)}
-    .gbox{max-height:min(440px,52vh);overflow:auto;border:1px solid var(--border);border-radius:14px;padding:6px 20px 18px;background:rgba(255,255,255,.03);font-size:.93rem;color:#cdd5c8}
-    .gbox h4{margin:18px 0 4px;color:var(--text);font-size:1rem}.gbox p{margin:6px 0}.gbox code{background:rgba(255,255,255,.08);padding:1px 6px;border-radius:5px;font-family:var(--mono);font-size:.82em}.gbox ul,.gbox ol{margin:6px 0 6px 20px}.gbox a{color:var(--accent);text-decoration:underline}
-    .opts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.op{flex:1;min-width:210px;display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:14px;cursor:pointer;background:rgba(255,255,255,.03);transition:border-color .3s,background .3s}
-    .op:has(input:checked){border-color:var(--accent);background:rgba(197,244,66,.07)}.op input{accent-color:var(--accent);margin-top:4px}.op span{display:flex;flex-direction:column;font-size:.92rem}.op b{color:var(--accent);font-size:1.05rem}.op small{color:var(--muted);font-size:.74rem}
-    .clist{display:grid;gap:8px;margin:6px 0 4px}.cl{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:11px 14px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.03);font-size:.92rem}.cl b{color:var(--accent)}
-    .rm{width:26px;height:26px;border-radius:50%;color:var(--muted);font-size:1.1rem;line-height:1}.rm:hover{background:rgba(255,255,255,.1);color:#fff}
-    .ctotal{display:flex;justify-content:space-between;align-items:center;padding:14px 4px;font-size:1.05rem;border-top:1px solid var(--border);margin:8px 0 16px}.ctotal b{font-size:1.5rem;color:var(--accent)}.ctotal:empty{display:none}
-    .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);z-index:600;background:#10170f;border:1px solid var(--accent);color:var(--text);padding:11px 20px;border-radius:99px;font-size:.9rem;box-shadow:0 18px 40px rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:all .3s var(--ease)}.toast.show{opacity:1;transform:translate(-50%,0)}
-    .pill2{display:inline-block;padding:2px 11px;border-radius:99px;font-size:.72rem;font-weight:700;border:1px solid var(--border);white-space:nowrap}.pill2.paid{color:var(--accent);border-color:rgba(197,244,66,.5)}.pill2.pending{color:#fbbf24;border-color:rgba(251,191,36,.5)}.pill2.expired{color:var(--muted)}
-    .oc{border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;background:rgba(255,255,255,.03)}.oh{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:4px}.oa{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
-    .btn-s{padding:8px 16px;font-size:.84rem}
-    .sh{margin:22px 0 10px;font-size:1rem}.tw{overflow-x:auto}.pt{width:100%;border-collapse:collapse;font-size:.88rem}.pt th{color:var(--muted);text-align:left;font-weight:500;font-size:.74rem;text-transform:uppercase;letter-spacing:.06em}.pt th,.pt td{padding:10px 8px;border-bottom:1px solid var(--border);vertical-align:top}.pt a{color:var(--accent);text-decoration:underline}
-    .stats2{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}.stats2 div{border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.03)}.stats2 small{color:var(--muted);display:block;font-size:.72rem}.stats2 b{font-size:1.1rem}
-    .two{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}@media(max-width:560px){.two{grid-template-columns:1fr}.stats2{grid-template-columns:1fr}}
-    #acctBody .field input:disabled{opacity:.6}
-    @media(max-width:1000px){.wgrid{grid-template-columns:1fr}}
-    @media(max-width:1000px){.hero .container{grid-template-columns:1fr}.win{max-width:560px}.head{grid-template-columns:1fr}.head p{justify-self:start}.values{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}.pass{grid-template-columns:1fr}.pass .big,.pass .side{text-align:left}}
-    @media(max-width:640px){.grid,.steps{grid-template-columns:1fr}.box{padding:22px 18px}.tools{flex-direction:column;align-items:stretch}.search{max-width:none}.cta-row .btn{width:100%}.badge-float.b{left:8px}}
-
-    /* preview window + phones/tablets */
-    .demowrap{position:relative}.demowrap .demo{display:block}
-    .dload{position:absolute;inset:0;display:grid;place-items:center;border-radius:14px;background:var(--bg-soft);color:var(--muted);font-size:.9rem}
-    .fsbtn{position:absolute;right:10px;bottom:10px;z-index:3;padding:6px 12px;border-radius:999px;font-size:.78rem;background:rgba(10,14,11,.82);color:#f2f5ee;border:1px solid rgba(255,255,255,.2)}
-    .demowrap.fs{position:fixed;inset:0;z-index:700;background:var(--bg)}.demowrap.fs .demo{width:100%;height:100%;border-radius:0;border:0}.demowrap.fs .fsbtn{bottom:auto;top:max(10px,env(safe-area-inset-top));right:10px}
-    @media(max-width:900px){.box{padding:22px 20px}.demo,.demo.tall{height:min(520px,62vh)}}
-    @media(max-width:640px){
-      .modal{padding:0;align-items:end}
-      .box{width:100%;max-height:96vh;max-height:96dvh;border-radius:22px 22px 0 0;padding:20px 14px calc(18px + env(safe-area-inset-bottom))}
-      .box.small{width:100%}
-      .box h3{font-size:1.15rem}.box .sub{margin-bottom:10px;font-size:.88rem}
-      .demo,.demo.tall{height:min(58vh,540px);height:58dvh;border-radius:12px}
-      .tab,.vt{padding:7px 12px;font-size:.82rem}
-      .actions{flex-direction:column;align-items:stretch}.actions>span{display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important}.actions .btn{width:100%;justify-content:center}.hint{min-width:0}
-      #demoNote{font-size:.78rem}
-    }
-    @media(max-width:700px){.cartfab{display:none!important}}
-    @media(max-width:520px){.logo span{display:none}.nav-right{gap:6px}.navbtn{padding:8px 10px}[data-acctlabel]{max-width:64px;overflow:hidden;text-overflow:ellipsis}}
-    /* light theme */
-    [data-theme=light]{color-scheme:light;--bg:#f5f7ef;--bg-soft:#ebf0e1;--surface:rgba(0,0,0,.035);--surface-2:rgba(0,0,0,.06);--border:rgba(30,45,10,.14);--text:#141a0e;--muted:#566250;--accent:#4a7a0c;--accent-2:#4a7a0c;--on-accent:#ffffff;--glow:rgba(74,122,12,.25)}
-    [data-theme=light] .glow{background:radial-gradient(700px 520px at var(--gx,75%) var(--gy,20%),rgba(140,200,40,.20),transparent 65%),radial-gradient(800px 600px at calc(100% - var(--gx,75%)) calc(100% - var(--gy,20%)),rgba(60,160,120,.12),transparent 65%),var(--bg)}
-    [data-theme=light] .dots{background-image:radial-gradient(rgba(0,0,0,.16) 1px,transparent 1px)}
-    [data-theme=light] #bg3d{opacity:.55}
-    [data-theme=light] header.scrolled{background:rgba(245,247,239,.82)}
-    [data-theme=light] footer{background:rgba(255,255,255,.6)}
-    [data-theme=light] .hero h1{background:linear-gradient(180deg,#141a0e 30%,#4b5a40);-webkit-background-clip:text;background-clip:text}
-    [data-theme=light] .modal{background:rgba(235,240,225,.82)}
-    [data-theme=light] .box,[data-theme=light] .toast{background:#fff}
-    [data-theme=light] .field input,[data-theme=light] .field select,[data-theme=light] .addr code,[data-theme=light] pre{background:#f3f6ec;color:#243312}
-    [data-theme=light] #payAmt{color:#141a0e!important}
-    [data-theme=light] .demo,[data-theme=light] .prev,[data-theme=light] .prev iframe,[data-theme=light] .screen,[data-theme=light] .screen iframe{background:#fff}
-    [data-theme=light] .dart{background:radial-gradient(circle at 30% 20%,rgba(74,122,12,.18),transparent 60%),#eef3e2}
-    [data-theme=light] .glass,[data-theme=light] .card,[data-theme=light] .dcard,[data-theme=light] .win{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.62))}
-    [data-theme=light] .btn-ghost,[data-theme=light] .search,[data-theme=light] .navbtn,[data-theme=light] .vt,[data-theme=light] .op,[data-theme=light] .cl,[data-theme=light] .oc,[data-theme=light] .fq,[data-theme=light] .chip,[data-theme=light] .stats2 div,[data-theme=light] .gbox,[data-theme=light] .eyebrow,[data-theme=light] .status,[data-theme=light] .fq.open{background:rgba(255,255,255,.75)}
-    [data-theme=light] .tag{background:rgba(255,255,255,.92)}
-    [data-theme=light] .gbox{color:#33402a}[data-theme=light] .gbox code{background:rgba(0,0,0,.07)}
-    [data-theme=light] .nav-mid a:hover,[data-theme=light] .x:hover,[data-theme=light] .rm:hover{background:rgba(0,0,0,.06);color:var(--text)}
-    [data-theme=light] .dotsnav button{background:rgba(0,0,0,.18)}[data-theme=light] .dotsnav button.on{background:var(--accent)}
-    [data-theme=light] .btn-primary,[data-theme=light] .chip.on,[data-theme=light] .tab.on,[data-theme=light] .vt.on{color:#fff}[data-theme=light] .chip.on,[data-theme=light] .tab.on{background:var(--accent);border-color:var(--accent)}[data-theme=light] .vt.on,[data-theme=light] .op:has(input:checked){background:rgba(74,122,12,.14);color:var(--text);border-color:var(--accent)}
-    @media(hover:none){.cursor{display:none}}
-    @media(prefers-reduced-motion:reduce){.r3d{opacity:1;transform:none}.badge-float,.lime-panel img{animation:none}*,*::before,*::after{transition-duration:.01ms!important;scroll-behavior:auto!important}}
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Geostore — Gift cards, game credit &amp; website code</title>
+  <meta name="description" content="Buy gift cards, game credit and ready-made website code. Pay with crypto, get your code in seconds.">
+  <meta name="theme-color" content="#f3f7ef">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'self' mailto:">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <meta property="og:title" content="Geostore — Your global digital marketplace">
+  <meta property="og:image" content="logo-512.png">
+  <script>try{var _t=localStorage.getItem("geostore_theme");document.documentElement.setAttribute("data-theme",_t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="glow" aria-hidden="true"></div>
-  <div class="dots" aria-hidden="true"></div>
-  <canvas id="bg3d" aria-hidden="true"></canvas>
-  <div class="progress" aria-hidden="true"></div>
-  <div class="cursor" id="cursor" aria-hidden="true"></div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></symbol>
+    <symbol id="i-shop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></symbol>
+    <symbol id="i-bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
+  </svg>
 
-  <header id="hdr">
-    <nav class="nav" aria-label="Main">
-      <a href="#top" class="logo"><img src="logo.svg" alt="" width="30" height="30"><span data-brand>Geostore Codes</span></a>
-      <div class="nav-mid"><a href="#about">What we do</a><a href="#products">Products</a><a href="#websites" id="navWeb">Websites</a><a href="#digital" id="navDig">Digital items</a><a href="#how">How it works</a><a href="#faq">FAQ</a></div>
-      <div class="nav-right"><span class="status"><i></i><span id="statusTxt">store open</span></span><button type="button" class="navbtn" id="themeBtn" aria-label="Switch light or dark theme" title="Light / dark">🌙</button><button type="button" class="navbtn" data-openacct aria-label="Account">👤 <span data-acctlabel>Sign in</span></button><button type="button" class="navbtn" data-opencart aria-label="Cart">🛒 <span class="cc" data-cartcount hidden>0</span></button><a href="#products" class="btn btn-primary hide-m">Browse codes</a></div>
-    </nav>
+  <header class="top" id="hdr">
+    <div class="wrap nav">
+      <a href="#top" class="brand" aria-label="Home"><img src="logo-96.png" alt="" width="38" height="38"><span data-brand>Geostore</span></a>
+      <nav class="nav-links" aria-label="Main"><a href="#shop" data-tabgo="gift" id="navGift">Gift cards</a><a href="#shop" data-tabgo="sites" id="navSites">Websites</a><a href="#shop" data-tabgo="code" id="navCode">Code</a><a href="#how">How it works</a><a href="#faq">FAQ</a></nav>
+      <div class="nav-right">
+        <button type="button" class="theme" data-theme-toggle role="switch" aria-label="Dark mode" aria-checked="false"><span class="knob"><svg class="sun"><use href="#i-sun"/></svg><svg class="moon"><use href="#i-moon"/></svg></span></button>
+        <button type="button" class="ibtn" data-openacct aria-label="Account"><svg><use href="#i-user"/></svg><span data-acctlabel>Sign in</span></button>
+        <button type="button" class="ibtn" data-opencart aria-label="Cart"><svg><use href="#i-bag"/></svg><span>Cart</span><span class="cc" data-cartcount hidden>0</span></button>
+      </div>
+    </div>
   </header>
 
   <main id="top">
     <section class="hero">
-      <div class="container">
-        <div>
-          <span class="eyebrow" id="heroChip">store open</span>
-          <h1>Website code that’s ready <span class="s">to paste.</span></h1>
-          <p class="lead">Clean, tested HTML, CSS and JavaScript — navbars, hero sections, product grids, pricing tables, FAQs and footers. Built for freelancers, shop owners and anyone building a website.</p>
-          <div class="cta-row">
-            <a href="#products" class="btn btn-primary btn-lg">Browse the codes</a>
-            <a href="#how" class="btn btn-ghost btn-lg">▸ How it works</a>
+      <div class="wrap">
+        <h1>Gift cards, game credit &amp; <em>website code.</em></h1>
+        <p>Pay with crypto. Get your code in seconds.</p>
+        <label class="searchbar" for="q"><svg><use href="#i-search"/></svg><input id="q" type="search" autocomplete="off" placeholder="Search gift cards, websites, code…" aria-label="Search"></label>
+        <div class="trust"><span><svg><use href="#i-bolt"/></svg>Instant delivery</span><span><svg><use href="#i-lock"/></svg>Safe crypto payment</span><span><svg><use href="#i-globe"/></svg>Works worldwide</span></div>
+      </div>
+    </section>
+
+    <section class="shop" id="shop">
+      <div class="wrap">
+        <div class="seg" id="seg" role="tablist" aria-label="What are you looking for?"></div>
+
+        <div id="results" hidden></div>
+
+        <div id="panels">
+          <div class="panel" id="panelGift" hidden>
+            <div class="chips" id="gChips" role="tablist" aria-label="Gift card categories"></div>
+            <div class="brands" id="brands"></div>
+            <div class="brands" id="dgrid" style="margin-top:14px"></div>
+            <div class="more"><button type="button" class="btn btn-ghost" id="gMore" hidden>Show more</button></div>
           </div>
-          <p class="micro">live preview / free sample / pay with USDT</p>
-        </div>
-        <div class="scene">
-          <div class="win r3d" id="win" role="button" tabindex="0" aria-label="Open the featured code">
-            <span class="badge-float a" id="winPrice">$0</span>
-            <span class="badge-float b">free sample included</span>
-            <div class="win-top"><b id="winTitle">preview</b><span id="winCat">live</span></div>
-            <div class="screen" id="screen"><iframe sandbox="allow-scripts" tabindex="-1" title="" id="winFrame"></iframe></div>
-            <div class="win-bot"><span>live preview</span><div class="dotsnav" id="winDots"></div></div>
+          <div class="panel" id="panelSites" hidden>
+            <div class="grid sites" id="wgrid"></div>
+            <div class="more"><button type="button" class="btn btn-ghost" id="wMore" hidden>Show more websites</button></div>
+          </div>
+          <div class="panel" id="panelCode" hidden>
+            <div class="chips" id="chips" role="tablist" aria-label="Code categories"></div>
+            <div class="grid" id="grid"></div>
+            <div class="more"><button type="button" class="btn btn-ghost" id="more" hidden>Show more</button></div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <section class="section" id="about">
-      <div class="container scene">
-        <div class="head r3d"><h2>Most of a website is the <span class="s">same parts.</span></h2><p>Navbars, heroes, grids, footers. We build them once, properly, and you paste them in. Every item is a complete, working piece you can see before you buy.</p></div>
-        <div class="values">
-          <div class="val glass r3d"><span class="n">01</span><h3>See it before you buy</h3><p>Every code has a live, interactive preview and a free basic sample you can copy and try right away.</p></div>
-          <div class="val glass r3d" style="--d:.1s"><span class="n">02</span><h3>Plain HTML, CSS &amp; JS</h3><p>No frameworks, no libraries. Paste the code into any website, theme or project and it works on phones and desktops.</p></div>
-          <div class="val glass r3d" style="--d:.2s"><span class="n">03</span><h3>Pay in USDT, get it fast</h3><p>Pay with USDT (TRC20). Once the payment is confirmed on the blockchain, your private download page opens automatically.</p></div>
+        <div class="pass" id="pass" hidden>
+          <div><h2 id="passTitle"></h2><p id="passDesc"></p></div>
+          <div class="pp"><div class="big" id="passPrice"></div><button class="btn btn-primary" id="passBuy" type="button">Get All-Access</button></div>
         </div>
       </div>
     </section>
 
-    <section class="lime">
-      <div class="container scene">
-        <div class="lime-panel r3d" id="statement">
-          <span class="mono">[ what we are, actually ]</span>
-          <p class="rw" id="rw">The best website code is the code you never have to write <span class="s">twice.</span></p>
-          <img src="logo.svg" alt="" width="64" height="64">
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="products" style="padding-top:20px">
-      <div class="container scene">
-        <div class="head r3d"><h2>Every code, <span class="s">in one place.</span></h2><p>Pick a category, search, or open any card for a live demo and free sample.</p></div>
-        <div class="tools">
-          <div class="chips" id="chips" role="tablist" aria-label="Categories"></div>
-          <input class="search" id="search" type="search" placeholder="Search codes…" aria-label="Search codes">
-        </div>
-        <div class="grid" id="grid"></div>
-        <div style="text-align:center;margin-top:26px"><button type="button" class="btn btn-ghost btn-lg" id="more" hidden>Show more</button></div>
-        <div class="pass r3d" id="pass" hidden>
-          <div><span class="eyebrow">best value</span><h2 id="passTitle"></h2><p id="passDesc"></p></div>
-          <div class="side"><div class="big" id="passPrice"></div><button class="btn btn-primary btn-lg" id="passBuy" type="button">Get All-Access</button></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="websites" hidden style="padding-top:20px">
-      <div class="container scene">
-        <div class="head r3d"><h2>Complete <span class="s">websites.</span></h2><p>Ready-to-launch 3D websites for shops, restaurants, pharmacies, clinics and more. Each one comes in 3 colour styles and includes a step-by-step guide to add your own products and data.</p></div>
-        <div class="grid wgrid" id="wgrid"></div>
-        <div style="text-align:center;margin-top:26px"><button type="button" class="btn btn-ghost btn-lg" id="wmore" hidden>Show more websites</button></div>
-      </div>
-    </section>
-
-    <section class="section" id="digital" hidden style="padding-top:20px">
-      <div class="container scene">
-        <div class="head r3d"><h2>Digital <span class="s">items.</span></h2><p>Instant digital goods, delivered to your private page the moment your payment is confirmed.</p></div>
-        <div class="tools" id="dTools" hidden style="margin-bottom:16px"><input class="search" id="dSearch" type="search" placeholder="Search gift cards and digital items…" aria-label="Search digital items"></div>
-        <div class="dgrid" id="dgrid"></div>
-        <p style="text-align:center;margin-top:20px"><button type="button" class="btn btn-ghost" id="dMore" hidden>Show more</button></p>
-        <div class="soon r3d" id="soon" hidden><div class="ico">🎁</div><h3>Coming soon</h3><p>Gift cards and other digital items are on the way. Check back shortly.</p></div>
-      </div>
-    </section>
-
-    <section class="section" id="how">
-      <div class="container scene">
-        <div class="head r3d"><h2>From preview to your project in <span class="s">minutes.</span></h2><p>No accounts, no waiting for a human. Four steps.</p></div>
+    <section class="how" id="how">
+      <div class="wrap">
+        <h2>How it works</h2>
         <div class="steps">
-          <div class="step glass r3d"><span class="n">01</span><h3>Preview it</h3><p>Open any code to see it live and copy the free sample.</p></div>
-          <div class="step glass r3d" style="--d:.08s"><span class="n">02</span><h3>Choose &amp; pay</h3><p>Click Buy, enter your email and send the exact USDT amount shown (TRC20 network).</p></div>
-          <div class="step glass r3d" style="--d:.16s"><span class="n">03</span><h3>We detect it</h3><p>The payment is recognised automatically on the blockchain, usually within a minute or two.</p></div>
-          <div class="step glass r3d" style="--d:.24s"><span class="n">04</span><h3>Get your code</h3><p>Your private page opens with the full code, a live preview and a Copy button.</p></div>
+          <div class="step rv"><i>1</i><b>Pick</b><span>Choose a gift card, game credit or website code.</span></div>
+          <div class="step rv"><i>2</i><b>Pay</b><span>Send the exact crypto amount shown.</span></div>
+          <div class="step rv"><i>3</i><b>Confirmed</b><span>We detect your payment automatically.</span></div>
+          <div class="step rv"><i>4</i><b>Receive</b><span>Your code appears on a private page and in your account.</span></div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="faq" style="padding-top:20px">
-      <div class="container scene">
-        <div class="head r3d"><h2>Good to <span class="s">know.</span></h2><p>Short answers to the things people ask first.</p></div>
-        <div class="faq" id="faqList">
-          <div class="fq open r3d"><button type="button" aria-expanded="true">What exactly do I receive?<span class="pl"></span></button><div class="an"><div><p>A complete, ready-to-use HTML file for each code you buy, with a live preview and a Copy button on your private delivery page. You can paste it into your own website or project.</p></div></div></div>
-          <div class="fq r3d"><button type="button" aria-expanded="false">Can I use the code for my clients?<span class="pl"></span></button><div class="an"><div><p>Yes. Use the codes in your own projects and in client projects. Please do not resell or share the code files themselves.</p></div></div></div>
-          <div class="fq r3d"><button type="button" aria-expanded="false">How does payment work?<span class="pl"></span></button><div class="an"><div><p>You pay in USDT on the TRON (TRC20) network. We show you an exact amount and a wallet address. Send precisely that amount; the payment is detected automatically and your delivery page unlocks.</p></div></div></div>
-          <div class="fq r3d"><button type="button" aria-expanded="false">I paid but my page did not unlock<span class="pl"></span></button><div class="an"><div><p>Keep the payment page open for a few minutes — blockchain confirmations take a moment. If it still does not unlock, email us with your order ID and the transaction ID and we will fix it.</p></div></div></div>
-          <div class="fq r3d"><button type="button" aria-expanded="false">Do I need coding skills?<span class="pl"></span></button><div class="an"><div><p>Basic knowledge of HTML helps, but the codes are simple: copy the file, change the text and images, and publish.</p></div></div></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="lime final">
-      <div class="container scene">
-        <div class="lime-panel r3d">
-          <h2>Ready to build <span class="s">faster?</span></h2>
-          <a href="#products" class="btn btn-dark btn-lg" style="position:relative">Browse the codes</a>
+    <section class="faqs" id="faq">
+      <div class="wrap">
+        <h2>Good to know</h2>
+        <div id="faqList">
+          <div class="fq open"><button type="button" aria-expanded="true">How fast do I get my order?<span class="pl"></span></button><div class="an"><div><p>Gift cards and codes appear on your private page as soon as your payment is confirmed on the blockchain — usually within a few minutes (Bitcoin can take 10–30 minutes).</p></div></div></div>
+          <div class="fq"><button type="button" aria-expanded="false">Which payment methods can I use?<span class="pl"></span></button><div class="an"><div><p>USDT on TRON (TRC20) or BNB Smart Chain (BEP20), Bitcoin, and Binance Pay when it is enabled. Pick one at checkout; the exact amount and address are shown on the payment page.</p></div></div></div>
+          <div class="fq"><button type="button" aria-expanded="false">I paid but nothing happened. What now?<span class="pl"></span></button><div class="an"><div><p>Keep the payment window open for a few minutes. If it still does not turn green, open <b>Account → Orders</b> or email us your order ID and we will fix it quickly.</p></div></div></div>
+          <div class="fq"><button type="button" aria-expanded="false">Do I need an account?<span class="pl"></span></button><div class="an"><div><p>No. An account just keeps every order, code and invoice in one place on any device.</p></div></div></div>
+          <div class="fq"><button type="button" aria-expanded="false">What about website code — can I use it for clients?<span class="pl"></span></button><div class="an"><div><p>Yes, in your own and your clients' projects. Please do not resell or share the code files themselves.</p></div></div></div>
+          <div class="fq"><button type="button" aria-expanded="false">Can I get a refund?<span class="pl"></span></button><div class="an"><div><p>Digital codes cannot be returned once revealed. If a code does not work, contact us with your order ID and we will make it right.</p></div></div></div>
         </div>
       </div>
     </section>
   </main>
 
   <footer>
-    <div class="container">
-      <div class="foot">
-        <div>
-          <a href="#top" class="logo"><img src="logo.svg" alt="" width="30" height="30"><span data-brand>Geostore Codes</span></a>
-          <p class="blurb" id="tagline">Premium copy-paste website code.</p>
-        </div>
-        <div class="links"><a href="#products">Products</a><a href="#how">How it works</a><a href="#faq">FAQ</a><a href="#" data-contact>Contact us</a></div>
+    <div class="wrap">
+      <div class="fgrid">
+        <a href="#top" class="brand"><img src="logo-96.png" alt="" width="34" height="34"><span data-brand>Geostore</span></a>
+        <div class="flinks"><a href="#shop">Shop</a><a href="#how">How it works</a><a href="#faq">FAQ</a><a href="#" data-contact>Contact</a></div>
+        <span>© <span id="year"></span> <span data-brand>Geostore</span></span>
       </div>
-      <div class="copy">&copy; <span id="year">2026</span> <span data-brand>Geostore Codes</span>. All rights reserved.</div>
+      <p class="fine">Gift cards and codes are digital goods and cannot be returned after they are revealed. Brand names and logos belong to their owners and are used only to identify the products.</p>
     </div>
   </footer>
 
-  <!-- Product modal -->
+  <!-- bottom bar on phones: always visible -->
+  <nav class="tabbar" aria-label="Quick navigation">
+    <a href="#top" id="tbHome" class="on"><svg><use href="#i-home"/></svg>Home</a>
+    <a href="#shop" id="tbShop"><svg><use href="#i-shop"/></svg>Shop</a>
+    <button type="button" data-opencart><svg><use href="#i-bag"/></svg>Cart<span class="cc" data-cartcount hidden>0</span></button>
+    <button type="button" data-openacct><svg><use href="#i-user"/></svg><span data-acctlabel>Account</span></button>
+    <button type="button" data-theme-toggle role="switch" aria-label="Dark mode" aria-checked="false"><span class="tsw"><i></i></span>Theme</button>
+  </nav>
+
+  <!-- Product (code / website) -->
   <div class="modal" id="pm" role="dialog" aria-modal="true" aria-labelledby="pmTitle" aria-hidden="true">
-    <div class="box">
+    <div class="sheet">
       <button class="x" type="button" data-close aria-label="Close">&times;</button>
       <h3 id="pmTitle"></h3>
       <p class="sub" id="pmSub"></p>
       <div class="vtabs" id="pmVars" hidden></div>
-      <div class="tabs"><button type="button" class="tab on" data-tab="demo">Live demo</button><button type="button" class="tab" data-tab="guide" id="pmGuideTab" hidden>How to use &amp; connect your data</button></div>
+      <div class="tabs"><button type="button" class="tab on" data-tab="demo">Live demo</button><button type="button" class="tab" data-tab="guide" id="pmGuideTab" hidden>How to use</button></div>
       <div class="demowrap" id="demoWrap"><iframe class="demo" id="pmDemo" sandbox="allow-scripts allow-forms" title="Live demo"></iframe><div class="dload" id="pmLoad">Loading the full preview…</div><button type="button" class="fsbtn" id="pmFs" aria-label="Full screen preview">⛶ Full screen</button></div>
-      <p class="hint" id="demoNote" style="margin-top:8px">💡 This is the complete, paid version running live — scroll and click inside it. It is view-only: copying is disabled, and links and forms are for show. Buy to get the full code.</p>
+      <p class="hint" id="demoNote" style="margin-top:8px">View-only preview of the complete version. Links and forms are for show. Buy to get the full code.</p>
       <div class="gbox" id="pmGuide" hidden></div>
       <div class="opts" id="pmOpts" hidden></div>
-      <div class="actions">
-        <span class="hint" id="pmHint"></span>
-        <span style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-ghost" id="pmAdd">Add to cart</button><button type="button" class="btn btn-primary" id="pmBuy">Buy now</button></span>
-      </div>
+      <div class="actions"><span class="hint" id="pmHint"></span><span class="ab"><button type="button" class="btn btn-ghost" id="pmAdd">Add to cart</button><button type="button" class="btn btn-primary" id="pmBuy">Buy now</button></span></div>
     </div>
   </div>
 
-  <!-- Cart + checkout + payment modal -->
+  <!-- Gift card brand: regions -> amounts -->
+  <div class="modal" id="gm" role="dialog" aria-modal="true" aria-labelledby="gmTitle" aria-hidden="true">
+    <div class="sheet md">
+      <button class="x" type="button" data-close aria-label="Close">&times;</button>
+      <div class="ghead"><div class="logo-box" id="gmLogo"></div><div><h3 id="gmTitle"></h3><p class="sub" id="gmSub" style="margin:0"></p></div></div>
+      <div id="gmBody"></div>
+    </div>
+  </div>
+
+  <!-- Cart, checkout and payment -->
   <div class="modal" id="cartM" role="dialog" aria-modal="true" aria-labelledby="cartTitle" aria-hidden="true">
-    <div class="box small">
+    <div class="sheet sm">
       <button class="x" type="button" data-close aria-label="Close">&times;</button>
       <h3 id="cartTitle">Your cart</h3>
-      <div id="cartStep">
-        <div id="cartList" class="clist"></div>
-        <div class="ctotal" id="cartTotal"></div>
-        <form id="cartForm" novalidate>
-          <div class="field" id="fEmail"><label for="coEmail">Your email (your order is saved to it)</label><input type="email" id="coEmail" placeholder="you@example.com" autocomplete="email"></div>
-          <p class="note" id="signedAs" hidden></p>
-          <div class="field" id="fCoin"><label for="coCoin">Pay with</label><select id="coCoin"></select></div>
-          <div class="field" id="fAddr" hidden><label>Send the exact total to this address</label><div class="addr"><code id="coAddr"></code><button type="button" class="btn btn-ghost" id="coCopy">Copy</button></div></div>
-          <p class="note" id="manualNote" hidden>Pick the coin's network exactly as shown — the wrong network means lost funds. After sending, press confirm and your code is emailed as soon as the payment is verified.</p>
-          <button type="submit" class="btn btn-primary btn-block" id="coGo">Continue to payment</button>
-          <p class="msg" id="coMsg" role="status" aria-live="polite"></p>
-          <p class="note" style="text-align:center">Have an account? <a href="#" id="cartSignin" style="color:var(--accent);text-decoration:underline">Sign in</a> to keep all your orders and codes in one place.</p>
-        </form>
-      </div>
-      <div id="payView" hidden>
-        <p class="sub" id="payTitle"></p>
-        <div class="field"><label id="payL1">1. Send exactly this amount</label><div class="addr"><code id="payAmt" style="font-size:1.15rem;color:#fff"></code><button type="button" class="btn btn-ghost" id="payAmtCopy">Copy</button></div></div>
-        <div class="field"><label id="payL2">2. To this address</label><div class="addr"><code id="payAddr"></code><button type="button" class="btn btn-ghost" id="payAddrCopy">Copy</button></div></div>
-        <p class="note" style="color:#fbbf24">The amount must match <b>exactly</b>, including all the decimals — that is how we recognise your payment. If you pay from an exchange, add its withdrawal fee on top so the exact amount arrives. Wrong network = lost funds.</p>
-        <p class="msg" id="payStatus" role="status" aria-live="polite" style="font-size:.95rem"></p>
-        <a class="btn btn-primary btn-block" id="payOpen" target="_blank" rel="noopener" hidden>Open my codes</a>
-        <p class="note" id="payKeep" hidden>Bookmark the page that opens — it is your permanent link. You can also find it any time under <b>Account → Orders</b>.</p>
-        <p class="note" style="margin-top:14px">Closed this window by mistake? Your order is saved: open <b>Account</b> at the top of the page and press “Continue payment”.</p>
-      </div>
+      <div id="cartBody"></div>
     </div>
   </div>
 
-  <!-- Account modal -->
+  <!-- Account -->
   <div class="modal" id="acctM" role="dialog" aria-modal="true" aria-labelledby="acctTitle" aria-hidden="true">
-    <div class="box" style="width:min(760px,100%)">
+    <div class="sheet md">
       <button class="x" type="button" data-close aria-label="Close">&times;</button>
       <h3 id="acctTitle">Account</h3>
       <div id="acctBody"></div>
     </div>
   </div>
 
-  <button type="button" class="cartfab" data-opencart aria-label="Open cart">🛒 <span>Cart</span> <span class="cc" data-cartcount hidden>0</span></button>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="data.js"></script>
   <script src="pack-1.js"></script>
   <script src="pack-2.js"></script>
-  <script>
-  (function(){
-    'use strict';
-    var D = window.GEOSTORE_DATA || {settings:{},products:[]};
-    var S = D.settings || {};
-    // your own list (data.js) plus any product packs; a pack never overrides a product you already have
-    var every = (D.products || []).slice(), seen = {};
-    every.forEach(function(p){ seen[p.id] = 1; });
-    (window.GEOSTORE_PACKS || []).forEach(function(pk){ (pk.products || []).forEach(function(p){ if (!seen[p.id]){ seen[p.id] = 1; every.push(p); } }); });
-    every.forEach(function(p){
-      p.type = p.type === 'digital' ? 'digital' : 'code';
-      if (!p.variants || !p.variants.length) p.variants = [{name:'Standard', sample:p.sample || ''}];
-      p.sample = p.variants[0].sample;
-    });
-    var live = every.filter(function(p){ return p.published !== false; });
-    var ALL = live.filter(function(p){ return p.type === 'code'; });                 // every code product (snippets + websites)
-    var WEBS = ALL.filter(function(p){ return p.group === 'website'; });
-    var CODES = ALL.filter(function(p){ return p.group !== 'website'; });
-    var DIGITAL = live.filter(function(p){ return p.type === 'digital'; });
-    var $ = function(id){ return document.getElementById(id); };
-    function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-    function money(n){ return '$' + (Math.round(n*100)/100).toString(); }
-    function round2(n){ return Math.round(n*100)/100; }
-    function toast(m){ var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function(){ t.classList.remove('show'); }, 2400); }
-    function store(k, v){ try { if (v === undefined) return JSON.parse(localStorage.getItem(k)); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} return null; }
-
-    document.title = (S.storeName || 'Shop') + ' — Premium Website Code Snippets';
-    Array.prototype.forEach.call(document.querySelectorAll('[data-brand]'), function(e){ e.textContent = S.storeName || 'Shop'; });
-    if (S.tagline && $('tagline')) $('tagline').textContent = S.tagline;
-    $('year').textContent = new Date().getFullYear();
-    Array.prototype.forEach.call(document.querySelectorAll('[data-contact]'), function(a){ a.href = 'mailto:' + (S.email || ''); });
-
-    /* ---- catalogue ---- */
-    var cat = 'All', q = '';
-    var cats = ['All'];
-    CODES.forEach(function(p){ if (p.category && cats.indexOf(p.category) < 0) cats.push(p.category); });
-    $('chips').innerHTML = cats.map(function(c){ return '<button type="button" class="chip'+(c===cat?' on':'')+'" data-c="'+esc(c)+'">'+esc(c)+'</button>'; }).join('');
-    $('chips').addEventListener('click', function(e){
-      var b = e.target.closest('.chip'); if (!b) return;
-      cat = b.dataset.c;
-      Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(x){ x.classList.toggle('on', x === b); });
-      render();
-    });
-    $('search').addEventListener('input', function(){ q = this.value.trim().toLowerCase(); render(); });
-
-    function sp(p){ return +p.stylePrice > 0 ? +p.stylePrice : Math.max(1, Math.ceil(p.price / 2)); }
-    function cardHTML(p, wide){
-      return '<article class="card r3d'+(wide?' wcard':'')+'"><div class="prev" data-id="'+esc(p.id)+'" data-w="'+(wide?1200:800)+'"><span class="tag">'+esc(p.category||'Code')+'</span>'+(p.variants.length>1?'<span class="tag" style="left:auto;right:12px">'+p.variants.length+' styles</span>':'')+
-        '<iframe sandbox="allow-scripts" tabindex="-1" aria-hidden="true" loading="lazy" title="Preview of '+esc(p.title)+'" srcdoc="'+esc(p.sample)+'"></iframe></div>' +
-        '<div class="body"><h3>'+esc(p.title)+'</h3><p>'+esc(p.tagline||'')+'</p>' +
-        '<div class="row"><span class="price">'+money(p.price)+(p.variants.length>1?'<small class="from"> all styles</small>':'')+'</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-ghost" data-view="'+esc(p.id)+'">Preview</button><button type="button" class="btn btn-primary" data-add="'+esc(p.id)+'">🛒 Add to cart</button></span></div></div></article>';
-    }
-    var shown = 9, wshown = 6;
-    function render(reset){
-      if (reset !== false) shown = 9;
-      var all = CODES.filter(function(p){
-        return (cat==='All' || p.category===cat) && (!q || (p.title+' '+p.tagline+' '+p.category).toLowerCase().indexOf(q) > -1);
-      });
-      $('more').hidden = all.length <= shown;
-      $('more').textContent = 'Show more (' + (all.length - shown) + ' more)';
-      $('grid').innerHTML = all.slice(0, shown).map(function(p){ return cardHTML(p); }).join('') || '<p class="empty">No codes found. Try another category or search.</p>';
-      scalePreviews(); observe();
-    }
-    function renderWebs(){
-      $('websites').hidden = !WEBS.length; $('navWeb').hidden = !WEBS.length;
-      if (!WEBS.length) return;
-      $('wmore').hidden = WEBS.length <= wshown;
-      $('wmore').textContent = 'Show more websites (' + (WEBS.length - wshown) + ' more)';
-      $('wgrid').innerHTML = WEBS.slice(0, wshown).map(function(p){ return cardHTML(p, true); }).join('');
-      scalePreviews(); observe();
-    }
-    function scalePreviews(){
-      Array.prototype.forEach.call(document.querySelectorAll('.prev'), function(w){
-        var f = w.querySelector('iframe'); if (!f) return;
-        var W = +w.dataset.w || 800, s = w.clientWidth / W;
-        f.style.width = W + 'px'; f.style.transform = 'scale(' + s + ')';
-        f.style.height = (w.clientHeight / s) + 'px';
-      });
-    }
-    window.addEventListener('resize', scalePreviews);
-    $('more').addEventListener('click', function(){ shown += 9; render(false); });
-    $('wmore').addEventListener('click', function(){ wshown += 6; renderWebs(); });
-
-    var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function(es){
-      es.forEach(function(e){ if (e.isIntersecting){ var t = e.target; t.classList.add('in'); io.unobserve(t); setTimeout(function(){ t.classList.add('live'); }, 1000); } });
-    }, {threshold:.1}) : null;
-    function observe(){
-      Array.prototype.forEach.call(document.querySelectorAll('.reveal:not(.in), .r3d:not(.in)'), function(el){ io ? io.observe(el) : (el.classList.add('in'), el.classList.add('live')); });
-    }
-
-    /* ---- all-access ---- */
-    var AA = S.allAccess;
-    if (AA && AA.enabled && ALL.length){
-      $('pass').hidden = false;
-      $('passTitle').textContent = AA.title || 'All-Access Pass';
-      $('passDesc').textContent = AA.description || '';
-      $('passPrice').textContent = money(AA.price);
-      $('passBuy').addEventListener('click', function(){ addToCart('ALL', 'all'); openCart(); });
-    }
-
-    /* ---- modals ---- */
-    var lastFocus = null, onClose = {};
-    function openModal(m, from){ lastFocus = from || document.activeElement; m.classList.add('open'); m.setAttribute('aria-hidden','false'); }
-    function closeModal(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); if (m.id==='pm'){ demoSeq++; $('pmDemo').srcdoc=''; fullCache={}; $('demoWrap').classList.remove('fs'); } if (onClose[m.id]) onClose[m.id](); if (lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch(e) {} }
-    Array.prototype.forEach.call(document.querySelectorAll('.modal'), function(m){
-      m.addEventListener('click', function(e){ if (e.target===m || e.target.closest('[data-close]')) closeModal(m); });
-    });
-    document.addEventListener('keydown', function(e){
-      if (e.key==='Escape') Array.prototype.forEach.call(document.querySelectorAll('.modal.open'), closeModal);
-    });
-
-
-    /* ---- demo guard: links/forms inside a live preview must never leave the preview ---- */
-    function guardFn(){
-      var t;
-      function note(m){var n=document.getElementById('__dm');if(!n){n=document.createElement('div');n.id='__dm';n.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;background:#111;color:#fff;border:1px solid #c5f442;padding:10px 16px;border-radius:99px;font:600 13px system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:92vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none';document.body.appendChild(n)}n.textContent=m;n.style.opacity=1;clearTimeout(t);t=setTimeout(function(){n.style.opacity=0},2800)}
-      document.addEventListener('click',function(e){
-        var a=e.target.closest&&e.target.closest('a[href]');if(!a)return;
-        var h=a.getAttribute('href')||'';
-        if(h.length>1&&h.charAt(0)==='#'){e.preventDefault();var el=document.getElementById(h.slice(1));if(el)el.scrollIntoView({behavior:'smooth'});else note('Demo: this link has no page in the preview');return}
-        e.preventDefault();
-        note(h==='#'||h===''?'Demo link — in your real site this goes to your own page':'Demo: this link goes to another page ('+h.slice(0,40)+') that you add in your real site');
-      },true);
-      document.addEventListener('submit',function(e){if(!e.defaultPrevented){e.preventDefault();note('Demo form — connect it to your email or server in your real site')}});
-      window.open=function(u){note('Demo: this would open '+String(u||'a new page').slice(0,50)+' in your real site');return null};
-    }
-    function guard(html){
-      html = String(html || '');
-      var g = '<script>(' + guardFn.toString() + ')()<\/script>', i = html.lastIndexOf('</body>');
-      return i < 0 ? html + g : html.slice(0, i) + g + html.slice(i);
-    }
-
-    /* ---- product window: styles, options, guide ---- */
-    var cur = null, curV = 0, opt = 'all';
-    function byId(id){ return live.filter(function(p){ return p.id===id; })[0]; }
-    var fullCache = {}, demoSeq = 0;
-    /* runs INSIDE the preview frame: view-only protection (a deterrent — it cannot stop a determined developer) */
-    function protectFn(){
-      var st = document.createElement('style');
-      st.textContent = '*{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}input,textarea{-webkit-user-select:text!important;user-select:text!important}@media print{html{display:none!important}}';
-      document.head.appendChild(st);
-      var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='260' height='170'><text x='20' y='95' transform='rotate(-24 130 85)' font-family='Arial,sans-serif' font-size='17' font-weight='700' fill='%23888' fill-opacity='.9'>GEOSTORE PREVIEW</text></svg>";
-      var w = document.createElement('div');
-      w.style.cssText = 'position:fixed;inset:0;z-index:2147483646;pointer-events:none;opacity:.10;background-image:url("data:image/svg+xml,' + svg.replace(/#/g, '%23') + '")';
-      document.body.appendChild(w);
-      function inField(e){ return /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || ''); }
-      ['contextmenu','copy','cut','dragstart','selectstart'].forEach(function(n){ document.addEventListener(n, function(e){ if (n !== 'contextmenu' && inField(e)) return; e.preventDefault(); }, true); });
-      document.addEventListener('keydown', function(e){
-        var k = String(e.key || '').toLowerCase(), m = e.ctrlKey || e.metaKey;
-        if (k === 'f12' || (m && (k === 's' || k === 'u' || k === 'p' || (!inField(e) && (k === 'c' || k === 'a' || k === 'x'))) || (m && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')))) e.preventDefault();
-      }, true);
-    }
-    function protect(html){
-      var g = '<script>(' + protectFn.toString() + ')()<\/script>', i = html.lastIndexOf('</body>');
-      return i < 0 ? html + g : html.slice(0, i) + g + html.slice(i);
-    }
-    function loadFull(p, i){
-      if (!API || p.type === 'digital') return Promise.resolve(null);
-      var k = p.id + '/' + i; if (fullCache[k]) return Promise.resolve(fullCache[k]);
-      return fetch(API + '/api/preview/' + encodeURIComponent(p.id) + '/' + i).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){
-        if (!j || !j.k || !j.d) return null;
-        var bin = atob(j.d), a = new Uint8Array(bin.length), kk = j.k;
-        for (var x = 0; x < bin.length; x++) a[x] = bin.charCodeAt(x) ^ kk.charCodeAt(x % kk.length);
-        return (fullCache[k] = new TextDecoder().decode(a));
-      }).catch(function(){ return null; });
-    }
-    function loadDemo(p, i, v){
-      var my = ++demoSeq;
-      if (!API){ $('pmDemo').srcdoc = guard(v.sample); return; }
-      $('pmLoad').hidden = false; $('pmDemo').srcdoc = '';
-      loadFull(p, i).then(function(h){
-        if (my !== demoSeq) return;
-        $('pmLoad').hidden = true;
-        $('pmDemo').srcdoc = h ? guard(protect(h)) : guard(v.sample);
-      });
-    }
-    function showVariant(i){
-      curV = i; var v = cur.variants[i];
-      loadDemo(cur, i, v);
-      Array.prototype.forEach.call($('pmVars').children, function(b,k){ b.classList.toggle('on', k===i); });
-      renderOpts();
-    }
-    function renderOpts(){
-      var n = cur.variants.length;
-      $('pmOpts').hidden = n < 2;
-      if (n < 2){ opt = 'all'; return; }
-      $('pmOpts').innerHTML =
-        '<label class="op"><input type="radio" name="opt" value="all"'+(opt==='all'?' checked':'')+'><span>All '+n+' styles <b>'+money(cur.price)+'</b><small>best value</small></span></label>' +
-        '<label class="op"><input type="radio" name="opt" value="one"'+(opt==='one'?' checked':'')+'><span>Only “'+esc(cur.variants[curV].name)+'” <b>'+money(sp(cur))+'</b><small>one style</small></span></label>';
-    }
-    $('pmOpts').addEventListener('change', function(e){ if (e.target.name === 'opt') opt = e.target.value; });
-    function openProduct(p, from){
-      cur = p; opt = 'all';
-      $('pmTitle').textContent = p.title;
-      $('pmSub').textContent = (p.category ? p.category + ' · ' : '') + (p.tagline || '');
-      var n = p.variants.length;
-      $('pmVars').hidden = n < 2;
-      $('pmVars').innerHTML = p.variants.map(function(v,k){ return '<button type="button" class="vt'+(k===0?' on':'')+'" data-v="'+k+'">'+esc(v.name)+'</button>'; }).join('');
-      $('pmGuideTab').hidden = !p.guide; $('pmGuide').innerHTML = p.guide || '';
-      $('pmHint').textContent = n > 1
-        ? 'Every style is shown in full, view-only. Buying unlocks the complete code to copy and use.'
-        : 'View-only preview. Buying unlocks the complete code to copy and use.';
-      $('pmDemo').className = 'demo' + (p.group === 'website' ? ' tall' : ''); $('demoWrap').classList.remove('fs'); $('pmFs').textContent = '⛶ Full screen';
-      showVariant(0); showTab('demo');
-      openModal($('pm'), from);
-    }
-    $('pmVars').addEventListener('click', function(e){ var b = e.target.closest('.vt'); if (b) showVariant(+b.dataset.v); });
-    function showTab(t){
-      Array.prototype.forEach.call(document.querySelectorAll('#pm .tab'), function(b){ b.classList.toggle('on', b.dataset.tab===t); });
-      $('demoWrap').hidden = t!=='demo'; $('demoNote').hidden = t!=='demo'; $('pmGuide').hidden = t!=='guide';
-    }
-    Array.prototype.forEach.call(document.querySelectorAll('#pm .tab'), function(b){ b.addEventListener('click', function(){ showTab(b.dataset.tab); }); });
-    $('pmFs').addEventListener('click', function(){ var w = $('demoWrap'), on = w.classList.toggle('fs'); this.textContent = on ? '✕ Close full screen' : '⛶ Full screen'; });
-    function chosen(){ return opt === 'one' && cur.variants.length > 1 ? curV : 'all'; }
-    $('pmAdd').addEventListener('click', function(){ addToCart(cur.id, chosen()); });
-    $('pmBuy').addEventListener('click', function(){ addToCart(cur.id, chosen(), true); closeModal($('pm')); openCart(); });
-
-    function clickGrid(e){
-      var v = e.target.closest('[data-view]'), a = e.target.closest('[data-add]'), pv = e.target.closest('.prev');
-      if (v) return openProduct(byId(v.dataset.view), v);
-      if (a){ addToCart(a.dataset.add, 'all'); return openCart(); }
-      if (pv) return openProduct(byId(pv.dataset.id), pv);
-    }
-    $('grid').addEventListener('click', clickGrid);
-    $('wgrid').addEventListener('click', clickGrid);
-
-    /* ---- cart (kept in this browser) ---- */
-    var cart = store('geostore_cart') || [];
-    if (!Array.isArray(cart)) cart = [];
-    function saveCart(){ store('geostore_cart', cart); var n = lines().length; Array.prototype.forEach.call(document.querySelectorAll('[data-cartcount]'), function(e){ e.textContent = n; e.hidden = !n; }); }
-    function addToCart(id, v, quiet){
-      var p = id === 'ALL' ? null : byId(id);
-      if (id !== 'ALL' && !p) return;
-      if (id === 'ALL'){ cart = cart.filter(function(i){ var q = byId(i.id); return q && q.type === 'digital'; }); cart.push({id:'ALL', v:'all'}); }
-      else if (cart.some(function(i){ return i.id === 'ALL'; }) && p.type !== 'digital'){ if (!quiet) toast('Already included in your All-Access pass'); return; }
-      else if (p.type === 'digital'){ if (!cart.some(function(i){ return i.id === id; })) cart.push({id:id, v:'all'}); }
-      else if (v === 'all'){ cart = cart.filter(function(i){ return i.id !== id; }); cart.push({id:id, v:'all'}); }
-      else if (!cart.some(function(i){ return i.id === id && (i.v === 'all' || i.v === v); })) cart.push({id:id, v:v});
-      saveCart(); if (!quiet) toast('Added to cart');
-    }
-    // the same pricing rules as the server (the server always has the final say)
-    function lines(){
-      var out = [], hasAll = cart.some(function(i){ return i.id === 'ALL'; }), by = {}, order = [];
-      cart.forEach(function(i){
-        if (i.id === 'ALL') return;
-        var p = byId(i.id); if (!p) return;
-        if (!by[i.id]){ by[i.id] = {p:p, all:false, st:[]}; order.push(i.id); }
-        var g = by[i.id];
-        if (p.type === 'digital' || i.v === 'all') g.all = true; else if (g.st.indexOf(i.v) < 0) g.st.push(i.v);
-      });
-      if (hasAll && AA && AA.enabled) out.push({id:'ALL', title:AA.title || 'All-Access Pass', price:+AA.price});
-      order.forEach(function(id){
-        var g = by[id], p = g.p, n = p.variants.length;
-        if (p.type === 'digital'){ out.push({id:id, title:p.title, price:+p.price}); return; }
-        if (hasAll) return;
-        if (n < 2 || g.all || g.st.length >= n || g.st.length * sp(p) >= p.price) out.push({id:id, title:p.title + (n > 1 ? ' (all ' + n + ' styles)' : ''), price:+p.price});
-        else { g.st.sort(); out.push({id:id, title:p.title + ' — ' + g.st.map(function(k){ return p.variants[k].name; }).join(', '), price:round2(g.st.length * sp(p))}); }
-      });
-      return out;
-    }
-    function renderCart(){
-      var L = lines(), total = round2(L.reduce(function(a, l){ return a + l.price; }, 0));
-      $('cartList').innerHTML = L.length ? L.map(function(l){ return '<div class="cl"><span>'+esc(l.title)+'</span><b>'+money(l.price)+'</b><button type="button" class="rm" data-rm="'+esc(l.id)+'" aria-label="Remove">×</button></div>'; }).join('') : '<p class="empty" style="padding:26px 0">Your cart is empty.<br>Add a code, a website or a digital item to get started.</p>';
-      $('cartTotal').innerHTML = L.length ? '<span>Total</span><b>'+money(total)+'</b>' : '';
-      $('cartForm').hidden = !L.length;
-      saveCart(); return L;
-    }
-    $('cartList').addEventListener('click', function(e){ var b = e.target.closest('[data-rm]'); if (!b) return; cart = cart.filter(function(i){ return i.id !== b.dataset.rm; }); renderCart(); });
-
-    /* ---- payment (automatic: USDT + Bitcoin through your Cloudflare server; or manual) ---- */
-    var API = String(S.apiUrl || '').replace(/\/+$/, '');
-    var coin = $('coCoin'), wallets = S.wallets || {}, coins = [];
-    var token = store('geostore_token') || '', me = store('geostore_me') || null, poll = null, tick = null, curOrder = null;
-    function authH(){ var h = {'content-type':'application/json'}; if (token) h.authorization = 'Bearer ' + token; return h; }
-    function apiCall(path, body, method){
-      return fetch(API + path, {method: method || (body ? 'POST' : 'GET'), headers: authH(), body: body ? JSON.stringify(body) : undefined})
-        .then(function(r){ return r.json().then(function(j){ if (!r.ok){ var er = new Error(j.error || 'Something went wrong'); er.status = r.status; throw er; } return j; }); });
-    }
-    function fillCoins(){
-      coin.innerHTML = '';
-      if (API){ coins.forEach(function(c){ var o = document.createElement('option'); o.value = c.id; o.textContent = c.name; coin.appendChild(o); }); }
-      else Object.keys(wallets).forEach(function(n){ if (!wallets[n]) return; var o = document.createElement('option'); o.value = o.textContent = n; coin.appendChild(o); });
-      $('fCoin').hidden = coin.options.length < 2 && !!API;
-    }
-    if (API){
-      coins = [{id:'usdt_trc20', name:'USDT (TRC20)'}]; fillCoins();
-      fetch(API + '/api/config').then(function(r){ return r.json(); }).then(function(c){ if (c && c.coins && c.coins.length){ coins = c.coins; fillCoins(); } if (typeof livePrices === 'function') livePrices(c); }).catch(function(){});
-    } else fillCoins();
-    function showAddr(){ $('coAddr').textContent = wallets[coin.value] || 'No wallet configured yet'; }
-    coin.addEventListener('change', function(){ if (!API) showAddr(); });
-    function copyBtn(btn, getText, label){
-      btn.addEventListener('click', function(){
-        var t = getText();
-        function done(){ btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = label; }, 1600); }
-        if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, done); else done();
-      });
-    }
-    copyBtn($('coCopy'), function(){ return $('coAddr').textContent; }, 'Copy');
-    copyBtn($('payAmtCopy'), function(){ return $('payAmt').textContent; }, 'Copy');
-    copyBtn($('payAddrCopy'), function(){ return $('payAddr').textContent; }, 'Copy');
-
-    function stopTimers(){ clearInterval(poll); clearInterval(tick); poll = tick = null; }
-    onClose.cartM = stopTimers;
-    function openCart(from){
-      stopTimers(); $('cartStep').hidden = false; $('payView').hidden = true; $('cartTitle').textContent = 'Your cart';
-      renderCart();
-      var man = !API;
-      $('fAddr').hidden = !man; $('manualNote').hidden = !man; $('coGo').textContent = man ? "I've paid — confirm order" : 'Continue to payment';
-      if (man) showAddr();
-      $('fEmail').hidden = !!me; $('signedAs').hidden = !me; if (me) $('signedAs').innerHTML = 'Signed in as <b>' + esc(me.email) + '</b> — this order will be saved to your account.';
-      $('cartSignin').parentNode.hidden = !!me;
-      $('coMsg').textContent = ''; $('coMsg').classList.remove('err');
-      openModal($('cartM'), from);
-    }
-    function leftText(ms){ if (ms <= 0) return 'expired'; var m = Math.floor(ms/60000), s = Math.floor(ms%60000/1000); return m + ':' + (s<10?'0':'') + s + ' left'; }
-    function showPay(o){
-      curOrder = o; stopTimers();
-      $('cartStep').hidden = true; $('payView').hidden = false; $('cartTitle').textContent = 'Pay with ' + o.coinName;
-      $('payTitle').innerHTML = esc(o.title) + ' — <b style="color:var(--accent)">' + money(o.usd) + '</b>';
-      $('payL1').innerHTML = '1. Send exactly this amount of <b>' + esc(o.coinName) + '</b>';
-      $('payL2').innerHTML = '2. To this address — network: <b>' + esc(o.network) + '</b>';
-      $('payAmt').textContent = o.amount; $('payAddr').textContent = o.wallet;
-      renderPay(o);
-      if (o.status === 'pending'){
-        poll = setInterval(function(){ refresh(o.id); }, o.coin === 'btc' ? 20000 : 8000);
-        tick = setInterval(function(){ if (curOrder) renderPay(curOrder); }, 1000);
-      }
-    }
-    function renderPay(o){
-      curOrder = o;
-      var st = $('payStatus'), open = $('payOpen');
-      st.classList.remove('err');
-      if (o.status === 'paid'){
-        open.hidden = false; $('payKeep').hidden = false; open.href = o.deliveryUrl;
-        if (o.fulfil === 'wait'){ st.textContent = '✅ Payment received — your code is being prepared, this takes a few seconds…'; }
-        else if (o.fulfil === 'stuck'){ st.classList.add('err'); st.textContent = '✅ Payment received. Your code needs a quick manual check — we will deliver it very soon. Order ID: ' + o.id; stopTimers(); }
-        else { st.textContent = '✅ Payment received — thank you!'; stopTimers(); }
-      } else if (o.status === 'expired'){
-        st.classList.add('err'); st.textContent = 'This order expired. If you already paid, email us your order ID: ' + o.id; open.hidden = true; stopTimers();
-      } else {
-        var left = o.expiresAt - Date.now();
-        st.textContent = '⏳ Waiting for your payment… ' + leftText(left) + (o.coin === 'btc' ? '. Bitcoin needs 1 network confirmation (about 10–30 minutes).' : '. This page updates by itself.'); open.hidden = true;
-        if (left <= 0) { st.classList.add('err'); st.textContent = 'Time is up. If you already sent the payment it may still be detected — keep this window open for a few minutes.'; }
-      }
-    }
-    function refresh(id){ apiCall('/api/order/' + id).then(function(o){ if (o && o.status) renderPay(o); }).catch(function(){}); }
-    function rememberOrder(id){ var ids = store('geostore_orders') || []; if (ids.indexOf(id) < 0){ ids.push(id); store('geostore_orders', ids.slice(-20)); } }
-    function resumeOrder(id){
-      return apiCall('/api/order/' + id).then(function(o){ closeModal($('acctM')); openCart(); showPay(o); });
-    }
-
-    $('cartForm').addEventListener('submit', function(e){
-      e.preventDefault();
-      var L = lines(); if (!L.length) return;
-      var email = me ? me.email : $('coEmail').value.trim(), msg = $('coMsg');
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ msg.classList.add('err'); msg.textContent = 'Please enter a valid email address.'; return; }
-      msg.classList.remove('err');
-      if (API){
-        msg.textContent = 'Creating your order…';
-        apiCall('/api/order', {email: email, coin: coin.value || 'usdt_trc20', items: cart.map(function(i){ return {id:i.id, v:i.v}; })})
-          .then(function(o){ msg.textContent = ''; rememberOrder(o.id); cart = []; saveCart(); showPay(o); })
-          .catch(function(er){ msg.classList.add('err'); msg.textContent = er.message || 'Could not reach the payment server. Please try again.'; });
-        return;
-      }
-      var total = round2(L.reduce(function(a, l){ return a + l.price; }, 0));
-      var body = 'New order\r\n' + L.map(function(l){ return '- ' + l.title + ': ' + money(l.price); }).join('\r\n') + '\r\nTotal: ' + money(total) + '\r\nCoin: ' + coin.value + '\r\nCustomer email: ' + email;
-      window.location.href = 'mailto:' + (S.email||'') + '?subject=' + encodeURIComponent('Order: ' + L[0].title + (L.length > 1 ? ' +' + (L.length - 1) : '')) + '&body=' + encodeURIComponent(body);
-      msg.textContent = 'Your email app opened with the order details — press Send to finish.';
-    });
-    $('cartSignin').addEventListener('click', function(e){ e.preventDefault(); closeModal($('cartM')); openAccount(); });
-
-    /* ---- customer account ---- */
-    var acctTab = 'orders';
-    function setAuth(t, profile){ token = t || ''; me = profile || null; store('geostore_token', token || null); store('geostore_me', me); updateNav(); }
-    function updateNav(){ Array.prototype.forEach.call(document.querySelectorAll('[data-acctlabel]'), function(e){ e.textContent = me ? (me.name ? me.name.split(' ')[0] : 'Account') : 'Sign in'; }); }
-    function dt(ms){ return ms ? new Date(ms).toLocaleString([], {dateStyle:'medium', timeStyle:'short'}) : ''; }
-    function pill(st){ return '<span class="pill2 '+st+'">'+({pending:'Waiting for payment', paid:'Paid', expired:'Expired'}[st]||st)+'</span>'; }
-    function orderCard(o){
-      return '<div class="oc"><div class="oh"><b>'+esc(o.title)+'</b>'+pill(o.status)+'</div><div class="mono">'+dt(o.createdAt)+' · order '+esc(o.id.slice(0,8))+' · '+money(o.usd)+' · '+esc(o.amount)+' '+esc(o.coinName.split(' ')[0])+'</div>' +
-        '<div class="oa">'+(o.status==='paid' ? '<a class="btn btn-primary btn-s" target="_blank" rel="noopener" href="'+esc(o.deliveryUrl)+'">Open my codes</a>' : '')+(o.status==='pending' ? '<button type="button" class="btn btn-primary btn-s" data-pay="'+esc(o.id)+'">Continue payment</button>' : '')+'</div></div>';
-    }
-    function explorer(o){ return !o.txid || o.txid === 'manual' ? 'confirmed by us' : '<a target="_blank" rel="noopener" href="'+(o.coin==='btc' ? 'https://mempool.space/tx/' : 'https://tronscan.org/#/transaction/')+esc(o.txid)+'">'+esc(o.txid.slice(0,10))+'…</a>'; }
-    function openAccount(from){
-      $('acctTitle').textContent = me ? 'My account' : 'Account';
-      openModal($('acctM'), from);
-      me ? renderIn() : renderOut('in');
-    }
-    function renderOut(tab){
-      if (!API){ $('acctBody').innerHTML = '<p class="empty" style="padding:24px 0"><b style="color:var(--text)">Customer accounts are ready.</b><br><br>They switch on as soon as the payment server is connected (dashboard → Settings → Payment server URL, then Sync).<br>Until then, customers can still order — their order is sent to you by email.</p>'; return; }
-      var ids = (store('geostore_orders') || []).slice().reverse();
-      $('acctBody').innerHTML =
-        '<div class="tabs"><button type="button" class="tab '+(tab==='in'?'on':'')+'" data-at="in">Sign in</button><button type="button" class="tab '+(tab==='up'?'on':'')+'" data-at="up">Create account</button></div>' +
-        '<form id="authForm" novalidate>' + (tab==='up' ? '<div class="field"><label>Your name</label><input id="afName" autocomplete="name"></div>' : '') +
-        '<div class="field"><label>Email</label><input id="afEmail" type="email" autocomplete="email"></div><div class="field"><label>Password'+(tab==='up'?' (at least 8 characters)':'')+'</label><input id="afPw" type="password" autocomplete="'+(tab==='up'?'new-password':'current-password')+'"></div>' +
-        '<button class="btn btn-primary btn-block" type="submit">'+(tab==='up'?'Create account':'Sign in')+'</button><p class="msg" id="afMsg"></p></form>' +
-        '<p class="note">With an account you keep every order, code, payment and your details in one place, on any device.</p>' +
-        '<h4 class="sh">Orders placed on this device</h4><div id="devOrders">'+(ids.length?'<p class="note">Loading…</p>':'<p class="note">No orders yet.</p>')+'</div>';
-      $('acctBody').dataset.tab = tab;
-      if (ids.length) Promise.all(ids.slice(0,10).map(function(id){ return apiCall('/api/order/' + id).catch(function(){ return null; }); })).then(function(os){
-        os = os.filter(Boolean); $('devOrders').innerHTML = os.length ? os.map(orderCard).join('') : '<p class="note">No orders yet.</p>';
-      });
-    }
-    function renderIn(){
-      $('acctBody').innerHTML = '<p class="note">Loading your account…</p>';
-      apiCall('/api/account/me').then(function(r){
-        me = r.profile; store('geostore_me', me); updateNav();
-        var paid = r.orders.filter(function(o){ return o.status === 'paid'; });
-        var tabs = [['orders','Orders ('+r.orders.length+')'],['pay','Payment history'],['profile','Profile']];
-        var body = '';
-        if (acctTab === 'orders') body = r.orders.length ? r.orders.map(orderCard).join('') : '<p class="empty">No orders yet. Your purchases will appear here.</p>';
-        if (acctTab === 'pay') body = paid.length ? '<div class="tw"><table class="pt"><thead><tr><th>Date</th><th>Items</th><th>Paid</th><th>Transaction</th></tr></thead><tbody>'+paid.map(function(o){ return '<tr><td>'+dt(o.paidAt||o.createdAt)+'</td><td>'+esc(o.title)+'</td><td>'+money(o.usd)+'<div class="mono">'+esc(o.amount)+' '+esc(o.coinName.split(' ')[0])+'</div></td><td>'+explorer(o)+'</td></tr>'; }).join('')+'</tbody></table></div><p class="note" style="margin-top:12px">Total spent: <b>'+money(r.spent)+'</b></p>' : '<p class="empty">No payments yet.</p>';
-        if (acctTab === 'profile') body =
-          '<div class="stats2"><div><small>Member since</small><b>'+new Date(r.profile.createdAt).toLocaleDateString()+'</b></div><div><small>Orders</small><b>'+r.orders.length+'</b></div><div><small>Total spent</small><b>'+money(r.spent)+'</b></div></div>' +
-          '<form id="profForm"><div class="two"><div class="field"><label>Name</label><input id="pfName" value="'+esc(r.profile.name)+'"></div><div class="field"><label>Email</label><input value="'+esc(r.profile.email)+'" disabled></div><div class="field"><label>Phone</label><input id="pfPhone" value="'+esc(r.profile.phone)+'"></div><div class="field"><label>Country</label><input id="pfCountry" value="'+esc(r.profile.country)+'"></div></div><button class="btn btn-primary" type="submit">Save details</button> <span class="msg" id="pfMsg"></span></form>' +
-          '<h4 class="sh">Change password</h4><form id="pwForm"><div class="two"><div class="field"><label>Current password</label><input id="pwOld" type="password" autocomplete="current-password"></div><div class="field"><label>New password (8+ characters)</label><input id="pwNew" type="password" autocomplete="new-password"></div></div><button class="btn btn-ghost" type="submit">Change password</button> <span class="msg" id="pwMsg"></span></form>' +
-          '<p style="margin-top:22px"><button type="button" class="btn btn-ghost" id="signOut">Sign out</button></p>';
-        $('acctBody').innerHTML = '<p class="note" style="margin-bottom:12px">Signed in as <b>'+esc(r.profile.email)+'</b></p><div class="tabs">'+tabs.map(function(t){ return '<button type="button" class="tab '+(acctTab===t[0]?'on':'')+'" data-at="'+t[0]+'">'+t[1]+'</button>'; }).join('')+'</div>'+body;
-      }).catch(function(er){ if (er.status === 401){ setAuth('', null); renderOut('in'); } else $('acctBody').innerHTML = '<p class="empty">'+esc(er.message)+'</p>'; });
-    }
-    $('acctBody').addEventListener('click', function(e){
-      var t = e.target.closest('[data-at]'), pay = e.target.closest('[data-pay]');
-      if (t){ if (me){ acctTab = t.dataset.at; renderIn(); } else renderOut(t.dataset.at); }
-      if (pay) resumeOrder(pay.dataset.pay).catch(function(er){ toast(er.message); });
-      if (e.target.id === 'signOut'){ setAuth('', null); $('acctTitle').textContent = 'Account'; renderOut('in'); toast('Signed out'); }
-    });
-    $('acctBody').addEventListener('submit', function(e){
-      e.preventDefault();
-      var id = e.target.id;
-      if (id === 'authForm'){
-        var up = $('acctBody').dataset.tab === 'up', msg = $('afMsg'); msg.classList.remove('err'); msg.textContent = 'Please wait…';
-        apiCall(up ? '/api/account/register' : '/api/account/login', {email:$('afEmail').value.trim(), password:$('afPw').value, name: up ? $('afName').value.trim() : undefined})
-          .then(function(r){ setAuth(r.token, r.profile); acctTab = 'orders'; $('acctTitle').textContent = 'My account'; renderIn(); toast(up ? 'Account created' : 'Welcome back'); })
-          .catch(function(er){ msg.classList.add('err'); msg.textContent = er.message; });
-      }
-      if (id === 'profForm'){
-        apiCall('/api/account/update', {name:$('pfName').value, phone:$('pfPhone').value, country:$('pfCountry').value}).then(function(r){ me = r.profile; store('geostore_me', me); updateNav(); $('pfMsg').classList.remove('err'); $('pfMsg').textContent = 'Saved ✓'; }).catch(function(er){ $('pfMsg').classList.add('err'); $('pfMsg').textContent = er.message; });
-      }
-      if (id === 'pwForm'){
-        apiCall('/api/account/password', {oldPassword:$('pwOld').value, newPassword:$('pwNew').value}).then(function(r){ setAuth(r.token, r.profile); $('pwMsg').classList.remove('err'); $('pwMsg').textContent = 'Password changed ✓'; $('pwOld').value = $('pwNew').value = ''; }).catch(function(er){ $('pwMsg').classList.add('err'); $('pwMsg').textContent = er.message; });
-      }
-    });
-    Array.prototype.forEach.call(document.querySelectorAll('[data-openacct]'), function(b){ b.addEventListener('click', function(){ openAccount(b); }); });
-    Array.prototype.forEach.call(document.querySelectorAll('[data-opencart]'), function(b){ b.addEventListener('click', function(){ openCart(b); }); });
-    $('acctM').addEventListener('click', function(){});
-    updateNav(); saveCart();
-
-    /* ---------- FAQ accordion ---------- */
-    (function(){
-      var items = document.querySelectorAll('.fq');
-      Array.prototype.forEach.call(items, function(it){
-        it.querySelector('button').addEventListener('click', function(){
-          var open = !it.classList.contains('open');
-          Array.prototype.forEach.call(items, function(x){ x.classList.remove('open'); x.querySelector('button').setAttribute('aria-expanded','false'); });
-          if (open){ it.classList.add('open'); this.setAttribute('aria-expanded','true'); }
-        });
-      });
-    })();
-
-    var fine = window.matchMedia && matchMedia('(hover:hover) and (pointer:fine)').matches;
-    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
-
-    /* ---------- live status + hero chip ---------- */
-    (function(){
-      var n = ALL.length;
-      $('statusTxt').textContent = n + (n === 1 ? ' code' : ' codes') + ' in store';
-      $('heroChip').textContent = 'store open / ' + n + (n === 1 ? ' code' : ' codes');
-    })();
-
-    /* ---------- 3D tilt on cards / panels ---------- */
-    if (fine && !reduce){
-      document.addEventListener('pointermove', function(e){
-        var el = e.target.closest && e.target.closest('.r3d.live');
-        if (!el) return;
-        var r = el.getBoundingClientRect(), px = (e.clientX - r.left)/r.width - .5, py = (e.clientY - r.top)/r.height - .5;
-        el.style.setProperty('--ry', (px * 12).toFixed(2) + 'deg');
-        el.style.setProperty('--rx', (-py * 10).toFixed(2) + 'deg');
-      });
-      document.addEventListener('pointerout', function(e){
-        var el = e.target.closest && e.target.closest('.r3d');
-        if (el && !el.contains(e.relatedTarget)){ el.style.setProperty('--rx','0deg'); el.style.setProperty('--ry','0deg'); }
-      });
-    }
-
-    /* ---------- hero: featured product window ---------- */
-    (function(){
-      var feat = ['bento-portfolio','saas-pricing-toggle','glass-login-signup','link-in-bio','hero','product-grid','pricing','navbar'].map(byId).filter(Boolean);
-      ALL.forEach(function(p){ if (feat.length < 4 && feat.indexOf(p) < 0) feat.push(p); });
-      feat = feat.slice(0, 4);
-      var win = $('win');
-      if (!feat.length){ win.style.display = 'none'; return; }
-      var frame = $('winFrame'), idx = 0, timer = null;
-      $('winDots').innerHTML = feat.map(function(p,i){ return '<button type="button" aria-label="Show '+esc(p.title)+'" data-i="'+i+'"></button>'; }).join('');
-      function fit(){ var sc = $('screen'), s = sc.clientWidth / 1000; frame.style.transform = 'scale(' + s + ')'; frame.style.height = (sc.clientHeight / s) + 'px'; }
-      function show(i){
-        idx = i; var p = feat[i];
-        frame.srcdoc = p.sample; $('winTitle').textContent = p.title; $('winCat').textContent = p.category || 'live';
-        $('winPrice').textContent = money(p.price);
-        Array.prototype.forEach.call($('winDots').children, function(b,k){ b.classList.toggle('on', k===i); });
-        fit();
-      }
-      function start(){ if (reduce || feat.length < 2) return; clearInterval(timer); timer = setInterval(function(){ show((idx+1) % feat.length); }, 4800); }
-      $('winDots').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; e.stopPropagation(); show(+b.dataset.i); start(); });
-      win.addEventListener('click', function(){ openProduct(feat[idx], win); });
-      win.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openProduct(feat[idx], win); } });
-      window.addEventListener('resize', fit);
-      show(0); start();
-    })();
-
-    /* ---------- header, progress, glow, word reveal ---------- */
-    var words = [];
-    (function(){
-      var rw = $('rw');
-      function walk(node){
-        Array.prototype.slice.call(node.childNodes).forEach(function(n){
-          if (n.nodeType === 3){
-            var frag = document.createDocumentFragment();
-            n.textContent.split(/(\s+)/).forEach(function(t){
-              if (!t) return;
-              if (/^\s+$/.test(t)) frag.appendChild(document.createTextNode(t));
-              else { var s = document.createElement('span'); s.className = 'w'; s.textContent = t; frag.appendChild(s); words.push(s); }
-            });
-            node.replaceChild(frag, n);
-          } else if (n.nodeType === 1){ walk(n); }
-        });
-      }
-      walk(rw);
-    })();
-    var sy = 0;
-    function onScroll(){
-      sy = window.scrollY;
-      var h = document.documentElement.scrollHeight - innerHeight, p = h > 0 ? sy / h : 0;
-      var de = document.documentElement.style;
-      de.setProperty('--sp', p.toFixed(4));
-      de.setProperty('--gx', (78 - p * 60).toFixed(1) + '%');
-      de.setProperty('--gy', (14 + Math.sin(p * 9) * 18 + p * 50).toFixed(1) + '%');
-      $('hdr').classList.toggle('scrolled', sy > 24);
-      var r = $('rw').getBoundingClientRect();
-      var q = reduce ? 1 : clamp((innerHeight * .88 - r.top) / (innerHeight * .5 + r.height), 0, 1);
-      var n = words.length;
-      words.forEach(function(w, i){ w.style.opacity = (.16 + .84 * clamp(q * (n + 2) - i, 0, 1)).toFixed(2); });
-    }
-    window.addEventListener('scroll', onScroll, {passive:true});
-    window.addEventListener('resize', onScroll);
-    onScroll();
-
-    /* ---------- cursor ring ---------- */
-    (function(){
-      var c = $('cursor'); if (!fine || reduce) return;
-      var x = -100, y = -100, cx = x, cy = y;
-      window.addEventListener('pointermove', function(e){ x = e.clientX; y = e.clientY; c.classList.add('on'); });
-      document.addEventListener('pointerover', function(e){ c.classList.toggle('big', !!(e.target.closest && e.target.closest('a,button,.prev,.win,input'))); });
-      document.addEventListener('mouseleave', function(){ c.classList.remove('on'); });
-      (function loop(){ cx += (x - cx) * .22; cy += (y - cy) * .22; c.style.transform = 'translate(' + cx.toFixed(1) + 'px,' + cy.toFixed(1) + 'px)'; requestAnimationFrame(loop); })();
-    })();
-
-    /* ---------- light / dark theme ---------- */
-    (function(){
-      var b = $('themeBtn'), root = document.documentElement, m = document.querySelector('meta[name=theme-color]');
-      function cur(){ return root.getAttribute('data-theme') === 'light' ? 'light' : 'dark'; }
-      function paint(){ var l = cur() === 'light'; b.textContent = l ? '☀️' : '🌙'; b.title = l ? 'Switch to dark' : 'Switch to light'; if (m) m.setAttribute('content', l ? '#f5f7ef' : '#040605'); }
-      b.addEventListener('click', function(){ var n = cur() === 'light' ? 'dark' : 'light'; root.setAttribute('data-theme', n); try { localStorage.setItem('geostore_theme', n); } catch(e) {} paint(); });
-      paint();
-    })();
-
-    /* ---------- aurora ribbons background (canvas, no libraries) ---------- */
-    (function(){
-      var cv = $('bg3d'), ctx = cv.getContext && cv.getContext('2d'); if (!ctx) return;
-      var W, H, dpr, B = [], P = [], mouse = {x:0,y:0}, running = true;
-      function make(){
-        var n = W < 700 ? 10 : 22;
-        B = [
-          {n:n,          c:'197,244,66', a:.55, amp:.20, fq:1.15, sp:.10,  base:.30, spr:.55, ph:0,   sh:.0011},
-          {n:n,          c:'110,214,120',a:.36, amp:.26, fq:.85,  sp:-.08, base:.62, spr:.75, ph:2.1, sh:.0016},
-          {n:Math.round(n*.6), c:'80,170,230',a:.30, amp:.18, fq:1.6,  sp:.06,  base:.48, spr:.45, ph:4.2, sh:.0009}
-        ];
-        P = []; var m = W < 700 ? 24 : 55;
-        for (var i=0;i<m;i++) P.push({x:Math.random(), y:Math.random(), r:Math.random()*1.4+.4, s:Math.random()*6, v:Math.random()*.02+.005});
-      }
-      function size(){ dpr = Math.min(window.devicePixelRatio || 1, 1.5); W = innerWidth; H = innerHeight; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); make(); }
-      function draw(ts){
-        if (!running) return;
-        var t = reduce ? 0 : ts / 1000, STEPS = W < 700 ? 34 : 52;
-        ctx.globalCompositeOperation = 'source-over'; ctx.clearRect(0, 0, W, H);
-        ctx.globalCompositeOperation = 'lighter'; ctx.lineWidth = 1;
-        for (var bi = 0; bi < B.length; bi++){
-          var b = B[bi], shift = sy * b.sh, wander = Math.sin(sy * .0007 + b.ph) * .22 + Math.cos(sy * .0003 + b.ph * 2) * .1;
-          for (var i = 0; i < b.n; i++){
-            var k = i / (b.n - 1) - .5, edge = 1 - Math.abs(k) * 1.7;
-            ctx.beginPath();
-            for (var s = 0; s <= STEPS; s++){
-              var u = s / STEPS, px = u * W * 1.25 - W * .12;
-              var cy = H * (b.base + wander + b.amp * Math.sin(u * Math.PI * 2 * b.fq + t * b.sp + b.ph + shift * 6));
-              var fan = k * H * .22 * b.spr * (.25 + .75 * Math.abs(Math.sin(u * Math.PI * 1.15 * b.fq + b.ph + t * .05 + shift * 3)));
-              var py = cy + fan + (mouse.y - .5) * 24 * (1 - u);
-              if (s === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-            }
-            ctx.strokeStyle = 'rgba(' + b.c + ',' + (b.a * (.25 + .75 * Math.max(edge, 0))).toFixed(3) + ')';
-            ctx.stroke();
-          }
-        }
-        for (var j = 0; j < P.length; j++){
-          var q = P[j], a = .25 + .5 * Math.abs(Math.sin(t * .8 + q.s));
-          q.x += q.v * .002 * (reduce ? 0 : 1); if (q.x > 1.02) q.x = -.02;
-          ctx.fillStyle = 'rgba(197,244,66,' + a.toFixed(2) + ')';
-          ctx.beginPath(); ctx.arc(q.x * W, ((q.y + sy * .00006 * (j % 5 + 1)) % 1) * H, q.r, 0, 6.283); ctx.fill();
-        }
-        if (!reduce) requestAnimationFrame(draw);
-      }
-      size();
-      window.addEventListener('resize', function(){ size(); if (reduce) requestAnimationFrame(draw); });
-      window.addEventListener('pointermove', function(e){ mouse.x = e.clientX / W; mouse.y = e.clientY / H; }, {passive:true});
-      document.addEventListener('visibilitychange', function(){ running = !document.hidden; if (running) requestAnimationFrame(draw); });
-      requestAnimationFrame(draw);
-      if (reduce) window.addEventListener('scroll', function(){ requestAnimationFrame(draw); }, {passive:true});
-    })();
-
-    /* ---------- digital items section (hidden until you add items, or shows "coming soon") ---------- */
-    var dshown = 8;
-    function renderDigital(first){
-      var show = DIGITAL.length > 0 || S.digitalSection !== false;
-      $('digital').hidden = !show; $('navDig').hidden = !show;
-      if (!show) return;
-      if (!DIGITAL.length){ $('soon').hidden = false; $('dgrid').hidden = true; return; }
-      var dq = ($('dSearch').value || '').trim().toLowerCase(), list = DIGITAL.filter(function(p){ return !dq || (p.title + ' ' + (p.tagline || '')).toLowerCase().indexOf(dq) > -1; });
-      $('dTools').hidden = DIGITAL.length < 9; $('dMore').hidden = list.length <= dshown;
-      $('dMore').textContent = 'Show more (' + (list.length - dshown) + ' more)';
-      $('dgrid').innerHTML = !list.length ? '<p class="empty">No items match your search.</p>' : list.slice(0, dshown).map(function(p){
-        return '<article class="dcard r3d"><div class="dart">'+esc(p.icon || '🎁')+'</div><div class="body"><h3>'+esc(p.title)+'</h3><p>'+esc(p.tagline||'')+'</p><div class="row"><span class="price">'+money(p.price)+'</span><button type="button" class="btn btn-primary" data-dbuy="'+esc(p.id)+'">Buy</button></div></div></article>';
-      }).join('');
-      if (first){
-        $('dgrid').addEventListener('click', function(e){ var b = e.target.closest('[data-dbuy]'); if (b){ addToCart(b.dataset.dbuy, 'all'); openCart(); } });
-        $('dSearch').addEventListener('input', function(){ dshown = 8; renderDigital(false); });
-        $('dMore').addEventListener('click', function(){ dshown += 8; renderDigital(false); });
-      }
-      observe();
-    }
-    renderDigital(true);
-
-    /* ---- prices come live from your server, so "Sync to server" alone updates them ---- */
-    function livePrices(c){
-      if (!c || !c.prices) return;
-      var changed = false;
-      every.forEach(function(p){
-        var q = c.prices[p.id]; if (!q) return;
-        if (+q.price > 0 && +q.price !== +p.price){ p.price = +q.price; changed = true; }
-        if (+q.stylePrice !== +(p.stylePrice || 0)){ p.stylePrice = +q.stylePrice || 0; changed = true; }
-      });
-      if (c.allAccess && AA && +c.allAccess.price > 0 && +c.allAccess.price !== +AA.price){ AA.price = +c.allAccess.price; $('passPrice').textContent = money(AA.price); changed = true; }
-      if (changed){ render(false); renderWebs(); renderDigital(false); if (typeof renderCart === 'function') renderCart(); }
-    }
-
-    renderWebs();
-    render();
-  })();
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
