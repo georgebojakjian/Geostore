@@ -297,6 +297,12 @@
           <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-p btn-s" id="tgConnect">Connect Telegram</button><button type="button" class="btn btn-g btn-s" id="tgTest">Send test alert</button><button type="button" class="btn btn-g btn-s" id="tgRefresh">↻ Refresh status</button><button type="button" class="btn btn-d btn-s" id="tgOff">Disconnect</button></div>
         </div>
 
+        <div class="panel"><h2>Social media &amp; best sellers</h2>
+          <p class="help" style="margin-bottom:14px">Paste the full link (starting with https://). Only the ones you fill in appear as icons at the bottom of your shop. Leave empty to hide.</p>
+          <div class="form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px"><div><label for="soc_facebook">Facebook</label><input id="soc_facebook" data-soc="facebook" placeholder="https://…" autocomplete="off"></div><div><label for="soc_instagram">Instagram</label><input id="soc_instagram" data-soc="instagram" placeholder="https://…" autocomplete="off"></div><div><label for="soc_x">X (Twitter)</label><input id="soc_x" data-soc="x" placeholder="https://…" autocomplete="off"></div><div><label for="soc_youtube">YouTube</label><input id="soc_youtube" data-soc="youtube" placeholder="https://…" autocomplete="off"></div><div><label for="soc_tiktok">TikTok</label><input id="soc_tiktok" data-soc="tiktok" placeholder="https://…" autocomplete="off"></div><div><label for="soc_telegram">Telegram channel</label><input id="soc_telegram" data-soc="telegram" placeholder="https://…" autocomplete="off"></div><div><label for="soc_whatsapp">WhatsApp channel</label><input id="soc_whatsapp" data-soc="whatsapp" placeholder="https://…" autocomplete="off"></div><div><label for="soc_snapchat">Snapchat</label><input id="soc_snapchat" data-soc="snapchat" placeholder="https://…" autocomplete="off"></div><div><label for="soc_linkedin">LinkedIn</label><input id="soc_linkedin" data-soc="linkedin" placeholder="https://…" autocomplete="off"></div><div><label for="soc_discord">Discord</label><input id="soc_discord" data-soc="discord" placeholder="https://…" autocomplete="off"></div></div>
+          <div class="form" style="margin-top:14px"><label for="sFeat">Best sellers — brand names shown first, separated by commas (example: itunes, pubg, roblox, google play)</label><input id="sFeat" placeholder="itunes, pubg, roblox, steam" autocomplete="off"><p class="help">Leave empty to use the built-in list (iTunes, Apple, PUBG, Roblox, Google Play, Steam, PlayStation, Xbox, Free Fire, Netflix…).</p></div>
+        </div>
+
         <div class="panel"><h2>Server connection</h2><div class="form">
           <div class="full"><label for="sApi">Payment server URL (from Cloudflare, e.g. https://geostore-api.yourname.workers.dev). Leave empty for manual mode.</label><input id="sApi" placeholder="https://geostore-api.yourname.workers.dev"></div>
           <div class="full"><label for="sTok">Admin token (private — saved only in this browser, never published)</label><input id="sTok" type="password" autocomplete="off" placeholder="the ADMIN_TOKEN you chose in Cloudflare"></div>
@@ -730,7 +736,7 @@
   function renderSettings(){
     if (base() && token()) tgState();
     var s = state.settings, aa = s.allAccess, w = s.autoWallets || {};
-    $('sWalU').value = w.usdt_trc20||''; $('sWalE').value = w.usdt_bep20||''; var ba = s.binanceAddr || {}; $('sBinU').checked = !!ba.usdt_trc20; $('sBinE').checked = !!ba.usdt_bep20; $('sWa').value = s.whatsapp || ''; $('sTgU').value = s.telegram || ''; $('sWalB').value = w.btc||''; $('sWalP').value = w.binancepay||'';
+    $('sWalU').value = w.usdt_trc20||''; $('sWalE').value = w.usdt_bep20||''; var ba = s.binanceAddr || {}; $('sBinU').checked = !!ba.usdt_trc20; $('sBinE').checked = !!ba.usdt_bep20; $('sWa').value = s.whatsapp || ''; var so = s.social || {}; $$('[data-soc]').forEach(function(i){ i.value = so[i.dataset.soc] || ''; }); $('sFeat').value = s.featured || ''; $('sTgU').value = s.telegram || ''; $('sWalB').value = w.btc||''; $('sWalP').value = w.binancepay||'';
     $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
     $('sWal').value = Object.keys(s.wallets||{}).map(function(k){ return k + ' | ' + s.wallets[k]; }).join('\n');
     $('sDig').checked = s.digitalSection !== false; $('aaOn').checked = !!aa.enabled; $('aaTitle').value = aa.title||''; $('aaPrice').value = aa.price==null?'':aa.price; $('aaDesc').value = aa.description||'';
@@ -749,6 +755,10 @@
     s.wallets = w; s.autoWallets = {usdt_trc20: wu, usdt_bep20: we, btc: wb, binancepay: wp};
     var wa = $('sWa').value.replace(/[^0-9]/g, ''); if (wa && (wa.length < 7 || wa.length > 15)){ toast('The WhatsApp number should have 7–15 digits with the country code'); return; }
     s.whatsapp = wa; s.telegram = $('sTgU').value.trim().replace(/^@/, '').replace(/[^A-Za-z0-9_]/g, ''); s.binanceAddr = {usdt_trc20: $('sBinU').checked && !!wu, usdt_bep20: $('sBinE').checked && !!we};
+    var soc = {}; var bad = '';
+    $$('[data-soc]').forEach(function(i){ var v = i.value.trim(); if (!v) return; if (!/^https:\/\/[^\s"'<>]+$/.test(v)) bad = i.dataset.soc; else soc[i.dataset.soc] = v; });
+    if (bad){ toast('The ' + bad + ' link must start with https://'); return; }
+    s.social = soc; s.featured = $('sFeat').value.trim().slice(0, 300);
     s.digitalSection = $('sDig').checked;
     s.allAccess = {enabled:$('aaOn').checked, title:$('aaTitle').value.trim()||'All-Access Pass', price:+$('aaPrice').value||0, description:$('aaDesc').value.trim()};
     save(true); toast('Settings saved — now Sync on the Publish tab');
@@ -1051,7 +1061,7 @@
     return {brands: Object.keys(by).map(function(k){ return by[k]; })};
   }
   function downloadData(){
-    var s = state.settings, pubSettings = {storeName:s.storeName, tagline:s.tagline, email:s.email, whatsapp:s.whatsapp || '', telegram:s.telegram || '', apiUrl:s.apiUrl || '', allAccess:s.allAccess, digitalSection:s.digitalSection, wallets:s.wallets};
+    var s = state.settings, pubSettings = {storeName:s.storeName, tagline:s.tagline, email:s.email, whatsapp:s.whatsapp || '', telegram:s.telegram || '', apiUrl:s.apiUrl || '', allAccess:s.allAccess, digitalSection:s.digitalSection, social:s.social || {}, featured:s.featured || '', wallets:s.wallets};
     var pub = {settings: pubSettings, gift: giftData(), products: state.products.map(function(p){
       var q = {id:p.id, title:p.title, category:p.category, price:p.price, stylePrice:p.stylePrice||0, group:p.group||'', guide:p.guide||'', tagline:p.tagline, type:p.type, published:p.published!==false};
       if (p.type === 'digital') q.icon = p.icon || '';

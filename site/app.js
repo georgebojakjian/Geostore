@@ -30,7 +30,9 @@
   var CODES = ALL.filter(function(p){ return p.group !== 'website'; });
   var DIGITAL = live.filter(function(p){ return p.type === 'digital'; });
   var BRANDS = ((D.gift && D.gift.brands) || []).filter(function(b){ return b && b.name && b.regions && b.regions.length; });
-  BRANDS.sort(function(a, b){ return a.name.localeCompare(b.name); });
+  var HOT = String(S.featured || 'itunes,apple,pubg,roblox,google play,steam,playstation,xbox,free fire,netflix,amazon,spotify,razer,fortnite,mobile legends,valorant').toLowerCase().split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+  function hotRank(name){ var n = String(name || '').toLowerCase(); for (var i = 0; i < HOT.length; i++) if (n.indexOf(HOT[i]) > -1) return i; return 999; }
+  BRANDS.sort(function(a, b){ return hotRank(a.name) - hotRank(b.name) || a.name.localeCompare(b.name); });
   function byId(id){ return live.filter(function(p){ return p.id === id; })[0]; }
   function sp(p){ return +p.stylePrice > 0 ? +p.stylePrice : Math.max(1, Math.ceil(p.price / 2)); }
 
@@ -92,13 +94,13 @@
       if (Math.abs(dx) < .4 && Math.abs(v) < .4){ cx = target; v = 0; draw(); raf = 0; return; }
       raf = requestAnimationFrame(step);
     }
-    function measure(){ W = bar.clientWidth; target = (IDX[key] + .5) * W / 5; if (!raf){ cx = target; draw(); } }
+    function measure(){ W = bar.clientWidth; target = (IDX[key] + .5) * W / 4; if (!raf){ cx = target; draw(); } }
     function set(k){
       if (!(k in IDX)) return; var changed = k !== key; key = k;
       items.forEach(function(b){ b.classList.toggle('on', b.dataset.k === k); });
       ico.setAttribute('href', '#' + ICON[k]);
       if (changed){ bub.classList.remove('pop'); void bub.offsetWidth; bub.classList.add('pop'); }
-      W = bar.clientWidth; if (!W) return; target = (IDX[k] + .5) * W / 5;
+      W = bar.clientWidth; if (!W) return; target = (IDX[k] + .5) * W / 4;
       if (reduceMotion || !changed){ cx = target; draw(); } else if (!raf) raf = requestAnimationFrame(step);
     }
     window.addEventListener('resize', measure); window.addEventListener('orientationchange', function(){ setTimeout(measure, 120); });
@@ -216,7 +218,7 @@
   $('grid').addEventListener('click', clickGrid); $('wgrid').addEventListener('click', clickGrid);
 
   /* gift cards: brand tiles + other digital items */
-  var gcat = 'All', gshown = 15;
+  var gcat = 'All', gshown = 20;
   function giftCats(){ var l = ['All']; BRANDS.forEach(function(b){ var c = b.cat || 'Gift cards'; if (l.indexOf(c) < 0) l.push(c); }); return l; }
   function brandTile(b){
     var n = b.regions.length;
@@ -233,8 +235,13 @@
     $('brands').hidden = !list.length;
     $('dgrid').className = 'brands'; $('dgrid').innerHTML = gcat === 'All' ? DIGITAL.map(digitalTile).join('') : '';
   }
-  $('gChips').addEventListener('click', function(e){ var b = e.target.closest('.chip'); if (!b) return; gcat = b.dataset.g; gshown = 15; renderGift(); });
-  $('gMore').addEventListener('click', function(){ gshown += 15; renderGift(); });
+  function renderBest(){
+    var hot = BRANDS.filter(function(b){ return hotRank(b.name) < 999; }).slice(0, 10);
+    $('bestGrid').innerHTML = hot.map(brandTile).join(''); $('bestSec').hidden = !hot.length;
+  }
+  $('bestGrid').addEventListener('click', function(e){ clickTiles(e); });
+  $('gChips').addEventListener('click', function(e){ var b = e.target.closest('.chip'); if (!b) return; gcat = b.dataset.g; gshown = 20; renderGift(); });
+  $('gMore').addEventListener('click', function(){ gshown += 20; renderGift(); });
   function clickTiles(e){
     var b = e.target.closest('[data-brand-id]'), d = e.target.closest('[data-dbuy]');
     if (b){ var br = BRANDS.filter(function(x){ return String(x.id || x.name) === b.dataset.brandId; })[0]; if (br) openGift(br, b); }
@@ -245,8 +252,8 @@
   /* search across everything */
   function applySearch(){
     var term = q.trim().toLowerCase(), box = $('results');
-    if (term.length < 2){ box.hidden = true; $('panels').hidden = false; $('seg').hidden = tabs.length < 2; return; }
-    $('panels').hidden = true; $('seg').hidden = true; box.hidden = false;
+    if (term.length < 2){ box.hidden = true; $('bestSec').hidden = !BRANDS.some(function(b){ return hotRank(b.name) < 999; }); $('panels').hidden = false; $('seg').hidden = tabs.length < 2; return; }
+    $('panels').hidden = true; $('seg').hidden = true; $('bestSec').hidden = true; box.hidden = false;
     function has(s){ return String(s || '').toLowerCase().indexOf(term) > -1; }
     var gb = BRANDS.filter(function(b){ return has(b.name) || has(b.cat); }), dg = DIGITAL.filter(function(p){ return has(p.title) || has(p.tagline); });
     var wb = WEBS.filter(function(p){ return has(p.title) || has(p.tagline) || has(p.category); }), cd = CODES.filter(function(p){ return has(p.title) || has(p.tagline) || has(p.category); });
@@ -715,17 +722,17 @@
   function chatSave(){ store('geostore_chat_log', CH.log.slice(-40)); }
   function chatDraw(){
     var box = $('chatLog'), html = '';
-    if (!CFG.chat) html = '<div class="msg-b sys">Live chat is offline right now.<br>Please message us on WhatsApp or by email — we answer fast.</div>';
+    if (!CFG.chat) html = '<div class="msg-b sys">Live chat is offline right now. Please try again a little later.</div>';
     else {
       if (!CH.log.length) html += '<div class="msg-b sys">👋 Hi! Ask us anything about your order or a product. We reply here.</div>';
       html += CH.log.map(function(m){ return '<div class="msg-b ' + (m.k === 'me' ? 'me' : m.k === 'them' ? 'them' : 'sys') + '">' + esc(m.text) + '</div>'; }).join('');
     }
     box.innerHTML = html; box.scrollTop = box.scrollHeight;
     $('chatForm').hidden = !CFG.chat;
-    $('chatSub').textContent = CFG.chat ? 'We usually reply within minutes' : 'Offline — use WhatsApp or email';
+    $('chatSub').textContent = CFG.chat ? 'We usually reply within minutes' : 'Offline right now';
   }
-  function chatLinks(){ var b = contactBtns().replace(/<button[^>]*data-chat[^>]*>[^<]*<\/button>/, ''); $('chatLinks').innerHTML = b; $('chatLinks').hidden = !b; }
-  function chatFab(){ $('chatFab').hidden = !(CFG.chat || waLink() || tgLink() || S.email); }
+  function chatLinks(){}
+  function chatFab(){ $('chatFab').hidden = !CFG.chat; }
   function chatBadge(){ var b = $('chatBadge'); b.hidden = !CH.unread; b.textContent = CH.unread; }
   function chatPoll(){
     clearTimeout(CH.timer); CH.timer = null;
@@ -741,7 +748,6 @@
   }
   function chatOpen(){
     CH.open = true; CH.unread = 0; chatBadge(); chatLinks(); chatDraw(); $('chatBox').hidden = false; $('chatFab').setAttribute('aria-expanded', 'true'); chatPoll();
-    if (CFG.chat) setTimeout(function(){ try { $('chatTxt').focus({preventScroll:true}); } catch(e) {} }, 60);
   }
   function chatClose(){ CH.open = false; $('chatBox').hidden = true; $('chatFab').setAttribute('aria-expanded', 'false'); chatPoll(); }
   function chatInit(){ chatFab(); if ($('chatBox').hidden === false){ chatLinks(); chatDraw(); } chatPoll(); }
@@ -756,6 +762,23 @@
   });
 
   /* ---------------- start ---------------- */
+  /* social icons: only the links you filled in are shown */
+  (function(){
+    var P = {facebook:'M13.5 21v-7.5h2.5l.4-3h-2.9V8.6c0-.9.3-1.4 1.5-1.4h1.5V4.5c-.3 0-1.2-.1-2.2-.1-2.2 0-3.7 1.3-3.7 3.8v2.3H8v3h2.6V21h2.9Z',
+      instagram:'M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4Zm0 2a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H7Zm5 2.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Zm5.200-3.200a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z',
+      x:'M17.8 3h3.100l-6.800 7.700L22 21h-6.200l-4.900-6.300L5.300 21H2.200l7.200-8.300L1.900 3h6.400l4.400 5.800L17.800 3Zm-1.100 16.200h1.700L7.300 4.700H5.500l11.200 14.500Z',
+      youtube:'M21.600 7.200a2.500 2.500 0 0 0-1.800-1.800C18.200 5 12 5 12 5s-6.200 0-7.800.4a2.500 2.500 0 0 0-1.800 1.800C2 8.800 2 12 2 12s0 3.200.4 4.800a2.500 2.500 0 0 0 1.800 1.800C5.800 19 12 19 12 19s6.200 0 7.800-.4a2.500 2.500 0 0 0 1.800-1.800C22 15.200 22 12 22 12s0-3.200-.4-4.800ZM10 15V9l5.200 3L10 15Z',
+      tiktok:'M16.500 3c.3 2.400 1.700 3.900 4 4v3.100c-1.400.1-2.700-.3-4-1.100v6.200c0 3.900-3.200 6.300-6.400 5.700-3.500-.6-5.400-4.300-3.900-7.600 1-2.200 3.300-3.400 5.600-3.100v3.200c-.4-.1-.8-.1-1.200 0-1.300.4-1.900 1.800-1.400 3 .6 1.300 2.300 1.700 3.400.8.6-.5.900-1.200.9-2V3h3Z',
+      telegram:'M21.500 4.300 2.900 11.500c-1.300.5-1.300 1.200-.2 1.500l4.700 1.500 1.800 5.600c.2.600.1.800.7.800.5 0 .7-.2 1-.5l2.200-2.200 4.600 3.400c.8.500 1.500.2 1.700-.8l3-14.400c.3-1.200-.5-1.800-1.400-1.400ZM8.500 13.700l9.900-6.200c.5-.3.9-.1.5.2l-8 7.300-.3 3.600-2.100-4.900Z',
+      whatsapp:'M12 2a10 10 0 0 0-8.600 15L2 22l5.200-1.400A10 10 0 1 0 12 2Zm5.800 14.200c-.2.700-1.400 1.300-2 1.400-.5.100-1.200.1-1.900-.1-.4-.1-1-.3-1.700-.6-3-1.300-4.900-4.300-5-4.500-.1-.2-1.200-1.600-1.200-3s.8-2.100 1-2.400c.3-.3.600-.3.800-.3h.600c.2 0 .4 0 .6.500l.9 2.100c.1.200.1.400 0 .5l-.3.500-.4.400c-.1.200-.3.300-.1.600.2.300.8 1.300 1.700 2.100 1.200 1 2.100 1.300 2.400 1.500.3.100.5.100.7-.1l1-1.200c.2-.3.400-.2.600-.1l2 .9c.3.100.5.200.6.300.1.200.1.800-.1 1.500Z',
+      snapchat:'M12 3c2.600 0 4.500 1.900 4.500 4.600v1.600c.3.100.8.300 1.100.4.400.1.600.4.500.7-.1.400-.8.700-1.400.9.400 1.100 1.200 2 2.300 2.400.3.100.4.400.2.600-.4.400-1 .6-1.700.7-.1.300-.1.700-.3.800-.3.100-.9-.1-1.500 0-.8.200-1.200 1.400-3.700 1.400s-2.900-1.200-3.700-1.400c-.6-.1-1.200.1-1.500 0-.2-.1-.2-.5-.3-.8-.7-.1-1.300-.3-1.700-.7-.2-.2-.1-.5.200-.6 1.100-.4 1.900-1.300 2.300-2.400-.6-.2-1.300-.5-1.400-.9-.1-.3.100-.6.500-.7.300-.1.800-.3 1.100-.4V7.600C7.500 4.900 9.400 3 12 3Z',
+      linkedin:'M4.500 9h3v10.500h-3V9ZM6 4.200a1.800 1.800 0 1 1 0 3.600 1.800 1.800 0 0 1 0-3.600ZM9.800 9h2.900v1.400c.4-.8 1.500-1.700 3.100-1.700 3.200 0 3.800 2.100 3.800 4.800v6h-3v-5.300c0-1.300 0-2.900-1.800-2.900s-2 1.400-2 2.800v5.400h-3V9Z',
+      discord:'M19.500 5.500A16 16 0 0 0 15.600 4.300l-.5 1a15 15 0 0 0-4.200 0l-.5-1a16 16 0 0 0-3.900 1.200C4 9.200 3.300 12.800 3.600 16.300a16 16 0 0 0 4.800 2.400l1-1.600a10 10 0 0 1-1.600-.8l.4-.3a11.500 11.500 0 0 0 9.600 0l.4.300c-.5.300-1 .600-1.600.8l1 1.600a16 16 0 0 0 4.800-2.400c.4-4.100-.7-7.600-2.900-10.800ZM9.300 14.200c-.9 0-1.600-.8-1.600-1.800s.7-1.800 1.600-1.800 1.600.8 1.600 1.800-.7 1.800-1.600 1.800Zm5.400 0c-.9 0-1.600-.8-1.600-1.800s.7-1.800 1.600-1.800 1.600.8 1.600 1.800-.7 1.800-1.600 1.800Z'};
+    var L = S.social || {}, h = '';
+    Object.keys(P).forEach(function(k){ var u = safeUrl(L[k]); if (u) h += '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer" aria-label="' + k + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="' + P[k] + '"/></svg></a>'; });
+    $('social').innerHTML = h; $('social').hidden = !h;
+  })();
+  renderBest();
   updateNav(); saveCart(); chatInit();
   if (tabs.length) showTab(tabs[0].id);
   else { $('shop').querySelector('.wrap').innerHTML = '<p class="empty" style="padding:60px 0">The shop is being stocked. Please check back soon.</p>'; }

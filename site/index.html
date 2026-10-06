@@ -8,6 +8,7 @@
   <meta name="theme-color" content="#f3f7ef">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'self' mailto:">
   <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="preconnect" href="https://flagcdn.com" crossorigin>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="logo.png">
   <meta property="og:title" content="Geostore — Your global digital marketplace">
@@ -55,6 +56,7 @@
 
     <section class="shop" id="shop">
       <div class="wrap">
+        <section class="best" id="bestSec" hidden><h2 class="sh2">🔥 Best sellers</h2><div class="brands" id="bestGrid"></div></section>
         <div class="seg" id="seg" role="tablist" aria-label="What are you looking for?"></div>
 
         <div id="results" hidden></div>
@@ -117,6 +119,7 @@
         <a href="#top" class="brand"><img src="logo-96.png" alt="" width="34" height="34"><span data-brand>Geostore</span></a>
         <div class="flinks"><a href="#shop">Shop</a><a href="#how">How it works</a><a href="#faq">FAQ</a><a href="#" data-contact>Contact</a></div>
         <span>© <span id="year"></span> <span data-brand>Geostore</span></span>
+        <div class="social" id="social" hidden></div>
       </div>
       <p class="fine">Gift cards and codes are digital goods and cannot be returned after they are revealed. Brand names and logos belong to their owners and are used only to identify the products.</p>
     </div>
@@ -130,14 +133,12 @@
     <a href="#shop" class="tb-it" data-i="1" data-k="shop" id="tbShop"><svg><use href="#i-shop"/></svg><b>Shop</b></a>
     <button type="button" class="tb-it" data-i="2" data-k="cart" data-opencart><svg><use href="#i-bag"/></svg><b>Cart</b><span class="cc" data-cartcount hidden>0</span></button>
     <button type="button" class="tb-it" data-i="3" data-k="acct" data-openacct><svg><use href="#i-user"/></svg><b data-acctlabel>Account</b></button>
-    <button type="button" class="tb-it" data-i="4" data-k="theme" data-theme-toggle role="switch" aria-label="Dark mode" aria-checked="false"><svg class="ti-moon"><use href="#i-moon"/></svg><svg class="ti-sun"><use href="#i-sun"/></svg><b>Theme</b></button>
   </nav>
 
   <!-- contact / live chat -->
   <button type="button" class="chat-fab" id="chatFab" aria-label="Chat with us"><svg><use href="#i-chat"/></svg><span class="cc" id="chatBadge" hidden>1</span></button>
   <div class="chat" id="chatBox" hidden role="dialog" aria-label="Chat with us">
     <div class="chat-h"><div><b>Need help?</b><small id="chatSub">We usually reply within minutes</small></div><button type="button" class="x2" id="chatClose" aria-label="Close chat">&times;</button></div>
-    <div class="chat-links" id="chatLinks"></div>
     <div class="chat-log" id="chatLog" aria-live="polite"></div>
     <form class="chat-in" id="chatForm" autocomplete="off"><input id="chatTxt" maxlength="600" placeholder="Type your message…" aria-label="Message"><button type="submit" class="btn btn-primary btn-sm">Send</button></form>
   </div>
@@ -187,10 +188,10 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="data.js"></script>
-  <script src="pack-1.js"></script>
-  <script src="pack-2.js"></script>
-  <script src="app.js"></script>
+  <script src="data.js" defer></script>
+  <script src="pack-1.js" defer></script>
+  <script src="pack-2.js" defer></script>
+  <script src="app.js" defer></script>
   <script src="bg.js" defer></script>
 </body>
 </html>
