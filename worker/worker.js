@@ -596,21 +596,34 @@ async function findPayment(env, o) {
   if (COINS[coin].kind === 'manual') return null;
   if (COINS[coin].kind === 'bsc') return await findBsc(env, o);
   if (coin === 'btc') {
-    const res = await fetch('https://mempool.space/api/address/' + o.wallet + '/txs');
-    if (!res.ok) return null;
-    for (const t of await res.json()) {
-      if (!t.status || !t.status.confirmed) continue;
-      const bt = t.status.block_time * 1000;
-      if (bt < o.createdAt - 120000 || bt > until) continue;
-      if (t.vout.some(v => v.scriptpubkey_address === o.wallet && v.value === o.amount) && !(await env.ORDERS.get('tx:' + t.txid))) return t.txid;
+    for (const t of await btcIn(o, null)) {
+      if (!t.confirmed || t.value !== o.amount) continue;
+      if (t.bt < o.createdAt - 120000 || t.bt > until) continue;
+      if (!(await env.ORDERS.get('tx:' + t.txid))) return t.txid;
     }
     return null;
   }
   const list = await trc20In(env, o, false);
   for (const t of list) {
-    if (String(t.value) === String(o.amount) && t.ts >= o.createdAt && t.ts <= o.expiresAt && !(await env.ORDERS.get('tx:' + t.txid))) return t.txid;
+    if (String(t.value) === String(o.amount) && t.ts >= o.createdAt - 60000 && t.ts <= until && !(await env.ORDERS.get('tx:' + t.txid))) return t.txid;
   }
   return null;
+}
+// Incoming Bitcoin payments to the order's wallet: mempool.space first, blockstream.info as a second source (same data format).
+// Returns [{txid, value (sats), confirmed, bt (ms)}] for every output paying the wallet.
+async function btcIn(o, notes) {
+  const out = [];
+  for (const base of ['https://mempool.space/api', 'https://blockstream.info/api']) {
+    try {
+      const res = await fetch(base + '/address/' + o.wallet + '/txs', { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) { if (notes) notes.push(base.split('/')[2] + ' answered HTTP ' + res.status); continue; }
+      const d = await res.json();
+      if (notes) notes.push(base.split('/')[2] + ' ok, ' + d.length + ' recent transaction(s)');
+      for (const t of d) for (const v of t.vout || []) if (v.scriptpubkey_address === o.wallet) out.push({ txid: t.txid, value: v.value, confirmed: !!(t.status && t.status.confirmed), bt: t.status && t.status.block_time ? t.status.block_time * 1000 : 0 });
+      return out;
+    } catch (e) { if (notes) notes.push(base.split('/')[2] + ' failed: ' + (e && e.message)); }
+  }
+  return out;
 }
 // Incoming USDT transfers to the order's wallet from TronGrid, with TronScan as a second source (TronGrid's free tier is often rate-limited).
 // Returns [{txid, value, ts}]. With dbg=true returns {list, notes} so the dashboard can explain what happened.
@@ -950,7 +963,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 11 });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 12 });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
@@ -1064,6 +1077,11 @@ async function route(req, env) {
             if (!l.length) info.notes.push('No incoming BEP20 USDT found for this wallet recently. Make sure the address in Settings is the one that received the money.');
             else if (!l.some(t => t.exact)) info.notes.push('Money arrived but not the exact amount ' + info.expects + '.');
           } catch (e) { info.notes.push('Could not reach any BNB Chain node: ' + (e && e.message)); }
+        } else if (coin === 'btc') {
+          const l = await btcIn(o, info.notes);
+          info.seen = l.map(t => ({ amount: (t.value / 1e8).toFixed(8), when: t.confirmed ? 'confirmed' : 'waiting for 1 confirmation', match: t.value === o.amount }));
+          if (!l.length) info.notes.push('No Bitcoin payments found for this wallet yet.');
+          else if (!l.some(t => t.value === o.amount)) info.notes.push('Bitcoin arrived but not the exact amount ' + info.expects + '.');
         } else info.notes.push('No details for this payment method.');
         if (o.status === 'pending') { lastLook.delete(o.id); const r2 = await checkOrder(env, o); info.after = r2.status; }
         return json(env, { ok: true, info });
