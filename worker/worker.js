@@ -217,6 +217,7 @@ async function accountRoutes(req, env, path, apiBase) {
     const salt = hex(16), acct = { email, name: String(body.name || '').trim().slice(0, 80), phone: '', country: '', salt, iter: PBKDF2_ITER, hash: await pbkdf2(pw, salt, PBKDF2_ITER), createdAt: Date.now(), orders: [] };
     await env.ORDERS.put('acct:' + email, JSON.stringify(acct));
     await pushIndex(env, 'cidx', email, 2000);
+    notify(env, '👤 <b>New sign-up</b>\n' + esc(email) + (acct.name ? ' · ' + esc(acct.name) : ''));
     return json(env, { token: await makeToken(env, acct), profile: profileOf(acct) });
   }
   if (path === '/api/account/login' && req.method === 'POST') {
@@ -1084,7 +1085,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 14 });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 15 });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);

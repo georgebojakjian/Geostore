@@ -572,10 +572,10 @@
         function(){ throw new Error('Could not reach the server. Check your connection and try again.'); });
   }
   var METHOD_UI = {
-    usdt_trc20:{cls:'usdt', glyph:'₮', badge:'Popular', note:'Tether on TRON. Low fee on most exchanges.'},
-    usdt_bep20:{cls:'bnb', glyph:'₮', badge:'Fast', note:'Tether on BNB Smart Chain. Low fee, quick.'},
-    btc:{cls:'btc', glyph:'₿', badge:'', note:'Bitcoin. Needs 1 network confirmation (10–30 min).'},
-    binancepay:{cls:'bpay', glyph:'B', badge:'Manual check', note:'Pay inside the Binance app. We confirm it by hand.'}
+    usdt_trc20:{cls:'usdt', glyph:'₮', badge:'Popular', note:'Tether on the TRON network. Low fee on most exchanges.', eta:'Usually confirmed in 1–3 minutes'},
+    usdt_bep20:{cls:'bnb', glyph:'₮', badge:'Fast', note:'Tether on BNB Smart Chain. Low fee and quick.', eta:'Usually confirmed in 1–3 minutes'},
+    btc:{cls:'btc', glyph:'₿', badge:'', note:'Bitcoin. Needs 1 network confirmation.', eta:'Usually 10–30 minutes'},
+    binancepay:{cls:'bpay', glyph:'B', badge:'Manual', note:'Send inside the Binance app with Binance Pay. We confirm it by hand.', eta:'Confirmed by us after you press “I have paid”'}
   };
   if (API){
     coins = [{id:'usdt_trc20', name:'USDT (TRC20)', network:'TRON (TRC20)', kind:'tron'}];
@@ -604,16 +604,30 @@
     $('cartBody').innerHTML = '<div class="steps-h"><i class="on"></i><i class="on"></i><i></i></div>' +
       '<div class="sumrows">' + L.map(function(l){ return '<div><span>' + esc(l.title) + '</span><span>' + money(l.price) + '</span></div>'; }).join('') + '<div><span>Total</span><span>' + money(total) + '</span></div></div>' +
       '<div class="methods">' + coins.map(function(c){
-        var u = METHOD_UI[c.id] || {cls:'usdt', glyph:'●', badge:'', note:c.network || ''};
-        return '<button type="button" class="method' + (c.id === coinSel ? ' on' : '') + '" data-coin="' + esc(c.id) + '">' + (u.badge ? '<span class="bd">' + esc(u.badge) + '</span>' : '') + '<span class="ic ' + u.cls + '">' + esc(u.glyph) + '</span><b>' + esc(c.name) + '</b><small>' + esc(u.note) + '</small><span class="ck">✓</span></button>';
+        var u = METHOD_UI[c.id] || {cls:'usdt', glyph:'●', badge:''};
+        return '<button type="button" class="method' + (c.id === coinSel ? ' on' : '') + '" data-coin="' + esc(c.id) + '">' + (u.badge ? '<span class="bd">' + esc(u.badge) + '</span>' : '') + '<span class="ic ' + u.cls + '">' + esc(u.glyph) + '</span><b>' + esc(c.name) + '</b><span class="ck">✓</span></button>';
       }).join('') + '</div>' +
-      '<div id="fromBox"></div><button type="button" class="btn btn-primary btn-block" id="coPay">Pay ' + money(total) + '</button><p class="msg" id="coMsg"></p><button type="button" class="back" style="margin-top:10px" data-tocart>← Back to cart</button>';
-    view = 'method'; drawFrom();
+      '<div id="mInfo"></div><div id="fromBox"></div>' +
+      '<button type="button" class="btn-pay" id="coPay"><span class="bp-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Pay ' + money(total) + '</span><span class="bp-r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>' +
+      '<p class="trust-line">🔒 Secure crypto payment · Your code is delivered automatically</p><p class="msg" id="coMsg"></p><button type="button" class="back" style="margin-top:6px" data-tocart>← Back to cart</button>';
+    view = 'method'; drawInfo(); drawFrom();
   }
   var pendingEmail = '';
+  $('cartBody').addEventListener('pointerdown', function(e){          // tactile feel: ripple + a tiny vibration where the phone supports it
+    var b = e.target.closest('.btn-pay'); if (!b || b.disabled) return;
+    var r = b.getBoundingClientRect(), s2 = document.createElement('i'), d = Math.max(r.width, r.height) * 1.2;
+    s2.className = 'rip'; s2.style.cssText = 'width:' + d + 'px;height:' + d + 'px;left:' + (e.clientX - r.left - d / 2) + 'px;top:' + (e.clientY - r.top - d / 2) + 'px';
+    b.appendChild(s2); setTimeout(function(){ s2.remove(); }, 650);
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch(x) {}
+  });
   function selCoin(){ return coins.filter(function(c){ return c.id === coinSel; })[0] || {}; }
   function binanceNotice(){
     return '<div class="notice"><span class="ico">⏳</span><div><b>Paying from your Binance account?</b><br>A transfer from Binance to our Binance address is an <b>internal transfer</b>, so it can take a while to be confirmed. <b>If your order is not confirmed within 1 hour, please contact us</b> with your order number and we will confirm it right away.' + contactRow() + '</div></div>';
+  }
+  function drawInfo(){
+    var box = $('mInfo'); if (!box) return;
+    var c = selCoin(), u = METHOD_UI[c.id]; if (!c.id || !u){ box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="minfo"><span class="ic ' + u.cls + '">' + esc(u.glyph) + '</span><div><b>' + esc(c.name) + '</b><span>' + esc(u.note) + '</span><small>' + (c.network ? esc(c.network) + ' · ' : '') + esc(u.eta || '') + '</small></div></div>';
   }
   function drawFrom(){
     var box = $('fromBox'); if (!box) return;
@@ -628,12 +642,12 @@
       var cid = (qd || qu).dataset.cqd || (qd || qu).dataset.cqu, it = cart.filter(function(i){ return i.id === cid; })[0];
       if (it){ var mx = it.m || 10; it.q = Math.max(1, Math.min(mx, (it.q || 1) + (qu ? 1 : -1))); if (qu && (it.q || 1) >= mx) toast('Maximum ' + mx + ' at a time'); renderCart(); }
     }
-    if (m){ coinSel = m.dataset.coin; $$('#cartBody .method').forEach(function(x){ x.classList.toggle('on', x === m); }); drawFrom(); }
+    if (m){ coinSel = m.dataset.coin; $$('#cartBody .method').forEach(function(x){ x.classList.toggle('on', x === m); }); drawInfo(); drawFrom(); }
     var fb = e.target.closest('[data-from]'); if (fb){ fromBinance = fb.dataset.from === 'yes'; drawFrom(); }
     if (e.target.id === 'cartSignin'){ e.preventDefault(); closeModal($('cartM')); openAccount(); }
     if (e.target.closest('[data-tocart]')){ view = 'cart'; setCartTitle('Your cart'); renderCart(); }
     if (e.target.id === 'coNext') goCheckout();
-    if (e.target.id === 'coPay') createOrder();
+    if (e.target.closest('#coPay')) createOrder();
     if (e.target.id === 'payClaim') claimManual();
     if (e.target.closest('[data-copy]')){ var c = e.target.closest('[data-copy]'), src = $(c.dataset.copy); copyText(src.dataset.v || src.textContent, function(){ var o = c.textContent; c.textContent = 'Copied ✓'; setTimeout(function(){ c.textContent = o; }, 1500); }); }
   });
@@ -653,10 +667,10 @@
     renderMethods();
   }
   function createOrder(){
-    var msg = $('coMsg'), btn = $('coPay'); if (btn) btn.disabled = true; msg.classList.remove('err'); msg.textContent = 'Creating your order…';
+    var msg = $('coMsg'), btn = $('coPay'); if (btn){ btn.disabled = true; btn.classList.add('busy'); } msg.classList.remove('err'); msg.textContent = 'Creating your order…';
     apiCall('/api/order', {email: pendingEmail, coin: coinSel || 'usdt_trc20', fromBinance: !!(fromBinance && selCoin().binance), items: cart.map(function(i){ return i.f ? {id:i.id, v:i.v, q:1, f:i.f} : {id:i.id, v:i.v, q:i.q || 1}; })})
       .then(function(o){ rememberOrder(o.id); cart = []; saveCart(); showPay(o); })
-      .catch(function(er){ if (btn) btn.disabled = false; var m2 = $('coMsg'); if (m2){ m2.classList.add('err'); m2.textContent = er.message || 'Could not create the order. Please try again.'; } });
+      .catch(function(er){ if (btn){ btn.disabled = false; btn.classList.remove('busy'); } var m2 = $('coMsg'); if (m2){ m2.classList.add('err'); m2.textContent = er.message || 'Could not create the order. Please try again.'; } });
   }
   function rememberOrder(id){ var ids = store('geostore_orders') || []; if (ids.indexOf(id) < 0){ ids.push(id); store('geostore_orders', ids.slice(-20)); } }
   function leftText(ms){ if (ms <= 0) return 'expired'; var m = Math.floor(ms / 60000), s = Math.floor(ms % 60000 / 1000); return m + ':' + (s < 10 ? '0' : '') + s; }

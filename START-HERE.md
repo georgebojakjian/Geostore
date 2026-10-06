@@ -18,7 +18,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 
 1. **Back up first.** Open your OLD dashboard → **Publish → Backup everything**. Keep that file.
 2. **Download the new project** (GitHub → branch `claude/geostore-website-template-bwou47` → Code → Download ZIP) and unzip it.
-3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":14`.
+3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":15`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
 6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`, `manifest.webmanifest`.
@@ -32,7 +32,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 ### 1 — Server (Cloudflare)
 1. Cloudflare → Workers & Pages → create a Worker → paste `worker/worker.js` → Deploy.
 2. Settings → **Variables and Secrets**: add a **Secret** named `ADMIN_TOKEN` (a long password only you know). Settings → **Bindings** → add a **KV namespace** named `ORDERS`.
-3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":14`.
+3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":15`.
 4. Do **not** add a Cron Trigger (the shop does not need one).
 
 ### 2 — Dashboard
@@ -90,7 +90,7 @@ Game top-ups (which need the player's ID) are the next step and are not in this 
 
 **What customers get:** a round chat button on the shop. It opens a small window with your **WhatsApp**, **Telegram** and **Email**, and a **live chat** box when you connect Telegram. Inside the payment window there are the same contact buttons, so anyone with a problem can reach you in one tap.
 
-**What you get:** a Telegram alert for every new order (“🛒 New order… waiting for payment”), every payment (“✅ Paid…”), Binance Pay claims and stuck deliveries, plus every chat message.
+**What you get:** a Telegram alert for every new sign-up, every new order (“🛒 New order… waiting for payment”), every payment (“✅ Paid…”), Binance Pay claims and stuck deliveries, plus every chat message.
 
 **Set it up (10 minutes, one time)**
 1. In Telegram open **@BotFather** → send `/newbot` → choose a name → copy the **token** it gives you.
@@ -142,6 +142,25 @@ A website cannot hide the browser's own bottom bar. But when a customer (or you)
 - **Game top-ups:** Select all shown / Clear shown, plus All / Selected / Not selected filters.
 - **Watermark:** every product preview shows a faint tiled watermark with your store name (turn it off per product in the editor with “Watermark the live preview”). The code the customer receives after paying is always clean. After updating, press **Sync to server**.
 - **Shop main page** shows about 50 items, plus a **Show all products** button that opens the full catalogue with search, type filter, categories and sorting.
+
+## Buying a domain and connecting it
+- **Cloudflare Registrar (my recommendation):** Cloudflare dashboard → **Domain Registration → Register Domains** → search → buy (card or PayPal). Price is the wholesale cost with no markup, and privacy protection is free.
+  1. In **Netlify** → your site → **Domain management → Add a domain** → type your domain.
+  2. In **Cloudflare → your domain → DNS → Records**, add: type **CNAME**, name **@** , target `YOUR-SITE.netlify.app`, and set the cloud to **grey “DNS only”**. Add a second one with name **www** and the same target.
+  3. Back in Netlify press **Verify DNS**. HTTPS turns on by itself after a few minutes.
+- **Buying inside Netlify:** also works and is the simplest (it sets up DNS for you), but there are fewer choices and it can cost more. If you leave Netlify later you just move the domain. Either way the server (Cloudflare Worker) needs **no change**.
+- Choose a name without brand words (iTunes, PUBG, Roblox…). Turn on two-step login at the registrar and keep the account in your own name and email.
+
+## How to publish a change (cheat sheet)
+| What changed | What to do |
+|---|---|
+| A price (own products, gift cards, top-ups) | Dashboard → **Sync to server** |
+| Wallets, profit %, watermark switch | Settings → Save → **Sync to server** |
+| New or removed product, brand or game, names, images, social links | **Sync to server** → **Download data.js** → put it in the `site` folder → upload the **whole `site` folder** to Netlify (Deploys → drag the folder) |
+| Shop design or checkout fix from me | Download the new project → upload the whole `site` folder to Netlify |
+| Server fix from me (`worker.js`) | Cloudflare → your Worker → **Edit code** → paste the whole file → **Deploy** → open `/api/health` and check the version number |
+| Dashboard update from me (`admin.html`) | Open the new `admin.html` → **Publish → Restore backup** with your latest backup file |
+Always make a **Backup everything** before replacing the dashboard file.
 
 ## Dashboard
 The dashboard now has the dark glass look. **Home** shows revenue, paid orders, estimated profit and “needs you” for **Today / 7D / 30D / 1Y**, a performance chart, payment-method split and the latest orders. **Gift cards → Prices** shows what each amount **costs you** at FazerCards, what you sell it for and your profit. The sun/moon button switches to a light dashboard.
