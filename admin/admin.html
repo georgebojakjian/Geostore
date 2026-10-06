@@ -6,17 +6,20 @@
   <title>Geostore Admin</title>
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" type="image/png" href="../site/favicon.png">
-  <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("geostore_admin_theme")==="light"?"light":"dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
+  <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("geostore_admin_theme")==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
   <style>
     :root{--bg:#0a0b0d;--glass:rgba(255,255,255,.045);--glass2:rgba(255,255,255,.075);--panel:var(--glass);--surface:rgba(255,255,255,.05);--surface2:rgba(255,255,255,.06);--border:rgba(255,255,255,.09);--border2:rgba(255,255,255,.17);--text:#f2f3f5;--muted:#9aa1ab;--accent:#ff5a36;--accent2:#ff7a59;--accent-soft:rgba(255,90,54,.14);--on:#fff;--soft:rgba(255,90,54,.14);--ring:rgba(255,90,54,.35);--danger:#ff6b6b;--warn:#f5b84b;--ok:#38d98a;--blue:#4cb3ff;--violet:#9b8cff;--ease:cubic-bezier(.22,.61,.36,1);--shadow:0 20px 50px -24px rgba(0,0,0,.8);--field:rgba(0,0,0,.28);--stage:url(shards.svg) center/cover fixed #0a0b0d;color-scheme:dark}
-    [data-theme=light]{--bg:#eef1f4;--glass:rgba(255,255,255,.72);--glass2:rgba(255,255,255,.95);--surface:rgba(255,255,255,.8);--surface2:rgba(20,30,40,.045);--border:rgba(20,30,40,.1);--border2:rgba(20,30,40,.2);--text:#12161b;--muted:#5a6672;--accent:#e8472b;--accent2:#d13a20;--accent-soft:rgba(232,71,43,.1);--soft:rgba(232,71,43,.1);--ring:rgba(232,71,43,.28);--danger:#c0392b;--warn:#a96c0b;--ok:#1f8a3b;--shadow:0 18px 40px -26px rgba(20,30,40,.4);--field:#fff;--stage:linear-gradient(160deg,#f7f9fb,#e6ebf0) fixed;color-scheme:light}
+    [data-theme=light]{--bg:#f3f8f2;--glass:rgba(255,255,255,.58);--glass2:rgba(255,255,255,.86);--surface:rgba(255,255,255,.72);--surface2:rgba(30,70,30,.05);--border:rgba(255,255,255,.75);--border2:rgba(30,70,30,.16);--text:#0f1a12;--muted:#566557;--accent:#3d9a0e;--accent2:#2f7d09;--accent-soft:rgba(61,154,14,.12);--soft:rgba(61,154,14,.12);--ring:rgba(61,154,14,.28);--on:#fff;--danger:#c0392b;--warn:#a96c0b;--ok:#1f8a3b;--blue:#1f78d1;--violet:#6c5ce7;--shadow:0 14px 34px -22px rgba(30,70,30,.45);--field:rgba(255,255,255,.9);--stage:radial-gradient(900px 520px at 6% -6%,rgba(61,154,14,.20),transparent 62%),radial-gradient(800px 520px at 102% 2%,rgba(76,179,255,.20),transparent 60%),radial-gradient(700px 500px at 50% 112%,rgba(155,140,255,.14),transparent 60%),linear-gradient(160deg,#f8fbf6,#e9f1ee) fixed;color-scheme:light}
+    [data-theme=light] .glass,[data-theme=light] .panel,[data-theme=light] aside,[data-theme=light] .stat,[data-theme=light] .kpi{border-color:rgba(255,255,255,.85);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,var(--shadow)}
+    [data-theme=light] .navb.on{box-shadow:0 8px 18px -12px rgba(47,125,9,.55);background:rgba(255,255,255,.95);color:var(--accent2)}
+    [data-theme=light] th,[data-theme=light] td{border-bottom-color:rgba(30,70,30,.08)}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     [hidden]{display:none!important}
     body{font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;background:var(--stage);color:var(--text);line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased}
     button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer;border:0;background:none}
     :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
     .app{display:grid;grid-template-columns:272px 1fr;gap:18px;padding:18px;min-height:100vh}
-    .glass,.panel,aside,.stat,.kpi{background:linear-gradient(160deg,var(--glass2),var(--glass));border:1px solid var(--border);border-radius:22px;backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2);box-shadow:var(--shadow)}
+    .glass,.panel,aside,.stat,.kpi{background:linear-gradient(160deg,var(--glass2),var(--glass));border:1px solid var(--border);border-radius:22px;backdrop-filter:blur(14px) saturate(1.15);-webkit-backdrop-filter:blur(14px) saturate(1.15);box-shadow:var(--shadow)}
     aside{position:sticky;top:18px;height:calc(100vh - 36px);padding:18px 14px;display:flex;flex-direction:column;gap:3px;overflow-y:auto}
     .brand{display:flex;gap:12px;align-items:center;padding:4px 8px 16px}
     .brand .mark{width:44px;height:44px;border-radius:14px;background:linear-gradient(145deg,var(--accent2),var(--accent));display:grid;place-items:center;box-shadow:0 10px 24px -8px var(--accent);flex:none}.brand .mark svg{width:24px;height:24px;color:#fff}
@@ -45,7 +48,7 @@
     .chip button{font-weight:800;color:var(--accent2);text-decoration:underline;margin-left:4px}
     h1{font-size:1.65rem;letter-spacing:-.03em;margin:4px 0 2px}.lead{color:var(--muted);margin-bottom:6px;max-width:70ch}
     h2{font-size:1.05rem;letter-spacing:-.01em;margin-bottom:12px}h3{font-size:1rem}
-    .view{display:none;flex-direction:column;gap:18px}.view.on{display:flex;animation:in .3s var(--ease)}@keyframes in{from{opacity:0;transform:translateY(6px)}}
+    .view{display:none;flex-direction:column;gap:18px}.view.on{display:flex;animation:in .12s ease-out}@keyframes in{from{opacity:0;transform:translateY(6px)}}
     .kpis,.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
     .kpi,.stat{padding:18px 18px 16px;border-radius:20px}
     .kh{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:.84rem;font-weight:650}
@@ -101,6 +104,11 @@
     #chart svg{width:100%;height:230px;display:block}.donutwrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.donutwrap svg{width:170px;height:170px;flex:none}
     .legend{display:grid;gap:8px;font-size:.84rem;flex:1;min-width:150px}.legend div{display:flex;align-items:center;gap:8px}.legend i{width:10px;height:10px;border-radius:3px;flex:none}.legend b{margin-left:auto}
     .pricetable td,.pricetable th{padding:8px 10px;font-size:.84rem}
+    .livegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+    .lv{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--border2);border-radius:16px;background:var(--surface);transition:transform .15s,border-color .15s}.lv:hover{transform:translateY(-2px);border-color:var(--accent)}
+    .lv .logo-s{width:44px;height:44px;border-radius:12px}.lv b{display:block;line-height:1.25}.lv small{color:var(--muted);font-weight:650;font-size:.72rem}
+    .regs{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.rc{display:inline-flex;align-items:center;border:1px solid var(--border2);border-radius:999px;background:var(--surface2);font-size:.72rem;font-weight:750;overflow:hidden}
+    .rc button{padding:3px 8px;font-size:.72rem;font-weight:750}.rc button:hover{background:var(--accent-soft);color:var(--accent2)}.rc .x{color:var(--muted);border-left:1px solid var(--border2)}.rc .x:hover{color:var(--danger)}
     @media(max-width:1100px){.kpis,.stats{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
     @media(max-width:900px){.app{grid-template-columns:1fr;padding:10px;gap:10px}aside{position:static;height:auto;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:8px;gap:6px;align-items:center;border-radius:18px}.brand{padding:0 6px 0 2px}.brand div,.grp,.lock{display:none}.navb{width:auto;white-space:nowrap;padding:9px 12px}.side-foot{margin:0 0 0 auto;padding:0}.themebtn span{display:none}.form{grid-template-columns:1fr}.topbar{position:static}}
     @media(max-width:560px){.kpis,.stats{grid-template-columns:1fr}h1{font-size:1.4rem}.periods{width:100%;justify-content:space-between}}
@@ -216,6 +224,10 @@
     <!-- GIFT CARDS (FazerCards) -->
     <section class="view" id="v-supplier">
       <h1>Gift cards</h1><p class="lead">Sell gift cards and game credit without holding stock. Choose what to sell, set your profit once, and the shop shows live prices. When a customer pays, the server buys the code from FazerCards and delivers it.</p>
+      <div class="panel" id="livePanel"><div class="bar"><h2 style="margin:0">✅ Live on your shop <span class="pill" id="liveCount"></span></h2>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="liveQ" type="search" placeholder="Find a brand or game…"><div class="seg" id="liveG"></div></div></div>
+        <p class="help" id="liveHint" style="margin-bottom:10px">Everything you saved below appears here. Press a country to see its prices, ✕ to remove it. After changes press Sync to server.</p>
+        <div class="livegrid" id="liveGrid"></div></div>
       <div class="panel"><div class="bar"><h2 style="margin:0">1 · Connection</h2><button class="btn btn-g btn-s" id="supCheck">Check connection &amp; balance</button></div>
         <p class="help" id="supStatus">Add your FazerCards API key in Cloudflare first (steps in START-HERE.md → “Selling gift cards”), then press the button.</p>
         <p class="tip">Every sale is paid from your FazerCards balance — keep it topped up. If it runs low the shop automatically hides those items.</p></div>
@@ -235,7 +247,7 @@
         <p class="help">After saving, press <b>Publish → Sync to server</b>, then <b>Download data.js</b> and upload your site folder (the brand list lives in data.js; prices are always live).</p></div>
       <div class="panel"><div class="bar"><h2 style="margin:0">4 · Game top-ups (PUBG, Free Fire, Mobile Legends…)</h2><button class="btn btn-p btn-s" id="tpLoad">Load game list</button></div>
         <p class="help" id="tpMsg">The customer types their Player ID at checkout, you are paid first, then FazerCards charges the game account. Uses the same profit setting as gift cards (step 2).</p>
-        <div id="tpTools" hidden><input class="search" id="tpSearch" type="search" placeholder="Search a game…" style="margin:10px 0">
+        <div id="tpTools" hidden><div class="bar" style="margin:10px 0"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="tpSearch" type="search" placeholder="Search a game…"><div class="seg" id="tpFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="sel">Selected</button><button type="button" data-f="unsel">Not selected</button></div></div><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-g btn-s" id="tpAll">Select all shown</button><button class="btn btn-g btn-s" id="tpNone">Clear shown</button></span></div>
           <div class="tw"><table><thead><tr><th style="width:36px"></th><th>Game</th><th style="width:96px"></th></tr></thead><tbody id="tpRows"></tbody></table></div></div>
         <div class="bar" style="margin:14px 0 0"><span class="help" id="tpSum"></span><button class="btn btn-p" id="tpSave">Save games</button></div>
         <p class="help">After saving: <b>Publish → Sync to server</b>, then <b>Download data.js</b> and upload the site folder.</p></div>
@@ -954,11 +966,38 @@
     $('ruleVal').value = r.value; $('ruleLbl').textContent = r.mode === 'fixed' ? 'Add this many dollars on top of the supplier price' : 'Add this % on top of the supplier price';
     var p = sellPrice(10); $('ruleEx').innerHTML = 'Example: a card that costs you <b>$10</b> will sell for <b>' + money(p) + '</b> — you earn <b>' + money(p - 10) + '</b> on each.';
   }
-  $('ruleMode').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; supRule().mode = b.dataset.m; save(true); renderRule(); });
-  $('ruleVal').addEventListener('input', function(){ supRule().value = Math.max(0, +this.value || 0); save(true); renderRule(); });
+  $('ruleMode').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; supRule().mode = b.dataset.m; save(true); renderRule(); drawPrices(); });
+  $('ruleVal').addEventListener('input', function(){ supRule().value = Math.max(0, +this.value || 0); save(true); renderRule(); drawPrices(); });
   function entry(c){ var d = detect(c.name), e = supEdit[c.category_id] || {}; return {brand: e.brand != null ? e.brand : d.brand, region: e.region != null ? e.region : d.region, group: e.group != null ? e.group : d.group}; }
+  /* ---------- "Live on your shop": always shows what you already added ---------- */
+  var liveG = 'All';
+  function renderLive(){
+    var cats = state.settings.sup.cats || {}, tc = state.settings.sup.tcats || {}, q = ($('liveQ').value || '').trim().toLowerCase(), by = {};
+    Object.keys(cats).forEach(function(id){ var c = cats[id], name = c.brand || c.n || id, key = name.toLowerCase(); var b = by[key] || (by[key] = {name: name, group: c.group || 'Gift cards', logo: c.logo || '', items: []}); b.items.push({id: id, region: (c.region || 'GLOBAL').toUpperCase(), n: c.n}); });
+    var brands = Object.keys(by).map(function(k){ return by[k]; }).sort(function(a, b){ return a.name.localeCompare(b.name); });
+    var games = Object.keys(tc).map(function(id){ return {id: id, name: tc[id].n || id, logo: tc[id].logo || ''}; }).sort(function(a, b){ return a.name.localeCompare(b.name); });
+    var groups = ['All']; brands.forEach(function(b){ if (groups.indexOf(b.group) < 0) groups.push(b.group); }); if (games.length) groups.push('Game top-ups');
+    if (groups.indexOf(liveG) < 0) liveG = 'All';
+    $('liveG').innerHTML = groups.length > 2 ? groups.map(function(g){ return '<button type="button" data-lg="' + esc(g) + '"' + (g === liveG ? ' class="on"' : '') + '>' + esc(g) + '</button>'; }).join('') : ''; $('liveG').hidden = groups.length <= 2;
+    var okB = function(b){ return (liveG === 'All' || liveG === b.group) && (!q || b.name.toLowerCase().indexOf(q) > -1); };
+    var bl = liveG === 'Game top-ups' ? [] : brands.filter(okB), gl = (liveG === 'All' || liveG === 'Game top-ups') ? games.filter(function(g){ return !q || g.name.toLowerCase().indexOf(q) > -1; }) : [];
+    $('liveCount').textContent = brands.length + ' brands · ' + Object.keys(cats).length + ' countries · ' + games.length + ' games';
+    var card = function(logo, name, tag, regs){ var lg = safeUrl(logo); return '<div class="lv">' + (lg ? '<img class="logo-s" loading="lazy" referrerpolicy="no-referrer" src="' + esc(lg) + '" alt="">' : '<span class="logo-s" style="display:grid;place-items:center;font-weight:800;color:#3d9a0e">' + esc(name.charAt(0).toUpperCase()) + '</span>') + '<div style="min-width:0"><b>' + esc(name) + '</b><small>' + esc(tag) + '</small><div class="regs">' + regs + '</div></div></div>'; };
+    var html = bl.map(function(b){ return card(b.logo, b.name, b.group, b.items.sort(function(x, y){ return x.region.localeCompare(y.region); }).map(function(it){ return '<span class="rc"><button type="button" data-lvp="' + esc(it.id) + '" title="' + esc(it.n || '') + ' — see prices">' + esc(it.region) + '</button><button type="button" class="x" data-lvx="' + esc(it.id) + '" title="Remove" aria-label="Remove">✕</button></span>'; }).join('')); }).join('') +
+      gl.map(function(g){ return card(g.logo, g.name, 'Game top-up', '<span class="rc"><button type="button" data-lvtp="' + esc(g.id) + '">Prices</button><button type="button" class="x" data-lvtx="' + esc(g.id) + '" title="Remove" aria-label="Remove">✕</button></span>'); }).join('');
+    $('liveGrid').innerHTML = html || '<p class="empty" style="grid-column:1/-1">' + (Object.keys(cats).length + games.length ? 'Nothing matches.' : 'Nothing added yet. Use steps 3 and 4 below, then press Save.') + '</p>';
+  }
+  $('liveQ').addEventListener('input', renderLive);
+  $('liveG').addEventListener('click', function(e){ var b = e.target.closest('[data-lg]'); if (!b) return; liveG = b.dataset.lg; renderLive(); });
+  $('liveGrid').addEventListener('click', function(e){
+    var p = e.target.closest('[data-lvp]'), x = e.target.closest('[data-lvx]'), tp = e.target.closest('[data-lvtp]'), tx = e.target.closest('[data-lvtx]');
+    if (p){ var c = state.settings.sup.cats[p.dataset.lvp]; openPrices('gift', p.dataset.lvp, c && (c.brand || c.n), '/api/admin/supplier/offers?category_id='); }
+    if (tp){ var g = state.settings.sup.tcats[tp.dataset.lvtp]; openPrices('topup', tp.dataset.lvtp, g && g.n, '/api/admin/supplier/topup-offers?category_id='); }
+    if (x){ delete state.settings.sup.cats[x.dataset.lvx]; delete supSel[x.dataset.lvx]; save(true); renderLive(); drawSup(); sumSup(); toast('Removed — press Sync to server'); }
+    if (tx){ delete state.settings.sup.tcats[tx.dataset.lvtx]; delete tpSel[tx.dataset.lvtx]; save(true); renderLive(); if (tpList.length) tpDraw(); toast('Removed — press Sync to server'); }
+  });
   function renderSupplier(){
-    renderRule();
+    renderRule(); renderLive();
     // restore the previous selection into the working set
     if (!supInit){ supInit = true; Object.keys(state.settings.sup.cats).forEach(function(id){ supSel[id] = true; var c = state.settings.sup.cats[id]; supEdit[id] = supEdit[id] || {brand:c.brand, region:c.region, group:c.group}; }); }
     var m = state.products.filter(function(p){ return p.supplier; });
@@ -1006,13 +1045,20 @@
   $('supNone').addEventListener('click', function(){ shownIds().forEach(function(id){ delete supSel[id]; }); drawSup(); sumSup(); });
   /* ---------- game top-ups ---------- */
   var tpList = [], tpSel = {}, tpInit = false;
+  var tpF = 'all';
+  function tpShownList(){
+    var q = $('tpSearch').value.trim().toLowerCase();
+    return tpList.filter(function(c){ if (tpF === 'sel' && !tpSel[c.category_id]) return false; if (tpF === 'unsel' && tpSel[c.category_id]) return false; return !q || c.name.toLowerCase().indexOf(q) > -1; });
+  }
   function tpDraw(){
     $('tpTools').hidden = !tpList.length; if (!tpList.length) return;
-    var q = $('tpSearch').value.trim().toLowerCase();
-    var list = tpList.filter(function(c){ return !q || c.name.toLowerCase().indexOf(q) > -1; }).slice(0, 200);
+    var all = tpShownList(), list = all.slice(0, 300);
     $('tpRows').innerHTML = list.map(function(c){ var id = esc(c.category_id), lg = safeUrl(c.imageurl); return '<tr><td><input type="checkbox" data-tp="' + id + '"' + (tpSel[c.category_id] ? ' checked' : '') + ' aria-label="Select"></td><td><div style="display:flex;gap:10px;align-items:center">' + (lg ? '<img class="logo-s" loading="lazy" referrerpolicy="no-referrer" src="' + esc(lg) + '" alt="">' : '') + '<b>' + esc(c.name) + '</b></div></td><td><button class="btn btn-g btn-s" data-tpr="' + id + '">Prices</button></td></tr>'; }).join('') || '<tr><td colspan="3" class="empty">Nothing matches.</td></tr>';
-    var n = Object.keys(tpSel).filter(function(k){ return tpSel[k]; }).length; $('tpSum').textContent = n + ' game' + (n === 1 ? '' : 's') + ' selected · saved: ' + Object.keys(state.settings.sup.tcats).length;
+    var n = Object.keys(tpSel).filter(function(k){ return tpSel[k]; }).length; $('tpSum').textContent = n + ' game' + (n === 1 ? '' : 's') + ' selected · saved: ' + Object.keys(state.settings.sup.tcats).length + ' · showing ' + list.length + ' of ' + all.length;
   }
+  $('tpAll').addEventListener('click', function(){ tpShownList().forEach(function(c){ tpSel[c.category_id] = true; }); tpDraw(); });
+  $('tpNone').addEventListener('click', function(){ tpShownList().forEach(function(c){ delete tpSel[c.category_id]; }); tpDraw(); });
+  $('tpFilter').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; tpF = b.dataset.f; $$('#tpFilter button').forEach(function(x){ x.classList.toggle('on', x === b); }); tpDraw(); });
   $('tpLoad').addEventListener('click', function(){
     var b = this; b.disabled = true; $('tpMsg').textContent = 'Loading…';
     api('/api/admin/supplier/topups').then(function(r){
@@ -1025,29 +1071,52 @@
   $('tpSave').addEventListener('click', function(){
     var tc = {}; tpList.forEach(function(c){ if (tpSel[c.category_id]) tc[c.category_id] = {n: c.name, logo: safeUrl(c.imageurl)}; });
     Object.keys(state.settings.sup.tcats).forEach(function(id){ if (tpSel[id] && !tc[id]) tc[id] = state.settings.sup.tcats[id]; });
-    state.settings.sup.tcats = tc; save(true); tpDraw(); toast('Saved — now Sync to server and update data.js');
+    state.settings.sup.tcats = tc; save(true); tpDraw(); renderLive(); toast('Saved — now Sync to server and update data.js');
   });
   $('tpRows').addEventListener('click', function(e){
     var b = e.target.closest('[data-tpr]'); if (!b) return;
-    var id = b.dataset.tpr, box = $('supPrices'), c = tpList.filter(function(x){ return x.category_id === id; })[0]; box.hidden = false; box.innerHTML = '<p class="help">Loading what FazerCards charges you…</p>'; box.scrollIntoView({behavior:'smooth', block:'center'});
-    api('/api/admin/supplier/topup-offers?category_id=' + encodeURIComponent(id)).then(function(r){
-      var ovr = state.settings.sup.over, rows = (r.offers || []).map(function(o){ var cost = +o.price_usd, ok = 'T-' + id + ':' + o.offer_id, mine = +ovr[ok] > 0, price = mine ? Math.max(+ovr[ok], Math.round((cost + .01) * 100) / 100) : sellPrice(cost); return '<tr><td><b>' + esc(o.name) + '</b></td><td>' + money(cost) + '</td><td><input type="number" min="0" step="0.01" value="' + price.toFixed(2) + '" data-ov="' + esc(ok) + '" data-cost="' + cost + '" style="width:92px;padding:6px 8px" aria-label="Your price"> ' + (mine ? '<button class="btn btn-g btn-s" data-ovreset="' + esc(ok) + '">Reset</button>' : '') + '</td><td style="color:var(--ok)">+' + money(price - cost) + '</td></tr>'; }).join('');
-      box.innerHTML = '<div class="bar"><h2 style="margin:0">' + esc((c && c.name) || r.name || id) + ' — prices</h2><button class="btn btn-g btn-s" id="prClose">Close</button></div><p class="help" style="margin-bottom:10px">Type a new price to change one amount only. “Reset” goes back to your automatic profit rule. Then press Sync to server.</p><div class="tw"><table class="pricetable"><thead><tr><th>Amount</th><th>Your cost</th><th>You sell for</th><th>Profit</th></tr></thead><tbody>' + (rows || '<tr><td colspan="4" class="empty">No amounts.</td></tr>') + '</tbody></table></div>';
-      $('prClose').onclick = function(){ box.hidden = true; };
-      box.onchange = function(e){ var t = e.target; if (!t.dataset.ov) return; var v = Math.round((+t.value || 0) * 100) / 100, cost = +t.dataset.cost; if (v <= cost){ toast('Your price must be higher than your cost ($' + cost.toFixed(2) + ')'); t.value = sellPrice(cost).toFixed(2); return; } state.settings.sup.over[t.dataset.ov] = v; save(true); toast('Price saved — press Sync to server'); if (!t.parentNode.querySelector('[data-ovreset]')) t.insertAdjacentHTML('afterend', ' <button class="btn btn-g btn-s" data-ovreset="' + esc(t.dataset.ov) + '">Reset</button>'); };
-      box.onclick = function(e){ var b2 = e.target.closest('[data-ovreset]'); if (!b2) return; delete state.settings.sup.over[b2.dataset.ovreset]; save(true); toast('Back to automatic price — press Sync to server'); var cl = e.target.closest('tr').querySelector('[data-ov]'); cl.value = sellPrice(+cl.dataset.cost).toFixed(2); b2.remove(); };
-    }).catch(function(er){ box.innerHTML = '<p class="help">❌ ' + esc(er.message) + '</p>'; });
+    var c = tpList.filter(function(x){ return x.category_id === b.dataset.tpr; })[0];
+    openPrices('topup', b.dataset.tpr, c && c.name, '/api/admin/supplier/topup-offers?category_id=');
   });
+  /* ---------- per-amount prices (gift cards + top-ups) with live profit % ---------- */
+  var priceCtx = null;
+  function pcost(o){ return +o.price_usd; }
+  function pkey(c, o){ return c.kind === 'topup' ? 'T-' + c.id + ':' + o.offer_id : c.id + ':' + o.card_id; }
+  function rowSell(c, o){ var ovr = state.settings.sup.over, k = pkey(c, o), cost = pcost(o), mine = +ovr[k] > 0; return {mine: mine, price: mine ? Math.max(+ovr[k], Math.round((cost + .01) * 100) / 100) : sellPrice(cost)}; }
+  function profitTxt(price, cost){ var pr = price - cost; return '+' + money(pr) + ' <span class="help">(' + (cost > 0 ? Math.round(pr / cost * 1000) / 10 : 0) + '%)</span>'; }
+  function drawPrices(){
+    var c = priceCtx, box = $('supPrices'); if (!c) return;
+    var rows = c.offers.map(function(o){
+      var cost = pcost(o), rs = rowSell(c, o), k = pkey(c, o);
+      return '<tr><td><b>' + esc(o.name) + '</b></td><td>' + money(cost) + '</td><td><input type="number" min="0" step="0.01" value="' + rs.price.toFixed(2) + '" data-ov="' + esc(k) + '" data-cost="' + cost + '" style="width:92px;padding:6px 8px" aria-label="Your price"> ' + (rs.mine ? '<button class="btn btn-g btn-s" data-ovreset="' + esc(k) + '">Reset</button>' : '') + '</td><td style="color:var(--ok)" data-pf>' + profitTxt(rs.price, cost) + '</td>' + (c.kind === 'topup' ? '' : '<td>' + (o.stock == null ? '–' : esc(o.stock)) + '</td><td>' + (+o.max_order_quantity > 0 ? esc(o.max_order_quantity) : '–') + '</td>') + '</tr>';
+    }).join('');
+    var r = supRule();
+    box.hidden = false;
+    box.innerHTML = '<div class="bar"><h2 style="margin:0">' + esc(c.name) + ' — what it costs you</h2><button class="btn btn-g btn-s" id="prClose">Close</button></div><p class="help" style="margin-bottom:10px">Automatic price = your cost + your profit setting (' + (r.mode === 'fixed' ? '+$' + r.value : '+' + r.value + '%') + '). Type a new price on any row to change that amount only; the profit updates as you type. “Reset” goes back to automatic. Then press Sync to server.</p><div class="tw"><table class="pricetable"><thead><tr><th>Amount</th><th>Your cost</th><th>You sell for</th><th>Your profit</th>' + (c.kind === 'topup' ? '' : '<th>In stock</th><th>Max per order</th>') + '</tr></thead><tbody>' + (rows || '<tr><td colspan="6" class="empty">No amounts available.</td></tr>') + '</tbody></table></div>';
+    $('prClose').onclick = function(){ box.hidden = true; priceCtx = null; };
+  }
+  $('supPrices').addEventListener('input', function(e){            // live: the profit % changes while you type
+    var t = e.target; if (!t.dataset.ov) return; var v = +t.value || 0, cost = +t.dataset.cost, cell = t.closest('tr').querySelector('[data-pf]');
+    cell.innerHTML = v > cost ? profitTxt(v, cost) : '<span style="color:var(--danger)">must be above cost</span>';
+  });
+  $('supPrices').addEventListener('change', function(e){
+    var t = e.target; if (!t.dataset.ov) return; var v = Math.round((+t.value || 0) * 100) / 100, cost = +t.dataset.cost;
+    if (v <= cost){ toast('Your price must be higher than your cost ($' + cost.toFixed(2) + ')'); drawPrices(); return; }
+    state.settings.sup.over[t.dataset.ov] = v; save(true); toast('Price saved — press Sync to server'); drawPrices();
+  });
+  $('supPrices').addEventListener('click', function(e){
+    var b2 = e.target.closest('[data-ovreset]'); if (!b2) return;
+    delete state.settings.sup.over[b2.dataset.ovreset]; save(true); toast('Back to automatic price — press Sync to server'); drawPrices();
+  });
+  function openPrices(kind, id, name, url){
+    var box = $('supPrices'); box.hidden = false; box.innerHTML = '<p class="help">Loading what FazerCards charges you…</p>'; box.scrollIntoView({behavior:'smooth', block:'center'});
+    api(url + encodeURIComponent(id)).then(function(r){ priceCtx = {kind: kind, id: id, name: name || r.name || id, offers: r.offers || []}; drawPrices(); })
+      .catch(function(er){ box.innerHTML = '<p class="help">❌ ' + esc(er.message) + '</p>'; });
+  }
   $('supCats').addEventListener('click', function(e){
     var b = e.target.closest('[data-pr]'); if (!b) return;
-    var id = b.dataset.pr, box = $('supPrices'), c = supCats.filter(function(x){ return x.category_id === id; })[0]; box.hidden = false; box.innerHTML = '<p class="help">Loading what FazerCards charges you…</p>'; box.scrollIntoView({behavior:'smooth', block:'center'});
-    api('/api/admin/supplier/offers?category_id=' + encodeURIComponent(id)).then(function(r){
-      var ovr = state.settings.sup.over, rows = (r.offers || []).map(function(o){ var cost = +o.price_usd, ok = id + ':' + o.card_id, mine = +ovr[ok] > 0, price = mine ? Math.max(+ovr[ok], Math.round((cost + .01) * 100) / 100) : sellPrice(cost), pr = price - cost; return '<tr><td><b>' + esc(o.name) + '</b></td><td>' + money(cost) + '</td><td><input type="number" min="0" step="0.01" value="' + price.toFixed(2) + '" data-ov="' + esc(ok) + '" data-cost="' + cost + '" style="width:92px;padding:6px 8px" aria-label="Your price"> ' + (mine ? '<button class="btn btn-g btn-s" data-ovreset="' + esc(ok) + '">Reset</button>' : '') + '</td><td style="color:var(--ok)">+' + money(pr) + ' <span class="help">(' + Math.round(pr / cost * 100) + '%)</span></td><td>' + (o.stock == null ? '–' : esc(o.stock)) + '</td><td>' + (+o.max_order_quantity > 0 ? esc(o.max_order_quantity) : '–') + '</td></tr>'; }).join('');
-      box.innerHTML = '<div class="bar"><h2 style="margin:0">' + esc((c && c.name) || r.name || id) + ' — what it costs you</h2><button class="btn btn-g btn-s" id="prClose">Close</button></div><p class="help" style="margin-bottom:10px">“Your cost” is what FazerCards charges you per card. “You sell for” uses your profit setting (' + (supRule().mode === 'fixed' ? '+$' + supRule().value : '+' + supRule().value + '%') + ').</p><div class="tw"><table class="pricetable"><thead><tr><th>Amount</th><th>Your cost</th><th>You sell for</th><th>Your profit</th><th>In stock</th><th>Max per order</th></tr></thead><tbody>' + (rows || '<tr><td colspan="6" class="empty">No amounts available.</td></tr>') + '</tbody></table></div>';
-      $('prClose').onclick = function(){ box.hidden = true; };
-      box.onchange = function(e){ var t = e.target; if (!t.dataset.ov) return; var v = Math.round((+t.value || 0) * 100) / 100, cost = +t.dataset.cost; if (v <= cost){ toast('Your price must be higher than your cost ($' + cost.toFixed(2) + ')'); t.value = sellPrice(cost).toFixed(2); return; } state.settings.sup.over[t.dataset.ov] = v; save(true); toast('Price saved — press Sync to server'); if (!t.parentNode.querySelector('[data-ovreset]')) t.insertAdjacentHTML('afterend', ' <button class="btn btn-g btn-s" data-ovreset="' + esc(t.dataset.ov) + '">Reset</button>'); };
-      box.onclick = function(e){ var b2 = e.target.closest('[data-ovreset]'); if (!b2) return; delete state.settings.sup.over[b2.dataset.ovreset]; save(true); toast('Back to automatic price — press Sync to server'); var cl = e.target.closest('tr').querySelector('[data-ov]'); cl.value = sellPrice(+cl.dataset.cost).toFixed(2); b2.remove(); };
-    }).catch(function(er){ box.innerHTML = '<p class="help">❌ ' + esc(er.message) + '</p>'; });
+    var c = supCats.filter(function(x){ return x.category_id === b.dataset.pr; })[0];
+    openPrices('gift', b.dataset.pr, c && c.name, '/api/admin/supplier/offers?category_id=');
   });
   $('supCats').addEventListener('change', function(e){
     var t = e.target, id;
@@ -1063,7 +1132,7 @@
       if (c){ var e = entry(c); cats[id] = {n: c.name, brand: e.brand || c.name, region: e.region || 'GLOBAL', group: e.group || 'Other', logo: safeUrl(c.imageurl) || (old && old.logo) || ''}; }
       else if (old) cats[id] = old;                         // selected earlier, catalog not loaded now: keep as is
     });
-    state.settings.sup.cats = cats; save(true); sumSup(); toast('Saved ' + Object.keys(cats).length + ' categories — now Sync, then Download data.js');
+    state.settings.sup.cats = cats; save(true); sumSup(); renderLive(); toast('Saved ' + Object.keys(cats).length + ' categories — now Sync, then Download data.js');
   });
   $('supMine').addEventListener('click', function(e){ var b = e.target.closest('[data-se]'); if (!b) return; show('products'); openEditor(state.products.filter(function(p){ return p.id === b.dataset.se; })[0]); });
 

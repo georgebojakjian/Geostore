@@ -18,7 +18,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 
 1. **Back up first.** Open your OLD dashboard → **Publish → Backup everything**. Keep that file.
 2. **Download the new project** (GitHub → branch `claude/geostore-website-template-bwou47` → Code → Download ZIP) and unzip it.
-3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":13`.
+3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":14`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
 6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`, `manifest.webmanifest`.
@@ -32,7 +32,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 ### 1 — Server (Cloudflare)
 1. Cloudflare → Workers & Pages → create a Worker → paste `worker/worker.js` → Deploy.
 2. Settings → **Variables and Secrets**: add a **Secret** named `ADMIN_TOKEN` (a long password only you know). Settings → **Bindings** → add a **KV namespace** named `ORDERS`.
-3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":13`.
+3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":14`.
 4. Do **not** add a Cron Trigger (the shop does not need one).
 
 ### 2 — Dashboard
@@ -134,6 +134,14 @@ Settings → **Social media & best sellers**. Paste your full links (https://…
 A website cannot hide the browser's own bottom bar. But when a customer (or you) installs the shop, it opens full screen with no browser bars at all:
 - **iPhone (Safari):** Share button → **Add to Home Screen**.
 - **Android (Chrome):** menu ⋮ → **Install app** / **Add to Home screen**.
+
+## New in the dashboard and shop
+- **Light glass look** is now the default (the moon button switches to dark). Screens switch faster.
+- **Gift cards → “Live on your shop”** (top of the tab) always shows everything you have already added — brands with their countries, and games — with search and filters. Press a country to see its prices, ✕ to remove it.
+- **Prices update live:** change a price and the profit % changes while you type; change the profit setting and any open price list updates instantly. No refresh needed.
+- **Game top-ups:** Select all shown / Clear shown, plus All / Selected / Not selected filters.
+- **Watermark:** every product preview shows a faint tiled watermark with your store name (turn it off per product in the editor with “Watermark the live preview”). The code the customer receives after paying is always clean. After updating, press **Sync to server**.
+- **Shop main page** shows about 50 items, plus a **Show all products** button that opens the full catalogue with search, type filter, categories and sorting.
 
 ## Dashboard
 The dashboard now has the dark glass look. **Home** shows revenue, paid orders, estimated profit and “needs you” for **Today / 7D / 30D / 1Y**, a performance chart, payment-method split and the latest orders. **Gift cards → Prices** shows what each amount **costs you** at FazerCards, what you sell it for and your profit. The sun/moon button switches to a light dashboard.
