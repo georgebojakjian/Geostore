@@ -80,7 +80,7 @@
     var ICON = {home:'i-home', shop:'i-shop', cart:'i-bag', acct:'i-user'}, IDX = {home:0, shop:1, cart:2, acct:3};
     var W = 0, cx = 0, v = 0, target = 0, raf = 0, key = 'home';
     function path(x){
-      var H = bar.clientHeight + 14, top = 14, R = 36, depth = 46;
+      var H = bar.clientHeight + 14, top = 14, R = 30, depth = 36;
       x = Math.max(R + 20, Math.min(W - R - 20, x));
       return 'M0,' + top + ' L' + (x - R - 22) + ',' + top +
         ' C' + (x - R - 4) + ',' + top + ' ' + (x - R + 2) + ',' + (top + depth * .15) + ' ' + (x - R + 5) + ',' + (top + depth * .45) +
@@ -109,6 +109,20 @@
     return {set: set};
   })();
   function tabShow(){ Tab.set(tabOver || tabBase); }
+  // tapping any bar item first closes an open window, so the bar always works (tapping the open tab again closes it)
+  $('tabbar').addEventListener('click', function(e){
+    var it = e.target.closest('.tb-it'); if (!it) return;
+    var open = $$('.modal.open'); if (!open.length) return;
+    var mine = it.hasAttribute('data-opencart') ? 'cartM' : it.hasAttribute('data-openacct') ? 'acctM' : '';
+    var same = open.some(function(m){ return m.id === mine; });
+    open.forEach(closeModal);
+    if (same){ e.stopPropagation(); e.preventDefault(); return; }
+    var href = it.getAttribute('href');
+    if (href && href.charAt(0) === '#'){            // Home / Shop: scroll after the window has released the page
+      e.preventDefault(); var tg = document.querySelector(href);
+      setTimeout(function(){ window.scrollTo({top: (tg && href !== '#top') ? Math.max(0, tg.getBoundingClientRect().top + window.pageYOffset - 56) : 0, behavior: 'smooth'}); }, 30);
+    }
+  }, true);
   (function(){
     var hdr = $('hdr'), shop = $('shop'), tick = false;
     function upd(){ tick = false; var y = window.pageYOffset; hdr.classList.toggle('scrolled', y > 8); var nb = y > shop.offsetTop - 160 ? 'shop' : 'home'; if (nb !== tabBase){ tabBase = nb; tabShow(); } }
