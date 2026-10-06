@@ -598,16 +598,41 @@ async function findPayment(env, o) {
     }
     return null;
   }
-  const url = 'https://api.trongrid.io/v1/accounts/' + o.wallet + '/transactions/trc20' +
-    '?only_confirmed=true&only_to=true&limit=200&contract_address=' + USDT_CONTRACT + '&min_timestamp=' + o.createdAt;
-  const res = await fetch(url, { headers: env.TRONGRID_KEY ? { 'TRON-PRO-API-KEY': env.TRONGRID_KEY } : {} });
-  if (!res.ok) return null;
-  for (const t of (await res.json()).data || []) {
-    const ok = t.to === o.wallet && t.type === 'Transfer' && t.token_info && t.token_info.address === USDT_CONTRACT &&
-      String(t.value) === String(o.amount) && t.block_timestamp >= o.createdAt && t.block_timestamp <= o.expiresAt;
-    if (ok && !(await env.ORDERS.get('tx:' + t.transaction_id))) return t.transaction_id;
+  const list = await trc20In(env, o, false);
+  for (const t of list) {
+    if (String(t.value) === String(o.amount) && t.ts >= o.createdAt && t.ts <= o.expiresAt && !(await env.ORDERS.get('tx:' + t.txid))) return t.txid;
   }
   return null;
+}
+// Incoming USDT transfers to the order's wallet from TronGrid, with TronScan as a second source (TronGrid's free tier is often rate-limited).
+// Returns [{txid, value, ts}]. With dbg=true returns {list, notes} so the dashboard can explain what happened.
+async function trc20In(env, o, dbg) {
+  const notes = [], out = [], seen = new Set();
+  const add = (txid, value, ts) => { if (txid && !seen.has(txid)) { seen.add(txid); out.push({ txid, value: String(value), ts }); } };
+  try {
+    const res = await fetch('https://api.trongrid.io/v1/accounts/' + o.wallet + '/transactions/trc20' +
+      '?only_confirmed=true&only_to=true&limit=200&contract_address=' + USDT_CONTRACT + '&min_timestamp=' + (o.createdAt - 60000),
+      { headers: env.TRONGRID_KEY ? { 'TRON-PRO-API-KEY': env.TRONGRID_KEY } : {}, signal: AbortSignal.timeout(8000) });
+    if (!res.ok) notes.push('TronGrid answered HTTP ' + res.status + (res.status === 429 ? ' (rate-limited: add a free TRONGRID_KEY secret)' : ''));
+    else {
+      const d = (await res.json()).data || [];
+      notes.push('TronGrid ok, ' + d.length + ' incoming USDT transfer(s) since the order was created');
+      for (const t of d) if (t.to === o.wallet && t.type === 'Transfer' && t.token_info && t.token_info.address === USDT_CONTRACT) add(t.transaction_id, t.value, t.block_timestamp);
+    }
+  } catch (e) { notes.push('TronGrid failed: ' + (e && e.message)); }
+  if (!out.length || dbg) {
+    try {
+      const res = await fetch('https://apilist.tronscanapp.com/api/token_trc20/transfers?limit=50&start=0&confirm=true&contract_address=' + USDT_CONTRACT +
+        '&toAddress=' + o.wallet + '&start_timestamp=' + (o.createdAt - 60000), { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) notes.push('TronScan answered HTTP ' + res.status);
+      else {
+        const d = (await res.json()).token_transfers || [];
+        notes.push('TronScan ok, ' + d.length + ' incoming USDT transfer(s)');
+        for (const t of d) if (t.to_address === o.wallet && (t.contract_address || USDT_CONTRACT) === USDT_CONTRACT && (t.finalResult || t.contractRet || 'SUCCESS') === 'SUCCESS') add(t.transaction_id, t.quant, t.block_ts);
+      }
+    } catch (e) { notes.push('TronScan failed: ' + (e && e.message)); }
+  }
+  return dbg ? { list: out, notes } : out;
 }
 async function checkOrder(env, o) {
   if (o.status !== 'pending') return o;
@@ -917,7 +942,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 9 });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 10 });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
@@ -1012,6 +1037,21 @@ async function route(req, env) {
         await env.ORDERS.delete('tg:owner'); tgMem.owner = ''; tgMem.t = Date.now();
         if (env.TELEGRAM_BOT_TOKEN) await tg(env, 'deleteWebhook', {}).catch(() => {});
         return json(env, { ok: true });
+      }
+      if (path === '/api/admin/diagnose' && req.method === 'POST') {
+        const b = await req.json().catch(() => ({}));
+        const o = await env.ORDERS.get('order:' + String(b.id || ''), 'json');
+        if (!o) return fail(env, 'Order not found', 404);
+        const coin = orderCoin(o), info = { status: o.status, coin, expects: fmtAmount(coin, o.amount), wallet: o.wallet, notes: [], seen: [] };
+        if (COINS[coin].kind === 'manual') info.notes.push('Binance Pay orders are confirmed by hand.');
+        else if (coin === 'usdt_trc20') {
+          const r = await trc20In(env, o, true); info.notes = r.notes;
+          info.seen = r.list.map(t => ({ amount: (Number(t.value) / 1e6).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''), when: new Date(t.ts).toISOString(), match: String(t.value) === String(o.amount) }));
+          if (!r.list.length) info.notes.push('No incoming USDT found for this wallet since the order was created. Check the wallet address in Settings is the one that received the money.');
+          else if (!r.list.some(t => String(t.value) === String(o.amount))) info.notes.push('Money arrived but not the exact amount ' + info.expects + ' (compare the list).');
+        } else info.notes.push('Automatic check details are only shown for TRC20 right now.');
+        if (o.status === 'pending') { lastLook.delete(o.id); const r2 = await checkOrder(env, o); info.after = r2.status; }
+        return json(env, { ok: true, info });
       }
       if (path === '/api/admin/markpaid' && req.method === 'POST') {
         const b = await req.json().catch(() => ({}));

@@ -839,6 +839,7 @@
         (o.fulfil ? '<div class="help">' + (o.fulfil==='ok' ? '🎁 delivered · cost $' + esc(o.cost) + ' · profit $' + esc(Math.round((o.usd - o.cost)*100)/100) : o.fulfil==='wait' ? '⏳ buying from supplier… ' + esc(o.fulfilErr) : '⚠ ' + esc(o.fulfilErr || 'supplier problem')) + '</div>' : '') + '</td><td><div class="acts">' +
         (o.fulfil && o.fulfil!=='ok' && o.status==='paid' ? '<button class="btn btn-p btn-s" data-retry="' + esc(o.id) + '">Retry delivery</button>' : '') +
         (o.status==='paid' ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(link) + '">Open order</a>' : '') +
+        (o.status==='pending' ? '<button class="btn btn-g btn-s" data-why="' + esc(o.id) + '">Why not paid?</button>' : '') +
         (o.status!=='paid' ? '<button class="btn btn-g btn-s" data-mp="' + esc(o.id) + '">Mark paid</button>' : '') + '</div></td></tr>';
     }).join('');
   }
@@ -849,6 +850,8 @@
   $('srvBody').addEventListener('click', function(e){
     var rb = e.target.closest('[data-retry]');
     if (rb){ rb.disabled = true; api('/api/admin/retry', {method:'POST', body: JSON.stringify({id: rb.dataset.retry})}).then(function(r){ toast(r.fulfil === 'ok' ? 'Delivered ✅' : 'Still not delivered: ' + (r.error || 'supplier problem')); loadServerOrders(); }).catch(function(er){ toast(er.message); rb.disabled = false; }); return; }
+    var wb = e.target.closest('[data-why]');
+    if (wb){ wb.disabled = true; api('/api/admin/diagnose', {method:'POST', body: JSON.stringify({id: wb.dataset.why})}).then(function(r){ var i = r.info; wb.disabled = false; alert('Server expects: ' + i.expects + ' USDT\nWallet: ' + i.wallet + '\n\n' + i.notes.join('\n') + (i.seen.length ? '\n\nIncoming transfers:\n' + i.seen.map(function(t){ return t.amount + '  ' + t.when + (t.match ? '  ✅ matches' : ''); }).join('\n') : '') + (i.after ? '\n\nOrder is now: ' + i.after : '')); loadServerOrders(); }).catch(function(er){ wb.disabled = false; toast(er.message); }); return; }
     var b = e.target.closest('[data-mp]'); if (!b) return;
     if (!confirm('Mark this order as paid? Only do this after you saw the money in your wallet / Binance.')) return;
     api('/api/admin/markpaid', {method:'POST', body: JSON.stringify({id:b.dataset.mp})}).then(function(){ toast('Marked as paid — delivery is automatic'); loadServerOrders(); }).catch(function(er){ toast(er.message); });
