@@ -109,6 +109,11 @@
     return {set: set};
   })();
   function tabShow(){ Tab.set(tabOver || tabBase); }
+  (function(){                                       // keyboard open: hide the bar so it can never sit on top of the keys or the form
+    var t = null, tags = /^(INPUT|TEXTAREA|SELECT)$/;
+    document.addEventListener('focusin', function(e){ if (tags.test(e.target.tagName)){ clearTimeout(t); document.body.classList.add('typing'); } });
+    document.addEventListener('focusout', function(){ clearTimeout(t); t = setTimeout(function(){ if (!tags.test((document.activeElement || {}).tagName || '')) document.body.classList.remove('typing'); }, 120); });
+  })();
   // tapping any bar item first closes an open window, so the bar always works (tapping the open tab again closes it)
   $('tabbar').addEventListener('click', function(e){
     var it = e.target.closest('.tb-it'); if (!it) return;
@@ -400,7 +405,7 @@
       var f = (r.fields || []).map(function(d){
         return '<div class="field"><label for="tf_' + esc(d.key) + '">' + esc(d.label) + '</label>' + (d.type === 'select' && d.options.length ? '<select id="tf_' + esc(d.key) + '" data-tf="' + esc(d.key) + '">' + d.options.map(function(o){ return '<option value="' + esc(o.value) + '">' + esc(o.label) + '</option>'; }).join('') + '</select>' : '<input id="tf_' + esc(d.key) + '" data-tf="' + esc(d.key) + '" autocomplete="off" maxlength="80" inputmode="text">') + '</div>';
       }).join('');
-      $('gmBody').innerHTML = f + '<div class="actions" style="margin:-4px 0 10px"><span class="hint" id="tpCheckMsg">Double-check your ID — a top-up cannot be reversed.</span><span class="ab"><button type="button" class="btn btn-ghost btn-sm" id="tpCheck">Check my ID</button></span></div>' +
+      $('gmBody').innerHTML = f + '<div class="actions" style="margin:-4px 0 10px"><span class="hint" id="tpCheckMsg">Double-check your ID — a top-up cannot be reversed.</span>' + (r.canCheck ? '<span class="ab"><button type="button" class="btn btn-ghost btn-sm" id="tpCheck">Check my ID</button></span>' : '') + '</div>' +
         '<div class="amounts">' + (r.offers || []).map(function(o){ return '<button type="button" class="amt" data-to="' + esc(o.offer) + '" data-tp="' + (+o.price) + '" data-tn="' + esc(o.name) + '"><b>' + esc(o.name) + '</b><span class="p">' + money(o.price) + '</span><small>Add to cart</small></button>'; }).join('') + '</div>';
     }).catch(function(er){ if (tcur !== g) return; $('gmBody').innerHTML = '<p class="empty">' + esc(er.message || 'Could not load.') + '</p>'; });
   }
@@ -411,7 +416,7 @@
     if (chk){
       var t = topupVals(); if (t.bad){ $('tpCheckMsg').textContent = 'Please fill in “' + t.bad + '”.'; return; }
       $('tpCheckMsg').textContent = 'Checking…';
-      apiCall('/api/topup/validate', {cat: tcur.id, fields: t.v}).then(function(r){ $('tpCheckMsg').textContent = r.valid === true ? '✅ Found' + (r.player ? ': ' + r.player : '') + (r.region ? ' (' + r.region + ')' : '') : r.valid === false ? '⚠ ID not found — check it again' : 'This game cannot be checked in advance — please double-check your ID.'; }).catch(function(er){ $('tpCheckMsg').textContent = er.message; });
+      apiCall('/api/topup/validate', {cat: tcur.id, fields: t.v}).then(function(r){ $('tpCheckMsg').textContent = r.valid === true ? '✅ Found' + (r.player ? ': ' + r.player : '') + (r.region ? ' (' + r.region + ')' : '') : r.valid === false ? '⚠ ID not found — check it again' : 'We could not check it right now — please double-check your ID before paying.'; }).catch(function(er){ $('tpCheckMsg').textContent = er.message; });
       return;
     }
     if (a){

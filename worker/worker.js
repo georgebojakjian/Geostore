@@ -364,7 +364,18 @@ async function topupRoute(req, env, url) {
   const cat = await getCatalog(env);
   let t; try { t = await topupOffers(env, cat, catId); } catch (e) { return fail(env, 'This item is temporarily unavailable. Please try again later.', 503); }
   if (!t) return fail(env, 'Not found', 404);
-  return json(env, { ok: true, name: t.name, fields: t.fields, offers: t.offers.map(o => ({ offer: o.offer, name: o.name, price: topupSell(cat.sup, catId, o.offer, o.cost) })) });
+  const canCheck = !!(await validatorFor(env, catId, t.name).catch(() => null));
+  return json(env, { ok: true, name: t.name, fields: t.fields, canCheck, offers: t.offers.map(o => ({ offer: o.offer, name: o.name, price: topupSell(cat.sup, catId, o.offer, o.cost) })) });
+}
+// which games FazerCards can check a Player ID for (the list is dynamic), matched by id or by name ("PUBG Mobile (Auto)" = "PUBG Mobile")
+let tvList = { t: 0, v: [] };
+const normName = x => String(x || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+async function validatorFor(env, catId, name) {
+  if (Date.now() - tvList.t > 600000) {
+    try { const j = await fz(env, 'GET', '/topups/validate-id'); tvList = { t: Date.now(), v: (j.items || []).map(i => ({ id: String(i.category_id), name: String(i.name || ''), fields: topupFieldDefs({ fields: i.fields }) })) }; }
+    catch (e) { tvList = { t: Date.now() - 540000, v: tvList.v }; }          // retry in a minute; keep the old list meanwhile
+  }
+  return tvList.v.find(i => i.id === catId) || tvList.v.find(i => normName(i.name) && normName(i.name) === normName(name)) || null;
 }
 const tvHits = new Map();
 async function topupValidate(req, env) {
@@ -375,8 +386,12 @@ async function topupValidate(req, env) {
   let t; try { t = await topupOffers(env, cat, catId); } catch (e) { return fail(env, 'Could not check right now. You can still continue.', 503); }
   if (!t) return fail(env, 'Not found', 404);
   const f = cleanTopupFields(t.fields, b.fields); if (f.error) return fail(env, f.error);
+  const vd = await validatorFor(env, catId, t.name).catch(() => null);
+  if (!vd) return json(env, { ok: true, valid: null, unsupported: true });
+  const first = Object.keys(f.v).map(k => f.v[k])[0], vf = {};
+  for (const d of vd.fields) vf[d.key] = f.v[d.key] !== undefined ? f.v[d.key] : first;
   try {
-    const j = await fz(env, 'POST', '/topups/validate-id', { category_id: catId, fields: f.v });
+    const j = await fz(env, 'POST', '/topups/validate-id', { category_id: vd.id, fields: vf });
     return json(env, { ok: true, valid: j.valid !== false, player: String(j.player_name || '').slice(0, 60), region: String(j.region || '').slice(0, 30) });
   } catch (e) {
     if (e.status === 422) return json(env, { ok: true, valid: false });
