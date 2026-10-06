@@ -18,7 +18,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 
 1. **Back up first.** Open your OLD dashboard → **Publish → Backup everything**. Keep that file.
 2. **Download the new project** (GitHub → branch `claude/geostore-website-template-bwou47` → Code → Download ZIP) and unzip it.
-3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":10`.
+3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":11`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
 6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`.
@@ -32,7 +32,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 ### 1 — Server (Cloudflare)
 1. Cloudflare → Workers & Pages → create a Worker → paste `worker/worker.js` → Deploy.
 2. Settings → **Variables and Secrets**: add a **Secret** named `ADMIN_TOKEN` (a long password only you know). Settings → **Bindings** → add a **KV namespace** named `ORDERS`.
-3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":10`.
+3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":11`.
 4. Do **not** add a Cron Trigger (the shop does not need one).
 
 ### 2 — Dashboard

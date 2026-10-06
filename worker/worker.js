@@ -28,7 +28,7 @@ const COINS = {
   binancepay: { name: 'Binance Pay', network: 'Binance Pay (inside the Binance app)', short: 'USDT', minutes: 120, graceMs: 24 * 3600000, throttle: 0, kind: 'manual' }
 };
 const BSC_USDT = '0x55d398326f99059ff775485246999027b3197955';          // USDT on BNB Smart Chain (18 decimals)
-const BSC_RPCS = ['https://bsc-dataseed.bnbchain.org', 'https://bsc-dataseed1.binance.org', 'https://bsc-dataseed.binance.org'];
+const BSC_RPCS = ['https://bsc-rpc.publicnode.com', 'https://bsc.drpc.org', 'https://1rpc.io/bnb', 'https://bsc-dataseed.bnbchain.org', 'https://bsc-dataseed1.binance.org', 'https://bsc-dataseed.binance.org'];   // several free nodes: some refuse log searches or rate-limit
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const PBKDF2_ITER = 10000;   // kept modest so it fits Cloudflare's free CPU limit; raise to 100000 on the paid plan
 // Cloudflare's FREE plan allows only 1,000 KV writes and 1,000 KV list calls per day,
@@ -567,19 +567,27 @@ async function bscRpc(method, params) {
   }
   throw new Error('BSC node unavailable' + (last && last.message ? ': ' + last.message : ''));
 }
-async function findBsc(env, o) {
-  const head = parseInt(await bscRpc('eth_blockNumber', []), 16), want = BigInt(o.amount) * 1000000000000n;   // 6-decimal order amount -> 18-decimal token units
+// Incoming USDT (BEP20) transfers to the order's wallet. Returns [{hash, value (18-decimal BigInt), exact, block, conf}] and fills notes.
+async function bscIn(o, notes) {
+  const head = parseInt(await bscRpc('eth_blockNumber', []), 16);
   const topicTo = '0x' + '0'.repeat(24) + o.wallet.toLowerCase().replace(/^0x/, '');
-  const age = (Date.now() - o.createdAt) / 1000 + 120, chunk = 4500;
-  const chunks = Math.min(4, Math.max(1, Math.ceil(age / 0.75 / chunk)));        // BSC makes a block roughly every 0.75-3 s
+  const age = (Date.now() - o.createdAt) / 1000 + 180, chunk = 2000;
+  const chunks = Math.min(8, Math.max(1, Math.ceil(age / 0.4 / chunk)));           // BSC now makes a block roughly every 0.45 s (older: up to 3 s)
+  const out = [];
   for (let c = 0; c < chunks; c++) {
     const to = head - c * chunk, from = Math.max(0, to - chunk + 1);
-    const logs = await bscRpc('eth_getLogs', [{ fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16), address: BSC_USDT, topics: [TRANSFER_TOPIC, null, topicTo] }]);
-    for (const l of logs) {
-      if (BigInt(l.data) !== want) continue;
-      if (head - parseInt(l.blockNumber, 16) < 10) continue;                      // wait for a few confirmations
-      if (!(await env.ORDERS.get('tx:' + l.transactionHash))) return l.transactionHash;
-    }
+    let logs;
+    try { logs = await bscRpc('eth_getLogs', [{ fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16), address: BSC_USDT, topics: [TRANSFER_TOPIC, null, topicTo] }]); }
+    catch (e) { if (notes) notes.push('BSC log search failed: ' + (e && e.message)); continue; }
+    for (const l of logs) out.push({ hash: l.transactionHash, value: BigInt(l.data), exact: BigInt(l.data) === BigInt(o.amount) * 1000000000000n, block: parseInt(l.blockNumber, 16), conf: head - parseInt(l.blockNumber, 16) });
+  }
+  if (notes) notes.push('BSC checked ' + chunks + ' block range(s) up to block ' + head + ', found ' + out.length + ' incoming USDT transfer(s)');
+  return out;
+}
+async function findBsc(env, o) {
+  for (const t of await bscIn(o, null)) {
+    if (!t.exact || t.conf < 10) continue;                       // wait for a few confirmations
+    if (!(await env.ORDERS.get('tx:' + t.hash))) return t.hash;
   }
   return null;
 }
@@ -942,7 +950,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 10 });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 11 });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
@@ -1049,7 +1057,14 @@ async function route(req, env) {
           info.seen = r.list.map(t => ({ amount: (Number(t.value) / 1e6).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''), when: new Date(t.ts).toISOString(), match: String(t.value) === String(o.amount) }));
           if (!r.list.length) info.notes.push('No incoming USDT found for this wallet since the order was created. Check the wallet address in Settings is the one that received the money.');
           else if (!r.list.some(t => String(t.value) === String(o.amount))) info.notes.push('Money arrived but not the exact amount ' + info.expects + ' (compare the list).');
-        } else info.notes.push('Automatic check details are only shown for TRC20 right now.');
+        } else if (COINS[coin].kind === 'bsc') {
+          try {
+            const l = await bscIn(o, info.notes);
+            info.seen = l.map(t => ({ amount: (Number(t.value / 1000000000000n) / 1e6).toString(), when: t.conf + ' blocks ago', match: t.exact }));
+            if (!l.length) info.notes.push('No incoming BEP20 USDT found for this wallet recently. Make sure the address in Settings is the one that received the money.');
+            else if (!l.some(t => t.exact)) info.notes.push('Money arrived but not the exact amount ' + info.expects + '.');
+          } catch (e) { info.notes.push('Could not reach any BNB Chain node: ' + (e && e.message)); }
+        } else info.notes.push('No details for this payment method.');
         if (o.status === 'pending') { lastLook.delete(o.id); const r2 = await checkOrder(env, o); info.after = r2.status; }
         return json(env, { ok: true, info });
       }
