@@ -21,7 +21,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":13`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
-6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`.
+6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`, `manifest.webmanifest`.
 
 > Always upload the **whole folder** — the shop is now several files.
 
@@ -129,6 +129,11 @@ Dashboard → **Products** → **+ New digital item (my own codes)**. Type the n
 
 ## Social media icons and best sellers
 Settings → **Social media & best sellers**. Paste your full links (https://…). Only the ones you fill appear as icons at the bottom of the shop. In the same box, type the brand names you want shown first (for example `itunes, pubg, roblox`). Then **Save settings → Sync → Download data.js → upload the site folder**.
+
+## Install the shop like an app (hides the browser bars)
+A website cannot hide the browser's own bottom bar. But when a customer (or you) installs the shop, it opens full screen with no browser bars at all:
+- **iPhone (Safari):** Share button → **Add to Home Screen**.
+- **Android (Chrome):** menu ⋮ → **Install app** / **Add to Home screen**.
 
 ## Dashboard
 The dashboard now has the dark glass look. **Home** shows revenue, paid orders, estimated profit and “needs you” for **Today / 7D / 30D / 1Y**, a performance chart, payment-method split and the latest orders. **Gift cards → Prices** shows what each amount **costs you** at FazerCards, what you sell it for and your profit. The sun/moon button switches to a light dashboard.
