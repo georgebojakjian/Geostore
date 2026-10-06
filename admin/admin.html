@@ -169,7 +169,7 @@
     <section class="view" id="v-products">
       <h1>Products</h1><p class="lead">Website code and your own digital items. Customers see a view-only preview; the full code is only delivered after payment. Gift cards from FazerCards are in the <b>Gift cards</b> tab.</p>
       <div id="plist">
-        <div class="bar"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="pSearch" type="search" placeholder="Search products…"><div class="seg" id="pFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="code">Code</button><button type="button" data-f="web">Websites</button><button type="button" data-f="digital">Digital</button><button type="button" data-f="hidden">Hidden</button></div></div><button class="btn btn-p" id="newP">+ New product</button></div>
+        <div class="bar"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="pSearch" type="search" placeholder="Search products…"><div class="seg" id="pFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="code">Code</button><button type="button" data-f="web">Websites</button><button type="button" data-f="digital">Digital</button><button type="button" data-f="hidden">Hidden</button></div></div><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-g" id="newDig">+ New digital item (my own codes)</button><button class="btn btn-p" id="newP">+ New product</button></span></div>
         <div class="panel tw" style="padding:6px 14px"><table><thead><tr><th>Product</th><th>Category</th><th style="width:120px">Price ($)</th><th>Live</th><th></th></tr></thead><tbody id="ptbody"></tbody></table>
         <p class="help" id="pcount" style="padding:10px 4px"></p><p style="text-align:center;padding-bottom:10px"><button class="btn btn-g btn-s" id="pMore" hidden>Show more</button></p></div>
         <p class="help">Tip: change a price right in the table, then press <b>Sync to server</b> — the shop picks up new prices by itself.</p>
@@ -233,6 +233,12 @@
         </div>
         <div class="bar" style="margin:14px 0 0"><span class="help" id="supSum"></span><button class="btn btn-p" id="supSave">Save selection</button></div>
         <p class="help">After saving, press <b>Publish → Sync to server</b>, then <b>Download data.js</b> and upload your site folder (the brand list lives in data.js; prices are always live).</p></div>
+      <div class="panel"><div class="bar"><h2 style="margin:0">4 · Game top-ups (PUBG, Free Fire, Mobile Legends…)</h2><button class="btn btn-p btn-s" id="tpLoad">Load game list</button></div>
+        <p class="help" id="tpMsg">The customer types their Player ID at checkout, you are paid first, then FazerCards charges the game account. Uses the same profit setting as gift cards (step 2).</p>
+        <div id="tpTools" hidden><input class="search" id="tpSearch" type="search" placeholder="Search a game…" style="margin:10px 0">
+          <div class="tw"><table><thead><tr><th style="width:36px"></th><th>Game</th><th style="width:96px"></th></tr></thead><tbody id="tpRows"></tbody></table></div></div>
+        <div class="bar" style="margin:14px 0 0"><span class="help" id="tpSum"></span><button class="btn btn-p" id="tpSave">Save games</button></div>
+        <p class="help">After saving: <b>Publish → Sync to server</b>, then <b>Download data.js</b> and upload the site folder.</p></div>
       <div class="panel" id="supPrices" hidden></div>
       <div class="panel" id="supMineBox" hidden><div class="bar"><h2 style="margin:0">Single-amount products (older way)</h2></div><div class="tw"><table><thead><tr><th>Product</th><th>Cost</th><th>My price</th><th></th></tr></thead><tbody id="supMine"></tbody></table></div></div>
     </section>
@@ -392,7 +398,7 @@
     }
     d.settings.autoWallets.usdt_bep20 = d.settings.autoWallets.usdt_bep20 || ''; d.settings.autoWallets.binancepay = d.settings.autoWallets.binancepay || '';
     d.settings.sup = d.settings.sup || {rule:{mode:'percent', value:15}, cats:{}};
-    d.settings.sup.rule = d.settings.sup.rule || {mode:'percent', value:15}; d.settings.sup.cats = d.settings.sup.cats || {};
+    d.settings.sup.rule = d.settings.sup.rule || {mode:'percent', value:15}; d.settings.sup.cats = d.settings.sup.cats || {}; d.settings.sup.over = d.settings.sup.over || {}; d.settings.sup.tcats = d.settings.sup.tcats || {};
     addPacks(d);
     d.products.forEach(function(p){
       if (!p.variants || !p.variants.length) p.variants = [{name:'Standard', sample:p.sample || '', full:p.full || ''}];
@@ -623,6 +629,9 @@
   $('newP').addEventListener('click', function(){
     openEditor({_new:true, id:uid(), title:'', category:'', price:9, tagline:'', type:'code', variants:[{name:'Standard', sample:TPL, full:TPL}], stock:[], used:0, published:true});
   });
+  $('newDig').addEventListener('click', function(){
+    openEditor({_new:true, id:uid(), title:'', category:'', price:5, tagline:'', type:'digital', icon:'🎁', variants:[{name:'Standard', sample:'', full:''}], stock:[], used:0, published:true});
+  });
   $('ptbody').addEventListener('click', function(e){
     var ed = e.target.closest('[data-edit]'), du = e.target.closest('[data-dup]');
     if (ed) openEditor(state.products.filter(function(p){return p.id===ed.dataset.edit;})[0]);
@@ -798,7 +807,7 @@
   function hash(str){ var h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (var i = 0, c; i < str.length; i++){ c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); } h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909); h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909); return (h2>>>0).toString(16) + (h1>>>0).toString(16); }
   function srvProduct(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, guide:p.guide||'', type:p.type, published:p.published!==false,
     variants:p.type==='code' ? p.variants.map(function(v){ return {name:v.name, full:v.full}; }) : [], stock:p.type==='digital' ? p.stock : []}; }
-  function supForServer(){ var s = state.settings.sup, cats = {}; Object.keys(s.cats).forEach(function(id){ cats[id] = {n: s.cats[id].n}; }); return {rule: s.rule, cats: cats}; }
+  function supForServer(){ var s = state.settings.sup, cats = {}; Object.keys(s.cats).forEach(function(id){ cats[id] = {n: s.cats[id].n}; }); var tc = {}; Object.keys(s.tcats || {}).forEach(function(id){ tc[id] = {n: s.tcats[id].n}; }); return {rule: s.rule, cats: cats, tcats: tc, over: s.over || {}}; }
   var syncing = false;
   function runSync(force){
     if (syncing) return; syncing = true;
@@ -995,13 +1004,49 @@
   function shownIds(){ var q = $('supSearch').value.trim().toLowerCase(); return supCats.filter(function(c){ if (supF === 'sel' && !supSel[c.category_id]) return false; if (supF === 'unsel' && supSel[c.category_id]) return false; return !q || (c.name || '').toLowerCase().indexOf(q) > -1; }).map(function(c){ return c.category_id; }); }
   $('supAll').addEventListener('click', function(){ shownIds().forEach(function(id){ supSel[id] = true; }); drawSup(); sumSup(); });
   $('supNone').addEventListener('click', function(){ shownIds().forEach(function(id){ delete supSel[id]; }); drawSup(); sumSup(); });
+  /* ---------- game top-ups ---------- */
+  var tpList = [], tpSel = {}, tpInit = false;
+  function tpDraw(){
+    $('tpTools').hidden = !tpList.length; if (!tpList.length) return;
+    var q = $('tpSearch').value.trim().toLowerCase();
+    var list = tpList.filter(function(c){ return !q || c.name.toLowerCase().indexOf(q) > -1; }).slice(0, 200);
+    $('tpRows').innerHTML = list.map(function(c){ var id = esc(c.category_id), lg = safeUrl(c.imageurl); return '<tr><td><input type="checkbox" data-tp="' + id + '"' + (tpSel[c.category_id] ? ' checked' : '') + ' aria-label="Select"></td><td><div style="display:flex;gap:10px;align-items:center">' + (lg ? '<img class="logo-s" loading="lazy" referrerpolicy="no-referrer" src="' + esc(lg) + '" alt="">' : '') + '<b>' + esc(c.name) + '</b></div></td><td><button class="btn btn-g btn-s" data-tpr="' + id + '">Prices</button></td></tr>'; }).join('') || '<tr><td colspan="3" class="empty">Nothing matches.</td></tr>';
+    var n = Object.keys(tpSel).filter(function(k){ return tpSel[k]; }).length; $('tpSum').textContent = n + ' game' + (n === 1 ? '' : 's') + ' selected · saved: ' + Object.keys(state.settings.sup.tcats).length;
+  }
+  $('tpLoad').addEventListener('click', function(){
+    var b = this; b.disabled = true; $('tpMsg').textContent = 'Loading…';
+    api('/api/admin/supplier/topups').then(function(r){
+      tpList = r.items || []; if (!tpInit){ tpInit = true; Object.keys(state.settings.sup.tcats).forEach(function(id){ tpSel[id] = true; }); }
+      $('tpMsg').textContent = tpList.length + ' games available. Tick the ones you want to sell.'; b.disabled = false; tpDraw();
+    }).catch(function(e){ b.disabled = false; $('tpMsg').textContent = '❌ ' + e.message; });
+  });
+  $('tpSearch').addEventListener('input', tpDraw);
+  $('tpRows').addEventListener('change', function(e){ var t = e.target; if (!t.dataset.tp) return; if (t.checked) tpSel[t.dataset.tp] = true; else delete tpSel[t.dataset.tp]; tpDraw(); });
+  $('tpSave').addEventListener('click', function(){
+    var tc = {}; tpList.forEach(function(c){ if (tpSel[c.category_id]) tc[c.category_id] = {n: c.name, logo: safeUrl(c.imageurl)}; });
+    Object.keys(state.settings.sup.tcats).forEach(function(id){ if (tpSel[id] && !tc[id]) tc[id] = state.settings.sup.tcats[id]; });
+    state.settings.sup.tcats = tc; save(true); tpDraw(); toast('Saved — now Sync to server and update data.js');
+  });
+  $('tpRows').addEventListener('click', function(e){
+    var b = e.target.closest('[data-tpr]'); if (!b) return;
+    var id = b.dataset.tpr, box = $('supPrices'), c = tpList.filter(function(x){ return x.category_id === id; })[0]; box.hidden = false; box.innerHTML = '<p class="help">Loading what FazerCards charges you…</p>'; box.scrollIntoView({behavior:'smooth', block:'center'});
+    api('/api/admin/supplier/topup-offers?category_id=' + encodeURIComponent(id)).then(function(r){
+      var ovr = state.settings.sup.over, rows = (r.offers || []).map(function(o){ var cost = +o.price_usd, ok = 'T-' + id + ':' + o.offer_id, mine = +ovr[ok] > 0, price = mine ? Math.max(+ovr[ok], Math.round((cost + .01) * 100) / 100) : sellPrice(cost); return '<tr><td><b>' + esc(o.name) + '</b></td><td>' + money(cost) + '</td><td><input type="number" min="0" step="0.01" value="' + price.toFixed(2) + '" data-ov="' + esc(ok) + '" data-cost="' + cost + '" style="width:92px;padding:6px 8px" aria-label="Your price"> ' + (mine ? '<button class="btn btn-g btn-s" data-ovreset="' + esc(ok) + '">Reset</button>' : '') + '</td><td style="color:var(--ok)">+' + money(price - cost) + '</td></tr>'; }).join('');
+      box.innerHTML = '<div class="bar"><h2 style="margin:0">' + esc((c && c.name) || r.name || id) + ' — prices</h2><button class="btn btn-g btn-s" id="prClose">Close</button></div><p class="help" style="margin-bottom:10px">Type a new price to change one amount only. “Reset” goes back to your automatic profit rule. Then press Sync to server.</p><div class="tw"><table class="pricetable"><thead><tr><th>Amount</th><th>Your cost</th><th>You sell for</th><th>Profit</th></tr></thead><tbody>' + (rows || '<tr><td colspan="4" class="empty">No amounts.</td></tr>') + '</tbody></table></div>';
+      $('prClose').onclick = function(){ box.hidden = true; };
+      box.onchange = function(e){ var t = e.target; if (!t.dataset.ov) return; var v = Math.round((+t.value || 0) * 100) / 100, cost = +t.dataset.cost; if (v <= cost){ toast('Your price must be higher than your cost ($' + cost.toFixed(2) + ')'); t.value = sellPrice(cost).toFixed(2); return; } state.settings.sup.over[t.dataset.ov] = v; save(true); toast('Price saved — press Sync to server'); if (!t.parentNode.querySelector('[data-ovreset]')) t.insertAdjacentHTML('afterend', ' <button class="btn btn-g btn-s" data-ovreset="' + esc(t.dataset.ov) + '">Reset</button>'); };
+      box.onclick = function(e){ var b2 = e.target.closest('[data-ovreset]'); if (!b2) return; delete state.settings.sup.over[b2.dataset.ovreset]; save(true); toast('Back to automatic price — press Sync to server'); var cl = e.target.closest('tr').querySelector('[data-ov]'); cl.value = sellPrice(+cl.dataset.cost).toFixed(2); b2.remove(); };
+    }).catch(function(er){ box.innerHTML = '<p class="help">❌ ' + esc(er.message) + '</p>'; });
+  });
   $('supCats').addEventListener('click', function(e){
     var b = e.target.closest('[data-pr]'); if (!b) return;
     var id = b.dataset.pr, box = $('supPrices'), c = supCats.filter(function(x){ return x.category_id === id; })[0]; box.hidden = false; box.innerHTML = '<p class="help">Loading what FazerCards charges you…</p>'; box.scrollIntoView({behavior:'smooth', block:'center'});
     api('/api/admin/supplier/offers?category_id=' + encodeURIComponent(id)).then(function(r){
-      var rows = (r.offers || []).map(function(o){ var cost = +o.price_usd, price = sellPrice(cost), pr = price - cost; return '<tr><td><b>' + esc(o.name) + '</b></td><td>' + money(cost) + '</td><td><b>' + money(price) + '</b></td><td style="color:var(--ok)">+' + money(pr) + ' <span class="help">(' + Math.round(pr / cost * 100) + '%)</span></td><td>' + (o.stock == null ? '–' : esc(o.stock)) + '</td><td>' + (+o.max_order_quantity > 0 ? esc(o.max_order_quantity) : '–') + '</td></tr>'; }).join('');
+      var ovr = state.settings.sup.over, rows = (r.offers || []).map(function(o){ var cost = +o.price_usd, ok = id + ':' + o.card_id, mine = +ovr[ok] > 0, price = mine ? Math.max(+ovr[ok], Math.round((cost + .01) * 100) / 100) : sellPrice(cost), pr = price - cost; return '<tr><td><b>' + esc(o.name) + '</b></td><td>' + money(cost) + '</td><td><input type="number" min="0" step="0.01" value="' + price.toFixed(2) + '" data-ov="' + esc(ok) + '" data-cost="' + cost + '" style="width:92px;padding:6px 8px" aria-label="Your price"> ' + (mine ? '<button class="btn btn-g btn-s" data-ovreset="' + esc(ok) + '">Reset</button>' : '') + '</td><td style="color:var(--ok)">+' + money(pr) + ' <span class="help">(' + Math.round(pr / cost * 100) + '%)</span></td><td>' + (o.stock == null ? '–' : esc(o.stock)) + '</td><td>' + (+o.max_order_quantity > 0 ? esc(o.max_order_quantity) : '–') + '</td></tr>'; }).join('');
       box.innerHTML = '<div class="bar"><h2 style="margin:0">' + esc((c && c.name) || r.name || id) + ' — what it costs you</h2><button class="btn btn-g btn-s" id="prClose">Close</button></div><p class="help" style="margin-bottom:10px">“Your cost” is what FazerCards charges you per card. “You sell for” uses your profit setting (' + (supRule().mode === 'fixed' ? '+$' + supRule().value : '+' + supRule().value + '%') + ').</p><div class="tw"><table class="pricetable"><thead><tr><th>Amount</th><th>Your cost</th><th>You sell for</th><th>Your profit</th><th>In stock</th><th>Max per order</th></tr></thead><tbody>' + (rows || '<tr><td colspan="6" class="empty">No amounts available.</td></tr>') + '</tbody></table></div>';
       $('prClose').onclick = function(){ box.hidden = true; };
+      box.onchange = function(e){ var t = e.target; if (!t.dataset.ov) return; var v = Math.round((+t.value || 0) * 100) / 100, cost = +t.dataset.cost; if (v <= cost){ toast('Your price must be higher than your cost ($' + cost.toFixed(2) + ')'); t.value = sellPrice(cost).toFixed(2); return; } state.settings.sup.over[t.dataset.ov] = v; save(true); toast('Price saved — press Sync to server'); if (!t.parentNode.querySelector('[data-ovreset]')) t.insertAdjacentHTML('afterend', ' <button class="btn btn-g btn-s" data-ovreset="' + esc(t.dataset.ov) + '">Reset</button>'); };
+      box.onclick = function(e){ var b2 = e.target.closest('[data-ovreset]'); if (!b2) return; delete state.settings.sup.over[b2.dataset.ovreset]; save(true); toast('Back to automatic price — press Sync to server'); var cl = e.target.closest('tr').querySelector('[data-ov]'); cl.value = sellPrice(+cl.dataset.cost).toFixed(2); b2.remove(); };
     }).catch(function(er){ box.innerHTML = '<p class="help">❌ ' + esc(er.message) + '</p>'; });
   });
   $('supCats').addEventListener('change', function(e){
@@ -1058,7 +1103,8 @@
       if (!b.logo && c.logo) b.logo = c.logo;
       b.regions.push({cat: id, region: c.region || 'GLOBAL'});
     });
-    return {brands: Object.keys(by).map(function(k){ return by[k]; })};
+    var tc = state.settings.sup.tcats || {};
+    return {brands: Object.keys(by).map(function(k){ return by[k]; }), topups: Object.keys(tc).map(function(id){ return {id: id, name: tc[id].n, logo: tc[id].logo || ''}; })};
   }
   function downloadData(){
     var s = state.settings, pubSettings = {storeName:s.storeName, tagline:s.tagline, email:s.email, whatsapp:s.whatsapp || '', telegram:s.telegram || '', apiUrl:s.apiUrl || '', allAccess:s.allAccess, digitalSection:s.digitalSection, social:s.social || {}, featured:s.featured || '', wallets:s.wallets};

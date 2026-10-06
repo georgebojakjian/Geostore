@@ -135,7 +135,7 @@ function priceCart(cat, raw, gp) {
     const p = (cat.products && cat.products[id]) || gp[id];
     if (!p || p.published === false) return { error: 'One of the items is not available any more' };
     const g = byProd[id] || (byProd[id] = { p, all: false, styles: new Set() });
-    if (p.type === 'digital') { g.all = true; g.q = Math.min(10, (g.q || 0) + Math.max(1, Math.min(10, Math.floor(Number(it.q) || 1)))); continue; }
+    if (p.type === 'digital') { g.all = true; g.q = p.topup ? 1 : Math.min(10, (g.q || 0) + Math.max(1, Math.min(10, Math.floor(Number(it.q) || 1)))); continue; }
     if (it.v === undefined || it.v === null || it.v === 'all') g.all = true;
     else {
       const n = Number(it.v);
@@ -147,7 +147,7 @@ function priceCart(cat, raw, gp) {
   if (hasAll) lines.push({ id: 'ALL', title: cat.allAccess.title || 'All-Access Pass', type: 'all', mode: 'all', price: Number(cat.allAccess.price) });
   for (const id of Object.keys(byProd)) {
     const g = byProd[id], p = g.p;
-    if (p.type === 'digital') { const q = g.q || 1; lines.push({ id, title: p.title, type: 'digital', mode: 'all', unit: Number(p.price), qty: q, price: round2(Number(p.price) * q), supplier: p.supplier || undefined, gift: p.gift || undefined }); continue; }
+    if (p.type === 'digital') { const q = g.q || 1; lines.push({ id, title: p.title, type: 'digital', mode: 'all', unit: Number(p.price), qty: q, price: round2(Number(p.price) * q), supplier: p.supplier || undefined, gift: p.gift || undefined, topup: p.topup || undefined, fields: p.fields || undefined }); continue; }
     if (hasAll) continue;                                  // already included in All-Access
     const n = (p.variants || []).length, sp = stylePriceOf(p);
     if (n < 2 || g.all || g.styles.size >= n || g.styles.size * sp >= p.price) lines.push({ id, title: p.title, type: 'code', mode: 'all', price: Number(p.price) });
@@ -289,6 +289,13 @@ async function checkSupplierLines(env, cat, lines) {
   let need = 0;
   for (const l of lines) {
     const p = cat.products[l.id] || (l.gift ? { title: l.title, supplier: l.supplier } : null); if (!p || !p.supplier) continue;
+    if (p.supplier.topup) {
+      let t; try { t = tpFind(await fzTopup(env, p.supplier.cat), p.supplier.card); } catch (e) { return 'This item is temporarily unavailable. Please try again later.'; }
+      const tc = Number(t && t.price_usd);
+      if (!t || !(tc > 0)) return '"' + p.title + '" is not available right now.';
+      if (tc >= l.price) return 'This item is being repriced and cannot be ordered right now. Please try again later.';
+      l.supplier = { cat: p.supplier.cat, card: p.supplier.card, topup: true, cost: tc }; need += tc; continue;
+    }
     let offer;
     try { offer = fzFind(await fzOffers(env, p.supplier.cat), p.supplier.card); } catch (e) { return 'This item is temporarily unavailable. Please try again later.'; }
     const qty = qtyOf(l);
@@ -313,6 +320,69 @@ function giftPrice(rule, cost) {
   const raw = rule && rule.mode === 'fixed' ? c + v : c * (1 + v / 100);
   return Math.max(Math.ceil(raw * 100 - 1e-7) / 100, round2(c + 0.01));
 }
+// your own fixed price for one amount (set in the dashboard) beats the percent / fixed rule, but never goes below cost + 1 cent
+function giftSell(sup, catId, card, cost) {
+  const ov = Number(sup && sup.over && sup.over[catId + ':' + card]);
+  return ov > 0 ? Math.max(round2(ov), round2(Number(cost) + 0.01)) : giftPrice(sup.rule, cost);
+}
+/* ---- game top-ups (FazerCards /topups): the customer gives a Player ID, FazerCards delivers to the game account ---- */
+const TOPUP_ID = /^t:([A-Za-z0-9_-]{1,80}):([A-Za-z0-9_.-]{1,80})$/;
+const tpCache = new Map();
+async function fzTopup(env, catId) {
+  const c = tpCache.get(catId); if (c && Date.now() - c.t < 20000) return c.v;
+  const v = await fz(env, 'GET', '/topups/offers?category_id=' + encodeURIComponent(catId));
+  tpCache.set(catId, { t: Date.now(), v }); if (tpCache.size > 100) tpCache.clear();
+  return v;
+}
+const tpFind = (j, offer) => ((j && j.offers) || []).find(o => String(o.offer_id) === String(offer));
+const optVal = o => typeof o === 'string' ? o : o && (o.value !== undefined ? o.value : o.id !== undefined ? o.id : o.key);
+function topupFieldDefs(j) {
+  return ((j && j.fields) || []).filter(f => f && /^[A-Za-z0-9_.-]{1,40}$/.test(String(f.key))).slice(0, 8).map(f => ({ key: String(f.key), label: String(f.label || f.key).slice(0, 60), type: f.type === 'select' ? 'select' : 'text', options: Array.isArray(f.options) ? f.options.map(o => ({ value: String(optVal(o)), label: String((o && o.label) || optVal(o)) })).filter(o => o.value && o.value !== 'undefined').slice(0, 80) : [] }));
+}
+// the customer's answers (Player ID, server...) checked against the fields FazerCards asks for
+function cleanTopupFields(defs, given) {
+  const out = {}; given = given && typeof given === 'object' ? given : {};
+  for (const d of defs) {
+    const v = String(given[d.key] == null ? '' : given[d.key]).trim();
+    if (!v) return { error: 'Please fill in "' + d.label + '".' };
+    if (v.length > 80 || /[\u0000-\u001f<>"'`\\]/.test(v)) return { error: '"' + d.label + '" has characters that are not allowed.' };
+    if (d.type === 'select' && d.options.length && !d.options.some(o => o.value === v)) return { error: 'Please choose a valid "' + d.label + '".' };
+    out[d.key] = v;
+  }
+  return { v: out };
+}
+async function topupOffers(env, cat, catId) {
+  const sup = cat && cat.sup; if (!sup || !sup.tcats || !sup.tcats[catId]) return null;
+  const j = await fzTopup(env, catId);
+  return { name: sup.tcats[catId].n || j.name || catId, fields: topupFieldDefs(j), offers: (j.offers || []).filter(o => Number(o.price_usd) > 0).map(o => ({ offer: String(o.offer_id), name: String(o.name), cost: Number(o.price_usd) })) };
+}
+const topupSell = (sup, catId, offer, cost) => giftSell(sup, 'T-' + catId, offer, cost);
+async function topupRoute(req, env, url) {
+  if (tooMany(giftHits, req.headers.get('cf-connecting-ip') || 'x', 90, 10 * 60000)) return fail(env, 'Too many requests. Please wait a moment.', 429);
+  const catId = String(url.searchParams.get('cat') || '');
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(catId)) return fail(env, 'Not found', 404);
+  const cat = await getCatalog(env);
+  let t; try { t = await topupOffers(env, cat, catId); } catch (e) { return fail(env, 'This item is temporarily unavailable. Please try again later.', 503); }
+  if (!t) return fail(env, 'Not found', 404);
+  return json(env, { ok: true, name: t.name, fields: t.fields, offers: t.offers.map(o => ({ offer: o.offer, name: o.name, price: topupSell(cat.sup, catId, o.offer, o.cost) })) });
+}
+const tvHits = new Map();
+async function topupValidate(req, env) {
+  if (tooMany(tvHits, req.headers.get('cf-connecting-ip') || 'x', 20, 10 * 60000)) return fail(env, 'Too many checks. Please wait a few minutes.', 429);
+  const b = await req.json().catch(() => null) || {}, catId = String(b.cat || '');
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(catId)) return fail(env, 'Not found', 404);
+  const cat = await getCatalog(env);
+  let t; try { t = await topupOffers(env, cat, catId); } catch (e) { return fail(env, 'Could not check right now. You can still continue.', 503); }
+  if (!t) return fail(env, 'Not found', 404);
+  const f = cleanTopupFields(t.fields, b.fields); if (f.error) return fail(env, f.error);
+  try {
+    const j = await fz(env, 'POST', '/topups/validate-id', { category_id: catId, fields: f.v });
+    return json(env, { ok: true, valid: j.valid !== false, player: String(j.player_name || '').slice(0, 60), region: String(j.region || '').slice(0, 30) });
+  } catch (e) {
+    if (e.status === 422) return json(env, { ok: true, valid: false });
+    return json(env, { ok: true, valid: null });                // this game cannot be checked in advance
+  }
+}
 async function giftOffers(env, cat, catId) {
   const sup = cat && cat.sup; if (!sup || !sup.cats || !sup.cats[catId]) return null;
   const j = await fzOffers(env, catId);
@@ -326,20 +396,29 @@ async function giftRoute(req, env, url) {
   const cat = await getCatalog(env);
   let g; try { g = await giftOffers(env, cat, catId); } catch (e) { return fail(env, 'This item is temporarily unavailable. Please try again later.', 503); }
   if (!g) return fail(env, 'Not found', 404);
-  return json(env, { ok: true, name: g.name, offers: g.offers.map(o => ({ card: o.card, name: o.name, price: giftPrice(cat.sup.rule, o.cost), inStock: o.stock == null || o.stock > 0, max: Math.max(1, Math.min(o.max, o.stock == null ? 10 : o.stock)) })) });
+  return json(env, { ok: true, name: g.name, offers: g.offers.map(o => ({ card: o.card, name: o.name, price: giftSell(cat.sup, catId, o.card, o.cost), inStock: o.stock == null || o.stock > 0, max: Math.max(1, Math.min(o.max, o.stock == null ? 10 : o.stock)) })) });
 }
 // Turn "g:<category>:<card>" cart ids into priced products (the server decides every price)
 async function resolveGift(env, cat, raw) {
   const gp = {};
   if (new Set(raw.map(it => String((it && it.id) || '').split(':')[1]).filter(Boolean)).size > 8) return { error: 'Please order gift cards from at most 8 different brands at a time.' };
   for (const it of raw.slice(0, 30)) {
-    const id = String((it && it.id) || ''), m = id.match(GIFT_ID); if (!m || gp[id]) continue;
+    const id = String((it && it.id) || ''), tm = id.match(TOPUP_ID);
+    if (tm && !gp[id]) {
+      let t; try { t = await topupOffers(env, cat, tm[1]); } catch (e) { return { error: 'This item is temporarily unavailable. Please try again later.' }; }
+      const of = t && t.offers.find(o => o.offer === tm[2]);
+      if (!of) return { error: 'One of the items is not available any more' };
+      const fl = cleanTopupFields(t.fields, it.f); if (fl.error) return { error: fl.error };
+      gp[id] = { title: t.name + ' — ' + of.name, price: topupSell(cat.sup, tm[1], of.offer, of.cost), type: 'digital', gift: true, topup: true, fields: fl.v, supplier: { cat: tm[1], card: tm[2], topup: true } };
+      continue;
+    }
+    const m = id.match(GIFT_ID); if (!m || gp[id]) continue;
     let g; try { g = await giftOffers(env, cat, m[1]); } catch (e) { return { error: 'This item is temporarily unavailable. Please try again later.' }; }
     const of = g && g.offers.find(o => o.card === m[2]);
     if (!of) return { error: 'One of the items is not available any more' };
     const wantQ = Math.max(1, Math.min(10, Math.floor(Number((raw.find(x => x && x.id === id) || {}).q) || 1)));
     if (of.stock != null && of.stock < wantQ) return { error: of.stock > 0 ? 'Only ' + of.stock + ' of "' + g.name + ' ' + of.name + '" left right now.' : '"' + g.name + ' ' + of.name + '" is out of stock right now.' };
-    gp[id] = { title: g.name + ' — ' + of.name, price: giftPrice(cat.sup.rule, of.cost), type: 'digital', gift: true, supplier: { cat: m[1], card: m[2] } };
+    gp[id] = { title: g.name + ' — ' + of.name, price: giftSell(cat.sup, m[1], of.card, of.cost), type: 'digital', gift: true, supplier: { cat: m[1], card: m[2] } };
   }
   return { gp };
 }
@@ -379,6 +458,19 @@ async function fulfil(env, o, force) {
     f.tries++; changed = true;
     try {
       let order;
+      if (l.supplier.topup) {
+        if (!f.sid) {
+          const j = await fz(env, 'POST', '/topups/order', { category_id: l.supplier.cat, offer_id: l.supplier.card, fields: l.fields || {} }, 'tp-' + o.id + '-' + i);
+          order = j.order; f.sid = order && (order.id || order.order_id || order.public_id) || null;
+        } else order = (await fz(env, 'GET', '/orders/' + encodeURIComponent(f.sid))).order;
+        const st = String((order && order.status) || '').toLowerCase(), who = Object.keys(l.fields || {}).map(k => l.fields[k]).join(' / ');
+        if (/refund|cancel|fail|reject|error/.test(st)) { f.state = 'stuck'; f.error = 'FazerCards says: ' + st + ' — refund your customer or retry'; }
+        else if (/complet|done|deliver|success/.test(st)) { o.codeList = o.codeList || {}; o.codeList[l.id] = ['✅ Top-up delivered to ' + who]; o.codes[l.id] = o.codeList[l.id][0]; f.state = 'done'; f.error = ''; f.doneAt = Date.now(); }
+        else { f.state = 'wait'; f.error = ''; }
+        if (f.state === 'wait' && f.tries >= 60) f.state = 'stuck';
+        if (f.state === 'stuck' && !f.alerted) { f.alerted = true; notify(env, '⚠️ <b>Needs you</b> — top-up problem for order #' + o.id.slice(0, 8).toUpperCase() + ' (' + esc(who) + ')\n' + esc(f.error || '')); }
+        continue;
+      }
       if (!f.sid) {
         const j = await fz(env, 'POST', '/giftcards/order', { category_id: l.supplier.cat, card_id: l.supplier.card, quantity: qtyOf(l) }, 'gs-' + o.id + '-' + i);
         order = j.order; f.sid = order && (order.id || order.order_id || order.public_id) || null;
@@ -879,7 +971,11 @@ function cleanSup(x) {
   if (!x || typeof x !== 'object') return undefined;
   const r = x.rule || {}, mode = r.mode === 'fixed' ? 'fixed' : 'percent', value = Math.min(Math.max(Number(r.value) || 0, 0), mode === 'fixed' ? 1000 : 500), cats = {};
   Object.keys(x.cats || {}).slice(0, 4000).forEach(id => { if (/^[A-Za-z0-9_-]{1,80}$/.test(id)) cats[id] = { n: String((x.cats[id] && x.cats[id].n) || '').slice(0, 80) }; });
-  return { rule: { mode, value }, cats };
+  const tcats = {};
+  Object.keys(x.tcats || {}).slice(0, 500).forEach(id => { if (/^[A-Za-z0-9_-]{1,80}$/.test(id)) tcats[id] = { n: String((x.tcats[id] && x.tcats[id].n) || '').slice(0, 80) }; });
+  const over = {};
+  Object.keys(x.over || {}).slice(0, 4000).forEach(k => { const v = Number(x.over[k]); if (/^[A-Za-z0-9_-]{1,80}:[A-Za-z0-9_.-]{1,80}$/.test(k) && v > 0 && v < 100000) over[k] = round2(v); });
+  return { rule: { mode, value }, cats, tcats, over };
 }
 async function adminIndex(req, env) {
   const b = await req.json().catch(() => null);
@@ -963,7 +1059,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 12 });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 13 });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
@@ -976,6 +1072,8 @@ async function route(req, env) {
     let pm = path.match(/^\/api\/preview\/([A-Za-z0-9_-]{1,64})\/(\d{1,2})$/);
     if (pm && req.method === 'GET') return await fullPreview(req, env, pm[1], +pm[2]);
     if (path === '/api/gift/offers' && req.method === 'GET') return await giftRoute(req, env, url);
+    if (path === '/api/topup/offers' && req.method === 'GET') return await topupRoute(req, env, url);
+    if (path === '/api/topup/validate' && req.method === 'POST') return await topupValidate(req, env);
     if (path === '/api/chat/send' && req.method === 'POST') return await chatSend(req, env);
     if (path === '/api/chat/poll' && req.method === 'GET') return await chatPoll(req, env, url);
     let tm = path.match(/^\/api\/telegram\/([A-Za-z0-9]{16,64})$/);
@@ -1018,6 +1116,19 @@ async function route(req, env) {
         const q = new URLSearchParams({ limit: '500', include_ui: '1' }); const cur = url.searchParams.get('cursor'); if (cur) q.set('cursor', cur);
         const j = await fz(env, 'GET', '/giftcards?' + q);
         return json(env, { ok: true, items: j.items || [], meta: j.meta || {} });
+      }
+      if (path === '/api/admin/supplier/topups' && req.method === 'GET') {
+        const items = []; let cursor = '';
+        for (let i = 0; i < 6; i++) {
+          const j = await fz(env, 'GET', '/topups?limit=500&include_ui=1' + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''));
+          (j.items || []).forEach(c => items.push({ category_id: String(c.category_id), name: String(c.name || ''), imageurl: c.imageurl || null, note: c.note || '' }));
+          cursor = (j.meta && j.meta.next_cursor) || ''; if (!cursor) break;
+        }
+        return json(env, { ok: true, items });
+      }
+      if (path === '/api/admin/supplier/topup-offers' && req.method === 'GET') {
+        const j = await fz(env, 'GET', '/topups/offers?include_ui=1&category_id=' + encodeURIComponent(url.searchParams.get('category_id') || ''));
+        return json(env, { ok: true, name: j.name, imageurl: j.imageurl || null, note: j.note || '', offers: j.offers || [], fields: j.fields || [] });
       }
       if (path === '/api/admin/supplier/offers' && req.method === 'GET') {
         const j = await fz(env, 'GET', '/giftcards/cards?include_ui=1&category_id=' + encodeURIComponent(url.searchParams.get('category_id') || ''));

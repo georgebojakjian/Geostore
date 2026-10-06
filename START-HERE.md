@@ -18,7 +18,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 
 1. **Back up first.** Open your OLD dashboard → **Publish → Backup everything**. Keep that file.
 2. **Download the new project** (GitHub → branch `claude/geostore-website-template-bwou47` → Code → Download ZIP) and unzip it.
-3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":12`.
+3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":13`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
 6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`.
@@ -32,7 +32,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 ### 1 — Server (Cloudflare)
 1. Cloudflare → Workers & Pages → create a Worker → paste `worker/worker.js` → Deploy.
 2. Settings → **Variables and Secrets**: add a **Secret** named `ADMIN_TOKEN` (a long password only you know). Settings → **Bindings** → add a **KV namespace** named `ORDERS`.
-3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":12`.
+3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":13`.
 4. Do **not** add a Cron Trigger (the shop does not need one).
 
 ### 2 — Dashboard
@@ -108,6 +108,27 @@ In the gift-card window every amount has a **− 1 +** stepper (limited by what 
 
 ## Customers paying from Binance to your Binance address
 In **Settings → Where customers pay you** tick **“This is a Binance deposit address”** under the TRC20/BEP20 address if it is a Binance address. At checkout customers then choose **Another wallet or exchange** or **Binance app**. If they pick the Binance app they see: *“a Binance→Binance transfer is internal and can take a while — if your order is not confirmed within 1 hour, contact us”* with WhatsApp / chat buttons. Those orders stay open for 3 hours, you get a Telegram alert immediately, and after 1 hour they show up as **needs you** in the dashboard so you can check Binance and press **Mark paid** (delivery is then automatic). Customers using any other wallet continue the normal way.
+
+---
+
+## Game top-ups (PUBG, Free Fire, Mobile Legends…)
+1. Dashboard → **🎁 Gift cards** → step **4 · Game top-ups** → **Load game list** → tick the games you want → **Save games**.
+2. **Publish → Sync to server**, then **Download data.js** and upload the `site` folder.
+3. Customers open the game, type their **Player ID** (and server if asked), can press **Check my ID**, choose an amount and pay like normal. After payment the server asks FazerCards to top up that account.
+4. A top-up is **not instant**: the order shows “being prepared” until FazerCards completes it. If FazerCards refunds or fails, you get a Telegram alert and the order shows **needs you** — refund your customer or press **Retry delivery**.
+5. Prices use your profit rule (step 2). To change one amount, press **Prices** next to the game and type the new price.
+
+> I have not been able to test a real top-up (it needs your FazerCards balance). Please buy ONE small top-up for your own game account first.
+
+## Your own digital items (not from FazerCards)
+Dashboard → **Products** → **+ New digital item (my own codes)**. Type the name, the price, and paste your codes (one per line). Each sale hands out the next unused code automatically and the item shows “out of stock” when the list is empty.
+
+## Change one price only
+- **Your own products:** Products → change the price in the table → **Sync to server**.
+- **Gift cards / top-ups:** Gift cards → **Prices** next to a brand → type a new price on that row (**Reset** returns to your automatic profit) → **Sync to server**. Prices never go below cost + 1 cent.
+
+## Social media icons and best sellers
+Settings → **Social media & best sellers**. Paste your full links (https://…). Only the ones you fill appear as icons at the bottom of the shop. In the same box, type the brand names you want shown first (for example `itunes, pubg, roblox`). Then **Save settings → Sync → Download data.js → upload the site folder**.
 
 ## Dashboard
 The dashboard now has the dark glass look. **Home** shows revenue, paid orders, estimated profit and “needs you” for **Today / 7D / 30D / 1Y**, a performance chart, payment-method split and the latest orders. **Gift cards → Prices** shows what each amount **costs you** at FazerCards, what you sell it for and your profit. The sun/moon button switches to a light dashboard.

@@ -29,6 +29,7 @@
   var WEBS = ALL.filter(function(p){ return p.group === 'website'; });
   var CODES = ALL.filter(function(p){ return p.group !== 'website'; });
   var DIGITAL = live.filter(function(p){ return p.type === 'digital'; });
+  var TOPUPS = ((D.gift && D.gift.topups) || []).filter(function(t){ return t && t.id && t.name; });
   var BRANDS = ((D.gift && D.gift.brands) || []).filter(function(b){ return b && b.name && b.regions && b.regions.length; });
   var HOT = String(S.featured || 'itunes,apple,pubg,roblox,google play,steam,playstation,xbox,free fire,netflix,amazon,spotify,razer,fortnite,mobile legends,valorant').toLowerCase().split(',').map(function(x){ return x.trim(); }).filter(Boolean);
   function hotRank(name){ var n = String(name || '').toLowerCase(); for (var i = 0; i < HOT.length; i++) if (n.indexOf(HOT[i]) > -1) return i; return 999; }
@@ -164,7 +165,7 @@
   /* ---------------- shop: tabs, chips, grids ---------------- */
   var tab = null, q = '';
   var tabs = [];
-  if (BRANDS.length || DIGITAL.length) tabs.push({id:'gift', label:'Gift cards', n:BRANDS.length + DIGITAL.length});
+  if (BRANDS.length || DIGITAL.length || TOPUPS.length) tabs.push({id:'gift', label:'Gift cards & games', n:BRANDS.length + DIGITAL.length + TOPUPS.length});
   if (WEBS.length) tabs.push({id:'sites', label:'Websites', n:WEBS.length});
   if (CODES.length) tabs.push({id:'code', label:'Code', n:CODES.length});
   function showTab(id){
@@ -224,6 +225,9 @@
     var n = b.regions.length;
     return '<button type="button" class="brand-tile" data-brand-id="' + esc(b.id || b.name) + '"><span class="logo-box">' + logoHTML(b.logo, b.name) + '</span><b>' + esc(b.name) + '</b><small>' + (n > 1 ? n + ' regions' : esc(regionLabel(b.regions[0].region))) + '</small></button>';
   }
+  function topupTile(t){
+    return '<button type="button" class="brand-tile" data-topup="' + esc(t.id) + '"><span class="logo-box">' + logoHTML(t.logo, t.name) + '</span><b>' + esc(t.name) + '</b><small>Game top-up</small></button>';
+  }
   function digitalTile(p){
     return '<button type="button" class="brand-tile" data-dbuy="' + esc(p.id) + '"><span class="logo-box">' + (safeUrl(p.icon) ? logoHTML(p.icon, p.title) : '<span style="font-size:2rem">' + esc(p.icon || '🎁') + '</span>') + '</span><b>' + esc(p.title) + '</b><small>' + money(p.price) + ' · tap to add</small></button>';
   }
@@ -233,16 +237,19 @@
     $('gMore').hidden = list.length <= gshown; $('gMore').textContent = 'Show more (' + (list.length - gshown) + ' more)';
     $('brands').innerHTML = list.slice(0, gshown).map(brandTile).join('');
     $('brands').hidden = !list.length;
-    $('dgrid').className = 'brands'; $('dgrid').innerHTML = gcat === 'All' ? DIGITAL.map(digitalTile).join('') : '';
+    $('dgrid').className = 'brands'; $('dgrid').innerHTML = gcat === 'All' ? TOPUPS.map(topupTile).join('') + DIGITAL.map(digitalTile).join('') : '';
   }
   function renderBest(){
-    var hot = BRANDS.filter(function(b){ return hotRank(b.name) < 999; }).slice(0, 10);
-    $('bestGrid').innerHTML = hot.map(brandTile).join(''); $('bestSec').hidden = !hot.length;
+    var hot = BRANDS.filter(function(b){ return hotRank(b.name) < 999; }).map(function(b){ return {r:hotRank(b.name), h:brandTile(b)}; })
+      .concat(TOPUPS.filter(function(t){ return hotRank(t.name) < 999; }).map(function(t){ return {r:hotRank(t.name), h:topupTile(t)}; }))
+      .sort(function(a, b){ return a.r - b.r; }).slice(0, 10);
+    $('bestGrid').innerHTML = hot.map(function(x){ return x.h; }).join(''); $('bestSec').hidden = !hot.length;
   }
   $('bestGrid').addEventListener('click', function(e){ clickTiles(e); });
   $('gChips').addEventListener('click', function(e){ var b = e.target.closest('.chip'); if (!b) return; gcat = b.dataset.g; gshown = 20; renderGift(); });
   $('gMore').addEventListener('click', function(){ gshown += 20; renderGift(); });
   function clickTiles(e){
+    var tp = e.target.closest('[data-topup]'); if (tp){ var tg2 = TOPUPS.filter(function(x){ return x.id === tp.dataset.topup; })[0]; if (tg2) openTopup(tg2, tp); return; }
     var b = e.target.closest('[data-brand-id]'), d = e.target.closest('[data-dbuy]');
     if (b){ var br = BRANDS.filter(function(x){ return String(x.id || x.name) === b.dataset.brandId; })[0]; if (br) openGift(br, b); }
     if (d){ addToCart(d.dataset.dbuy, 'all'); openCart(d); }
@@ -252,13 +259,14 @@
   /* search across everything */
   function applySearch(){
     var term = q.trim().toLowerCase(), box = $('results');
-    if (term.length < 2){ box.hidden = true; $('bestSec').hidden = !BRANDS.some(function(b){ return hotRank(b.name) < 999; }); $('panels').hidden = false; $('seg').hidden = tabs.length < 2; return; }
+    if (term.length < 2){ box.hidden = true; $('bestSec').hidden = !$('bestGrid').children.length; $('panels').hidden = false; $('seg').hidden = tabs.length < 2; return; }
     $('panels').hidden = true; $('seg').hidden = true; $('bestSec').hidden = true; box.hidden = false;
     function has(s){ return String(s || '').toLowerCase().indexOf(term) > -1; }
+    var tpm = TOPUPS.filter(function(t){ return has(t.name) || has('top up') && has(t.name); });
     var gb = BRANDS.filter(function(b){ return has(b.name) || has(b.cat); }), dg = DIGITAL.filter(function(p){ return has(p.title) || has(p.tagline); });
     var wb = WEBS.filter(function(p){ return has(p.title) || has(p.tagline) || has(p.category); }), cd = CODES.filter(function(p){ return has(p.title) || has(p.tagline) || has(p.category); });
     var html = '';
-    if (gb.length || dg.length) html += '<h2 class="sh" style="font-size:1.15rem">Gift cards &amp; digital</h2><div class="brands" style="margin-bottom:22px">' + gb.slice(0, 15).map(brandTile).join('') + dg.slice(0, 8).map(digitalTile).join('') + '</div>';
+    if (gb.length || dg.length || tpm.length) html += '<h2 class="sh" style="font-size:1.15rem">Gift cards &amp; digital</h2><div class="brands" style="margin-bottom:22px">' + tpm.slice(0, 8).map(topupTile).join('') + gb.slice(0, 15).map(brandTile).join('') + dg.slice(0, 8).map(digitalTile).join('') + '</div>';
     if (wb.length) html += '<h2 class="sh" style="font-size:1.15rem">Websites</h2><div class="grid sites" style="margin-bottom:22px">' + wb.slice(0, 6).map(function(p){ return cardHTML(p, true); }).join('') + '</div>';
     if (cd.length) html += '<h2 class="sh" style="font-size:1.15rem">Code</h2><div class="grid" style="margin-bottom:22px">' + cd.slice(0, 9).map(function(p){ return cardHTML(p); }).join('') + '</div>';
     box.innerHTML = html || '<p class="empty">Nothing matches “' + esc(q.trim()) + '”. Try another word.</p>';
@@ -366,8 +374,41 @@
 
   /* ---------------- gift sheet: regions -> amounts ---------------- */
   var gb = null, gr = null;
+  /* game top-up: Player ID form + amounts */
+  var tcur = null, tdef = null;
+  function openTopup(g, from){
+    tcur = g; gb = null;
+    $('gmTitle').textContent = g.name; $('gmLogo').innerHTML = logoHTML(g.logo, g.name); $('gmSub').textContent = 'Game top-up · enter your Player ID';
+    $('gmBody').innerHTML = '<div class="empty"><div class="spin" style="margin:0 auto 10px"></div>Loading…</div>';
+    openModal($('gm'), from);
+    apiCall('/api/topup/offers?cat=' + encodeURIComponent(g.id)).then(function(r){
+      if (tcur !== g) return; tdef = r;
+      var f = (r.fields || []).map(function(d){
+        return '<div class="field"><label for="tf_' + esc(d.key) + '">' + esc(d.label) + '</label>' + (d.type === 'select' && d.options.length ? '<select id="tf_' + esc(d.key) + '" data-tf="' + esc(d.key) + '">' + d.options.map(function(o){ return '<option value="' + esc(o.value) + '">' + esc(o.label) + '</option>'; }).join('') + '</select>' : '<input id="tf_' + esc(d.key) + '" data-tf="' + esc(d.key) + '" autocomplete="off" maxlength="80" inputmode="text">') + '</div>';
+      }).join('');
+      $('gmBody').innerHTML = f + '<div class="actions" style="margin:-4px 0 10px"><span class="hint" id="tpCheckMsg">Double-check your ID — a top-up cannot be reversed.</span><span class="ab"><button type="button" class="btn btn-ghost btn-sm" id="tpCheck">Check my ID</button></span></div>' +
+        '<div class="amounts">' + (r.offers || []).map(function(o){ return '<button type="button" class="amt" data-to="' + esc(o.offer) + '" data-tp="' + (+o.price) + '" data-tn="' + esc(o.name) + '"><b>' + esc(o.name) + '</b><span class="p">' + money(o.price) + '</span><small>Add to cart</small></button>'; }).join('') + '</div>';
+    }).catch(function(er){ if (tcur !== g) return; $('gmBody').innerHTML = '<p class="empty">' + esc(er.message || 'Could not load.') + '</p>'; });
+  }
+  function topupVals(){ var v = {}, bad = ''; $$('#gmBody [data-tf]').forEach(function(el){ v[el.dataset.tf] = el.value.trim(); if (!el.value.trim()) bad = el.previousElementSibling ? el.previousElementSibling.textContent : el.dataset.tf; }); return {v:v, bad:bad}; }
+  $('gmBody').addEventListener('click', function(e){
+    if (!tcur) return;
+    var chk = e.target.closest('#tpCheck'), a = e.target.closest('[data-to]');
+    if (chk){
+      var t = topupVals(); if (t.bad){ $('tpCheckMsg').textContent = 'Please fill in “' + t.bad + '”.'; return; }
+      $('tpCheckMsg').textContent = 'Checking…';
+      apiCall('/api/topup/validate', {cat: tcur.id, fields: t.v}).then(function(r){ $('tpCheckMsg').textContent = r.valid === true ? '✅ Found' + (r.player ? ': ' + r.player : '') + (r.region ? ' (' + r.region + ')' : '') : r.valid === false ? '⚠ ID not found — check it again' : 'This game cannot be checked in advance — please double-check your ID.'; }).catch(function(er){ $('tpCheckMsg').textContent = er.message; });
+      return;
+    }
+    if (a){
+      var t2 = topupVals(); if (t2.bad){ $('tpCheckMsg').textContent = 'Please fill in “' + t2.bad + '” first.'; toast('Fill in your Player ID first'); return; }
+      var id = 't:' + tcur.id + ':' + a.dataset.to, ex = cart.filter(function(i){ return i.id === id; })[0];
+      if (ex){ ex.f = t2.v; ex.p = +a.dataset.tp; } else cart.push({id:id, v:'all', t:tcur.name + ' — ' + a.dataset.tn, p:+a.dataset.tp, q:1, m:1, f:t2.v});
+      saveCart(); toast(ex ? 'Cart updated' : 'Added to cart');
+    }
+  });
   function openGift(b, from){
-    gb = b; gr = null;
+    gb = b; gr = null; tcur = null;
     $('gmTitle').textContent = b.name; $('gmLogo').innerHTML = logoHTML(b.logo, b.name);
     var regs = b.regions.slice().sort(function(x, y){ var a = String(x.region || '').toUpperCase(), c = String(y.region || '').toUpperCase(); if (a === 'US') return -1; if (c === 'US') return 1; return regionLabel(a).localeCompare(regionLabel(c)); });
     gb._regs = regs;
@@ -396,6 +437,7 @@
   }
   function syncGiftCart(){ var b = $('gmCart'); if (!b) return; var n = lines().length; b.hidden = !n; b.textContent = 'View cart (' + n + ')'; }
   $('gmBody').addEventListener('click', function(e){
+    if (tcur) return;
     var r = e.target.closest('[data-r]'), bk = e.target.closest('[data-back]'), rt = e.target.closest('[data-retry]'), card = e.target.closest('.amt');
     if (r) showAmounts(gb._regs[+r.dataset.r]);
     if (bk) showRegions();
@@ -425,7 +467,7 @@
   function addToCart(id, v, quiet){
     var p = id === 'ALL' ? null : byId(id);
     if (id !== 'ALL' && !p) return;
-    if (id === 'ALL'){ cart = cart.filter(function(i){ var q2 = byId(i.id); return i.id.indexOf('g:') === 0 || (q2 && q2.type === 'digital'); }); cart.push({id:'ALL', v:'all'}); }
+    if (id === 'ALL'){ cart = cart.filter(function(i){ var q2 = byId(i.id); return i.id.indexOf('g:') === 0 || i.id.indexOf('t:') === 0 || (q2 && q2.type === 'digital'); }); cart.push({id:'ALL', v:'all'}); }
     else if (cart.some(function(i){ return i.id === 'ALL'; }) && p.type !== 'digital'){ if (!quiet) toast('Already included in your All-Access pass'); return; }
     else if (p.type === 'digital'){ var dx = cart.filter(function(i){ return i.id === id; })[0]; if (dx) dx.q = Math.min(10, (dx.q || 1) + 1); else cart.push({id:id, v:'all', q:1}); }
     else if (v === 'all'){ cart = cart.filter(function(i){ return i.id !== id; }); cart.push({id:id, v:'all'}); }
@@ -437,6 +479,7 @@
     var out = [], hasAll = cart.some(function(i){ return i.id === 'ALL'; }), by = {}, order = [];
     cart.forEach(function(i){
       if (i.id === 'ALL') return;
+      if (i.id.indexOf('t:') === 0){ out.push({id:i.id, title:(i.t || 'Game top-up') + ' · ' + Object.keys(i.f || {}).map(function(k){ return i.f[k]; }).join(' / '), unit:+i.p || 0, qty:1, max:1, noqty:true, price:round2(+i.p || 0)}); return; }
       if (i.id.indexOf('g:') === 0){ var gq = Math.max(1, Math.min(10, i.q || 1)); out.push({id:i.id, title:i.t || 'Gift card', unit:+i.p || 0, qty:gq, max:i.m || 10, price:round2((+i.p || 0) * gq)}); return; }
       var p = byId(i.id); if (!p) return;
       if (!by[i.id]){ by[i.id] = {p:p, all:false, st:[]}; order.push(i.id); }
@@ -485,7 +528,7 @@
   function renderCart(){
     var L = lines(), total = totalOf(L), b = $('cartBody');
     if (!L.length){ b.innerHTML = '<div class="empty" style="padding:30px 0">Your cart is empty.<br>Pick a gift card, a website or a code to get started.</div>'; saveCart(); return; }
-    b.innerHTML = L.map(function(l){ return '<div class="cl"><span>' + esc(l.title) + '</span>' + (l.qty ? '<span class="qty"><button type="button" data-cqd="' + esc(l.id) + '" aria-label="Fewer">−</button><b>' + l.qty + '</b><button type="button" data-cqu="' + esc(l.id) + '" aria-label="More">+</button></span>' : '<span></span>') + '<b>' + money(l.price) + '</b><button type="button" class="rm" data-rm="' + esc(l.id) + '" aria-label="Remove">×</button></div>'; }).join('') +
+    b.innerHTML = L.map(function(l){ return '<div class="cl"><span>' + esc(l.title) + '</span>' + (l.qty && !l.noqty ? '<span class="qty"><button type="button" data-cqd="' + esc(l.id) + '" aria-label="Fewer">−</button><b>' + l.qty + '</b><button type="button" data-cqu="' + esc(l.id) + '" aria-label="More">+</button></span>' : '<span></span>') + '<b>' + money(l.price) + '</b><button type="button" class="rm" data-rm="' + esc(l.id) + '" aria-label="Remove">×</button></div>'; }).join('') +
       '<div class="total"><span>Total</span><span>' + money(total) + '</span></div>' +
       (me ? '<p class="note" style="margin:0 0 12px">Signed in as <b>' + esc(me.email) + '</b> — this order is saved to your account.</p>' : '<div class="field"><label for="coEmail">Your email (your order is saved to it)</label><input id="coEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"></div>') +
       '<button type="button" class="btn btn-primary btn-block" id="coNext">' + (API ? 'Continue to payment' : "I've paid — confirm order") + '</button><p class="msg" id="coMsg"></p>' +
@@ -549,7 +592,7 @@
   }
   function createOrder(){
     var msg = $('coMsg'), btn = $('coPay'); if (btn) btn.disabled = true; msg.classList.remove('err'); msg.textContent = 'Creating your order…';
-    apiCall('/api/order', {email: pendingEmail, coin: coinSel || 'usdt_trc20', fromBinance: !!(fromBinance && selCoin().binance), items: cart.map(function(i){ return {id:i.id, v:i.v, q:i.q || 1}; })})
+    apiCall('/api/order', {email: pendingEmail, coin: coinSel || 'usdt_trc20', fromBinance: !!(fromBinance && selCoin().binance), items: cart.map(function(i){ return i.f ? {id:i.id, v:i.v, q:1, f:i.f} : {id:i.id, v:i.v, q:i.q || 1}; })})
       .then(function(o){ rememberOrder(o.id); cart = []; saveCart(); showPay(o); })
       .catch(function(er){ if (btn) btn.disabled = false; var m2 = $('coMsg'); if (m2){ m2.classList.add('err'); m2.textContent = er.message || 'Could not create the order. Please try again.'; } });
   }
