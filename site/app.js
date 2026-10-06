@@ -561,7 +561,7 @@
     var warns = manual ?
       '<div><span>①</span><span>Open <b>Binance → Pay → Send</b> and enter the Pay ID below.</span></div><div><span>②</span><span>Send exactly <b>' + esc(o.amount) + ' USDT</b>, then press “I have paid”.</span></div><div><span>③</span><span>We check it by hand. You will see your order here as soon as it is confirmed.</span></div>' :
       '<div><span>①</span><span>Send <b>only ' + esc(o.coinName) + '</b> on the <b>' + esc(o.network) + '</b> network. Other networks are lost.</span></div>' +
-      '<div><span>②</span><span>Send the <b>exact amount</b>. If you pay from an exchange, add its withdrawal fee on top so exactly <b>' + esc(o.amount) + '</b> arrives.</span></div>' +
+      '<div><span>②</span><span>Send the <b>exact amount</b> shown (it includes a few extra cents that identify your order). If you pay from an exchange, add its withdrawal fee on top so exactly <b>' + esc(o.amount) + '</b> arrives.</span></div>' +
       '<div><span>③</span><span>' + (isBtc ? 'Bitcoin needs 1 confirmation (about 10–30 minutes).' : 'This window updates by itself in under a minute after you pay.') + '</span></div>';
     $('cartBody').innerHTML = '<div class="steps-h"><i class="on"></i><i class="on"></i><i class="on"></i></div>' +
       '<div class="pay-top"><span class="mono muted">Order ' + esc(o.id.slice(0, 8).toUpperCase()) + '</span><span class="pill pending" id="payPill">Waiting for payment</span></div>' +

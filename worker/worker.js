@@ -90,7 +90,7 @@ async function pushIndex(env, key, val, max) {
 }
 const getCatalog = env => env.ORDERS.get('idx', 'json');
 const saveOrder = (env, o, ttl) => env.ORDERS.put('order:' + o.id, JSON.stringify(o), ttl ? { expirationTtl: ttl } : undefined);
-const fmtAmount = (coin, a) => coin === 'btc' ? (a / 1e8).toFixed(8) : (a / 1e6).toFixed(3);
+const fmtAmount = (coin, a) => coin === 'btc' ? (a / 1e8).toFixed(8) : (a % 10000 === 0 ? (a / 1e6).toFixed(2) : (a / 1e6).toFixed(3));  // new orders are whole cents so any wallet can type them
 function tooMany(map, key, max, windowMs) {
   const now = Date.now(), hits = (map.get(key) || []).filter(t => now - t < windowMs);
   hits.push(now); map.set(key, hits);
@@ -514,10 +514,10 @@ async function createOrder(req, env, apiBase) {
     const rate = await btcRate();
     if (!rate) return fail(env, 'Could not get the Bitcoin price right now. Please try USDT or try again in a minute.', 503);
     base = Math.round(priced.usd / rate * 1e8);
-  } else base = Math.round(priced.usd * 1e6);
+  } else base = Math.ceil(Math.round(priced.usd * 1e6) / 10000) * 10000;   // whole cents
   let amount = null, amtKey = null;
   for (let i = 0; i < 40 && amount === null; i++) {
-    const cand = coin === 'btc' ? base + 1 + randInt(99) : base + (1 + randInt(99)) * 1000, key = 'amt:' + coin + ':' + cand;
+    const cand = coin === 'btc' ? base + 1 + randInt(99) : base + (1 + randInt(i < 25 ? 20 : 60)) * 10000, key = 'amt:' + coin + ':' + cand;
     if (!(await env.ORDERS.get(key))) { amount = cand; amtKey = key; }
   }
   if (amount === null) return fail(env, 'Too many open orders, please try again in a minute', 503);
@@ -917,7 +917,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 8 });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 9 });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);

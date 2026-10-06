@@ -18,7 +18,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 
 1. **Back up first.** Open your OLD dashboard → **Publish → Backup everything**. Keep that file.
 2. **Download the new project** (GitHub → branch `claude/geostore-website-template-bwou47` → Code → Download ZIP) and unzip it.
-3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":8`.
+3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":9`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
 6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`.
@@ -32,7 +32,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 ### 1 — Server (Cloudflare)
 1. Cloudflare → Workers & Pages → create a Worker → paste `worker/worker.js` → Deploy.
 2. Settings → **Variables and Secrets**: add a **Secret** named `ADMIN_TOKEN` (a long password only you know). Settings → **Bindings** → add a **KV namespace** named `ORDERS`.
-3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":8`.
+3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":9`.
 4. Do **not** add a Cron Trigger (the shop does not need one).
 
 ### 2 — Dashboard
@@ -49,6 +49,8 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 | **USDT BEP20** (address starts with `0x`) | ✅ yes | Fast; low fee on Binance |
 | **Bitcoin** | ✅ yes (after 1 confirmation) | Slower, 10–30 min |
 | **Binance Pay** (your Pay ID) | ❌ you confirm | Customer presses “I have paid”; the dashboard marks it **needs you**; you press **Mark paid**; delivery is automatic after that |
+
+**Amounts:** every order gets a few extra **cents** (for example $5.00 becomes **5.12**) so the server can tell orders apart. They are whole cents, so every wallet can type them. The customer must send that exact amount.
 
 **Important:** use an address from a wallet **you control** (TronLink, Trust Wallet…) for TRC20/BEP20. If you use a *Binance deposit address*, customers paying from Binance often pay **inside Binance** — it never appears on the blockchain, so the shop cannot see it. Binance Pay is the right option for those customers.
 Minimum amounts: some wallets (like the one that blocked you) refuse deposits under a minimum, so test with a wallet that accepts small amounts.
