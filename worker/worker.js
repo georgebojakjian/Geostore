@@ -787,6 +787,14 @@ const J = JSON.stringify;
 // This is a deterrent, not a vault: anything a browser can display can in theory be extracted, so previews are
 // rate-limited per visitor and never include the download/copy tools.
 const prevHits = new Map();
+// Tiled diagonal watermark baked into the preview HTML itself, so anyone who copies the markup copies the watermark too (and a tiny script restores it if it is deleted)
+function watermarkHTML(name) {
+  const t = String(name || 'Geostore').replace(/[<>&"'\\]/g, '').slice(0, 36) + ' · preview only';
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="340" height="190"><text x="170" y="95" text-anchor="middle" transform="rotate(-24 170 95)" font-family="Arial,sans-serif" font-size="21" font-weight="700" fill="#7a7a7a">' + t + '</text></svg>';
+  const bg = 'url(&quot;data:image/svg+xml,' + encodeURIComponent(svg).replace(/'/g, '%27') + '&quot;)';
+  const div = '<div id="__wm" style="position:fixed;inset:0;z-index:2147483647;pointer-events:none;opacity:.22;background:' + bg + ' repeat"></div>';
+  return div + '<script>(function(){var h=' + J(div) + ';setInterval(function(){if(!document.getElementById("__wm"))document.documentElement.insertAdjacentHTML("beforeend",h)},700)})()<\/script>';
+}
 async function fullPreview(req, env, id, vi) {
   const ip = req.headers.get('cf-connecting-ip') || 'x';
   if (tooMany(prevHits, ip, 40, 10 * 60000)) return fail(env, 'Too many previews. Please wait a few minutes.', 429);
@@ -794,7 +802,9 @@ async function fullPreview(req, env, id, vi) {
   if (!p || p.type === 'digital' || p.hidden) return fail(env, 'Not found', 404);
   const txt = await env.ORDERS.get('prod:' + id, 'text'); if (!txt) return fail(env, 'Not found', 404);
   const v = (JSON.parse(txt).variants || [])[vi]; if (!v || !v.full) return fail(env, 'Not found', 404);
-  const key = hex(16), kb = new TextEncoder().encode(key), data = new TextEncoder().encode(String(v.full));
+  let html = String(v.full);
+  if (p.wm !== false) { const w = watermarkHTML(cat.storeName), i = html.search(/<\/body>/i); html = i >= 0 ? html.slice(0, i) + w + html.slice(i) : html + w; }
+  const key = hex(16), kb = new TextEncoder().encode(key), data = new TextEncoder().encode(html);
   for (let i = 0; i < data.length; i++) data[i] ^= kb[i % kb.length];
   let bin = ''; for (let i = 0; i < data.length; i += 8192) bin += String.fromCharCode.apply(null, data.subarray(i, i + 8192));
   return json(env, { k: key, d: btoa(bin) });
@@ -1001,7 +1011,7 @@ async function adminIndex(req, env) {
     products[String(p.id)] = {
       title: String(p.title || ''), tagline: String(p.tagline || ''), price: Number(p.price) || 0, stylePrice: Number(p.stylePrice) || 0,
       type: p.type === 'digital' ? 'digital' : 'code', variants: (Array.isArray(p.variants) ? p.variants : []).map(String),
-      stockN: Number(p.stockN) || 0, published: p.published !== false,
+      stockN: Number(p.stockN) || 0, published: p.published !== false, wm: p.wm !== false,
       supplier: p.supplier && p.supplier.cat && p.supplier.card ? { kind: 'giftcard', cat: String(p.supplier.cat).slice(0, 120), card: String(p.supplier.card).slice(0, 120) } : undefined
     };
   });
@@ -1074,7 +1084,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 13 });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 14 });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);

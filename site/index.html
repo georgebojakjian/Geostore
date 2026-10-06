@@ -84,6 +84,8 @@
           </div>
         </div>
 
+        <div class="allwrap"><button type="button" class="btn btn-primary" id="allBtn">Show all products <span id="allCount"></span></button></div>
+
         <div class="pass" id="pass" hidden>
           <div><h2 id="passTitle"></h2><p id="passDesc"></p></div>
           <div class="pp"><div class="big" id="passPrice"></div><button class="btn btn-primary" id="passBuy" type="button">Get All-Access</button></div>
@@ -146,6 +148,23 @@
     <div class="chat-h"><div><b>Need help?</b><small id="chatSub">We usually reply within minutes</small></div><button type="button" class="x2" id="chatClose" aria-label="Close chat">&times;</button></div>
     <div class="chat-log" id="chatLog" aria-live="polite"></div>
     <form class="chat-in" id="chatForm" autocomplete="off"><input id="chatTxt" maxlength="600" placeholder="Type your message…" aria-label="Message"><button type="submit" class="btn btn-primary btn-sm">Send</button></form>
+  </div>
+
+  <!-- Full catalogue -->
+  <div class="modal" id="cm" role="dialog" aria-modal="true" aria-labelledby="cmTitle" aria-hidden="true">
+    <div class="sheet lg">
+      <button class="x" type="button" data-close aria-label="Close">&times;</button>
+      <h3 id="cmTitle">All products</h3>
+      <div class="cm-top">
+        <label class="searchbar cm-search" for="cmQ"><svg><use href="#i-search"/></svg><input id="cmQ" type="search" autocomplete="off" placeholder="Search all products…" aria-label="Search all products"></label>
+        <select id="cmSort" aria-label="Sort"><option value="pop">Best sellers first</option><option value="az">A → Z</option><option value="lo">Price: low to high</option><option value="hi">Price: high to low</option></select>
+      </div>
+      <div class="chips" id="cmTypes" role="tablist" aria-label="Type"></div>
+      <div class="chips" id="cmCats" role="tablist" aria-label="Category"></div>
+      <p class="hint" id="cmCount" style="margin:2px 0 10px"></p>
+      <div class="brands" id="cmGrid"></div>
+      <div class="more"><button type="button" class="btn btn-ghost" id="cmMore" hidden>Show more</button></div>
+    </div>
   </div>
 
   <!-- Product (code / website) -->

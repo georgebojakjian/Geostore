@@ -182,7 +182,7 @@
           <div><label for="fCat">Category <span class="help">(groups products in the shop)</span></label><input id="fCat" list="cats" placeholder="Navigation, Hero, Shop…"><datalist id="cats"></datalist></div>
           <div class="full"><label for="fTag">One-line description</label><input id="fTag"></div>
           <div><label for="fPrice">Price (USD)</label><input id="fPrice" type="number" min="0" step="0.5" required></div>
-          <div><label class="chk" style="margin-top:30px"><input type="checkbox" id="fPub"> Show on the website</label></div>
+          <div><label class="chk" style="margin-top:30px"><input type="checkbox" id="fPub"> Show on the website</label><label class="chk" style="margin-top:8px"><input type="checkbox" id="fWm"> Watermark the live preview <span class="help">(recommended for websites)</span></label></div>
           <div class="full" id="codeFields">
             <h3 style="margin-bottom:6px">Styles &amp; code</h3>
             <p class="help" style="margin-bottom:10px">Each style has a <b>public sample</b> (shown in the product card) and the <b>full code</b> (private — customers see it as a view-only preview and receive it after payment).</p>
@@ -615,7 +615,7 @@
     editing = p; draft = clone(p); vi = 0; $('plist').hidden = true; $('pedit').hidden = false;
     $('peTitle').textContent = p._new ? 'New product' : 'Edit: ' + p.title;
     $('fTitle').value = p.title||''; $('fCat').value = p.category||''; $('fPrice').value = p.price==null?'':p.price;
-    $('fPub').checked = p.published!==false; $('fTag').value = p.tagline||'';
+    $('fPub').checked = p.published!==false; $('fWm').checked = p.wm !== false; $('fTag').value = p.tagline||'';
     $('fStyleP').value = p.stylePrice||''; $('fGroup').value = p.group||''; $('fGuide').value = p.guide||'';
     $('delP').style.display = p._new ? 'none' : '';
     toggleType();
@@ -651,7 +651,7 @@
     saveVariantFields();
     var title = $('fTitle').value.trim(); if (!title){ toast('Please enter a title'); return; }
     draft.title = title; draft.category = $('fCat').value.trim(); draft.price = +$('fPrice').value || 0;
-    draft.published = $('fPub').checked; draft.tagline = $('fTag').value.trim();
+    draft.published = $('fPub').checked; draft.wm = $('fWm').checked; draft.tagline = $('fTag').value.trim();
     draft.stylePrice = +$('fStyleP').value || 0; draft.group = $('fGroup').value; draft.guide = $('fGuide').value;
     if (draft.type === 'digital'){
       draft.icon = $('fIcon').value.trim();
@@ -828,7 +828,7 @@
       api('/api/admin/index', {method:'POST', body: JSON.stringify({
         storeName: state.settings.storeName, wallets: state.settings.autoWallets || {}, binanceAddr: state.settings.binanceAddr || {}, remove: removed, sup: supForServer(),
         allAccess: {enabled: !!aa.enabled, title: aa.title, price: aa.price},
-        products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, type:p.type, published:p.published!==false, supplier:p.supplier ? {cat:p.supplier.cat, card:p.supplier.card} : undefined, variants:p.type==='code' ? p.variants.map(function(v){ return v.name; }) : [], stockN:p.type==='digital' ? p.stock.length : 0}; })
+        products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, type:p.type, published:p.published!==false, wm:p.wm !== false, supplier:p.supplier ? {cat:p.supplier.cat, card:p.supplier.card} : undefined, variants:p.type==='code' ? p.variants.map(function(v){ return v.name; }) : [], stockN:p.type==='digital' ? p.stock.length : 0}; })
       })}).then(function(r){ removed.forEach(function(id){ state.sync['gone:' + id] = 1; }); state.dirtySync = false; save(); finish('✅ Synced: ' + total + ' product(s) uploaded, ' + (r.products - total) + ' unchanged. The server is up to date.'); })
         .catch(function(e){ finish('❌ ' + e.message, true); });
     }
