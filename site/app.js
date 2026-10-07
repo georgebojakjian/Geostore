@@ -111,6 +111,19 @@
     return {set: set};
   })();
   function tabShow(){ Tab.set(tabOver || tabBase); }
+  if (SHELL){                                        // safety: if the phone reports a taller screen than it shows, lift the bar into view
+    (function(){
+      var bar = $('tabbar'), vv = window.visualViewport, root = document.documentElement;
+      function fit(){
+        if (!vv) return; root.style.setProperty('--lift', '0px');
+        var over = Math.round(bar.getBoundingClientRect().bottom - (vv.offsetTop + vv.height));
+        if (over > 2 && over < 160) root.style.setProperty('--lift', over + 'px');
+      }
+      window.addEventListener('resize', fit); window.addEventListener('orientationchange', function(){ setTimeout(fit, 200); });
+      if (vv) vv.addEventListener('resize', fit);
+      setTimeout(fit, 300); setTimeout(fit, 1200);
+    })();
+  }
   (function(){                                       // keyboard open: hide the bar only while the on-screen keyboard is really showing
     var vv = window.visualViewport, base = window.innerHeight, on = false;
     function chk(){

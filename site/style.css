@@ -434,3 +434,13 @@ html.shell,html.shell body{height:100%;overflow:hidden;overscroll-behavior:none}
 html.shell body{position:fixed;inset:0;width:100%;padding-bottom:0!important}
 html.shell #scr{position:absolute;left:0;right:0;top:0;bottom:var(--tab-h);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 html.shell .tabbar{position:fixed!important;bottom:0!important}
+
+/* installed app with viewport-fit=cover: the bar sits on the real bottom edge, above the iPhone home indicator */
+html.shell{--lift:0px}
+html.shell #scr{top:env(safe-area-inset-top);bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--lift))}
+html.shell .tabbar{height:calc(var(--tab-h) + env(safe-area-inset-bottom))!important;padding-bottom:env(safe-area-inset-bottom)!important;bottom:var(--lift)!important}
+html.shell .tb-bg{height:calc(var(--tab-h) + env(safe-area-inset-bottom) + 12px)}
+html.shell .modal{padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--lift))}
+html.shell .sheet{max-height:calc(100dvh - var(--tab-h) - env(safe-area-inset-bottom) - var(--lift) - 12px)}
+html.shell .chat-fab{bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--lift) + 18px)!important}
+html.shell .chat{bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--lift) + 80px)!important}
