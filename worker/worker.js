@@ -634,7 +634,7 @@ async function createOrder(req, env, apiBase) {
 
   const now = Date.now();
   const fromBinance = !!b.fromBinance && !!(cat.binanceAddr && cat.binanceAddr[coin]);
-  const o = { id: hex(16), key: hex(16), fromBinance, email, items: priced.lines, usd: priced.usd, coin, amount, amtKey, wallet, status: 'pending', createdAt: now, expiresAt: now + (fromBinance ? Math.max(C.minutes, 180) : C.minutes) * 60000, account: acct ? acct.email : null };
+  const o = { id: hex(16), key: hex(16), base: apiBase, fromBinance, email, items: priced.lines, usd: priced.usd, coin, amount, amtKey, wallet, status: 'pending', createdAt: now, expiresAt: now + (fromBinance ? Math.max(C.minutes, 180) : C.minutes) * 60000, account: acct ? acct.email : null };
   await saveOrder(env, o, 7 * 86400);
   // the "amt:" key both reserves the amount AND is the list of open orders the cron job checks
   await env.ORDERS.put(amtKey, o.id, { expirationTtl: ((fromBinance ? Math.max(C.minutes, 180) : C.minutes) + C.graceMs / 60000 + 5) * 60 });
@@ -688,7 +688,7 @@ async function markPaid(env, o, txid) {
   if (txid) await env.ORDERS.put('tx:' + txid, o.id);
   await env.ORDERS.delete(o.amtKey || ('amt:' + o.amount));
   if (wantMail) {                                          // one receipt per order; failures only raise a Telegram note
-    const cat0 = await getCatalog(env).catch(() => null), link = (env.__base || '') + '/api/delivery/' + o.id + '?k=' + o.key;
+    const cat0 = await getCatalog(env).catch(() => null), link = (o.base || env.__base || '') + '/api/delivery/' + o.id + '?k=' + o.key;
     bg(env, sendMail(env, o.email, 'Payment received — order #' + o.id.slice(0, 8).toUpperCase(), receiptHTML(cat0 && cat0.storeName, o, link))
       .catch(e => { notify(env, '⚠️ Receipt email to ' + esc(o.email) + ' failed: ' + esc(String((e && e.message) || e).slice(0, 160))); }));
   }
@@ -774,6 +774,13 @@ async function findBinancePay(env, o) {
     const id = 'bp:' + (t.transactionId || t.orderId || ts);
     if (!(await env.ORDERS.get('tx:' + id))) return id;
   }
+  try {                                                                    // second way: a plain Binance-to-Binance transfer shows up in the deposit history
+    for (const t of await bnDepositList(env, o)) {
+      if (micro(t.amount) !== o.amount || ![1, 6].includes(Number(t.status)) || Number(t.transferType) !== 1) continue;
+      if (Number(t.insertTime) && Number(t.insertTime) < o.createdAt - 60000) continue;
+      const id = 'bn:' + t.id; if (!(await env.ORDERS.get('tx:' + id))) return id;
+    }
+  } catch (e) { /* the Pay history already answered */ }
   return null;
 }
 const BN_NET = { usdt_trc20: 'TRX', usdt_bep20: 'BSC' };
@@ -1172,11 +1179,50 @@ async function adminIndex(req, env) {
   }));
   return json(env, { ok: true, products: Object.keys(products).length });
 }
+// Everything the server can see about money for this order, from every source, so you can find a payment that did not match
+async function diagnoseOrder(env, o) {
+  const coin = orderCoin(o), C = COINS[coin], notes = [], seen = [], refs = new Set();
+  const info = { status: o.status, coin, expects: fmtAmount(coin, o.amount), wallet: o.wallet, notes, seen };
+  const iso = t => t ? new Date(Number(t)).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : '';
+  const add = (display, mic, ref, when) => { if (!ref || refs.has(ref)) return; refs.add(ref); seen.push({ amount: display, micro: mic, ref, when, match: mic === o.amount }); };
+  if (binanceOn(env) && C.kind !== 'btc') {
+    try { const l = await bnPayList(env, o); notes.push('Binance Pay history: OK (' + l.length + ' record(s))'); l.forEach(t => { const a = Number(t.amount), cur = String(t.currency || ''); if (a > 0) add(a + ' ' + cur + ' · Binance Pay', cur === 'USDT' ? micro(a) : null, 'bp:' + (t.transactionId || t.orderId || t.transactionTime), iso(t.transactionTime)); }); } catch (e) { notes.push('Binance Pay history: ' + String((e && e.message) || e)); }
+    try { const l = await bnDepositList(env, o); notes.push('Binance deposit history: OK (' + l.length + ' record(s))'); l.forEach(t => { const internal = Number(t.transferType) === 1; add(t.amount + ' USDT · Binance ' + (internal ? 'internal transfer' : t.network), micro(t.amount), internal || !t.txId ? 'bn:' + t.id : String(t.txId), iso(t.insertTime)); }); } catch (e) { notes.push('Binance deposit history: ' + String((e && e.message) || e)); }
+  } else if (C.kind === 'manual') notes.push('Binance Pay orders are confirmed by hand until the Binance API key is added.');
+  if (coin === 'usdt_trc20') { const r = await trc20In(env, o, true); r.notes.forEach(n => notes.push(n)); r.list.forEach(t => add((Number(t.value) / 1e6) + ' USDT · blockchain', Number(t.value), t.txid, iso(t.ts))); }
+  else if (C.kind === 'bsc') { try { const l = await bscIn(o, notes); l.forEach(t => add(Number(t.value / 1000000000000n) / 1e6 + ' USDT · blockchain', Number(t.value / 1000000000000n), t.hash, t.conf + ' blocks ago')); } catch (e) { notes.push('Could not reach any BNB Chain node: ' + String((e && e.message) || e)); } }
+  else if (coin === 'btc') { const l = await btcIn(o, notes); l.forEach(t => add((t.value / 1e8).toFixed(8) + ' BTC · ' + (t.confirmed ? 'confirmed' : 'waiting for 1 confirmation'), t.value, t.txid, '')); }
+  for (const x of seen) { x.used = !!(await env.ORDERS.get('tx:' + x.ref)); x.near = !x.match && !x.used && coin !== 'btc' && x.micro != null && Math.abs(x.micro - o.amount) <= 500000; }
+  if (!seen.length) notes.push('No incoming payment found yet. Check the wallet address in Settings is the one that received the money.');
+  else if (seen.some(x => x.match && !x.used)) notes.push('A matching payment is visible — the order should confirm within a minute.');
+  else if (seen.some(x => x.near)) notes.push('A payment close to the expected amount arrived (see the list). If the customer says it is theirs, accept it.');
+  else notes.push('Money arrived, but none of it is the exact amount ' + info.expects + '.');
+  return info;
+}
+// Safety net, run by a Cloudflare Cron Trigger every few minutes: confirms payments even when the customer closed the page,
+// and tells you on Telegram about Binance money that matches no order.
+async function sweep(env) {
+  const ids = ((await env.ORDERS.get('oidx', 'json')) || []).slice(-40).reverse();
+  const orders = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
+  let n = 0;
+  for (const o of orders) { if (o.status === 'pending' && n < 10) { n++; try { await checkOrder(env, o); } catch (e) { /* next time */ } } else if (o.status === 'paid' && n < 10) { try { const before = o.fulfil && Object.values(o.fulfil).some(f => f.state === 'wait'); if (before) { n++; await ensureFulfilled(env, o); } } catch (e) { /* next time */ } } }
+  if (!binanceOn(env)) return;
+  const probe = { createdAt: Date.now() - 2 * 3600000 }, found = [];
+  try { for (const t of await bnPayList(env, probe)) { const a = Number(t.amount), cur = String(t.currency || ''); if (a > 0 && cur === 'USDT') found.push({ ref: 'bp:' + (t.transactionId || t.orderId || t.transactionTime), amt: a, kind: 'Binance Pay' }); } } catch (e) { /* diagnostics show it */ }
+  try { for (const t of await bnDepositList(env, probe)) if ([1, 6].includes(Number(t.status))) found.push({ ref: Number(t.transferType) === 1 || !t.txId ? 'bn:' + t.id : String(t.txId), amt: Number(t.amount), kind: Number(t.transferType) === 1 ? 'Binance transfer' : 'Binance deposit (' + t.network + ')' }); } catch (e) { /* diagnostics show it */ }
+  let alerts = 0;
+  for (const f of found) {
+    if (alerts >= 3 || !(f.amt >= 0.5)) continue;
+    if (await env.ORDERS.get('tx:' + f.ref) || await env.ORDERS.get('unm:' + f.ref)) continue;
+    await env.ORDERS.put('unm:' + f.ref, '1', { expirationTtl: 7 * 86400 }); alerts++;
+    notify(env, '💰 <b>Binance payment not matched to any order</b>\n' + f.amt + ' USDT · ' + esc(f.kind) + '\nIf a customer says it is theirs: Orders → find their order → <b>Why not paid?</b> → accept it.');
+  }
+}
 async function adminOrders(env) {
   const ids = ((await env.ORDERS.get('oidx', 'json')) || []).slice(-100).reverse();
   let list = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
   list = await Promise.all(list.map((o, i) => o.status === 'pending' && i < 8 ? checkOrder(env, o) : (i < 8 ? ensureFulfilled(env, o) : o)));   // refresh waiting orders
-  const expiredN = list.filter(o => o.status === 'expired').length; list = list.filter(o => o.status !== 'expired');
+  const expiredN = list.filter(o => o.status === 'expired').length;
   const orders = list.map(o => ({ id: o.id, email: o.email, title: orderTitle(o), item: o.item || '', amount: fmtAmount(orderCoin(o), o.amount), coin: COINS[orderCoin(o)].short, coinName: COINS[orderCoin(o)].name, usd: o.usd || null, status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null, key: o.key, account: o.account || null, claimed: o.claimed || null,
     fulfil: fulfilState(o), fulfilErr: Object.values(o.fulfil || {}).map(f => f.error).filter(Boolean)[0] || '', cost: round2(supplierLines(o).reduce((a, l) => a + (Number(l.supplier.cost) || 0) * qtyOf(l), 0)) || null, fromBinance: !!o.fromBinance }));
   return json(env, { orders, expiredN });
@@ -1246,7 +1292,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 18, mail: mailOn(env), binance: binanceOn(env), relay: !!env.BINANCE_RELAY });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 19, mail: mailOn(env), binance: binanceOn(env), relay: !!env.BINANCE_RELAY });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
@@ -1364,33 +1410,22 @@ async function route(req, env) {
         const b = await req.json().catch(() => ({}));
         const o = await env.ORDERS.get('order:' + String(b.id || ''), 'json');
         if (!o) return fail(env, 'Order not found', 404);
-        const coin = orderCoin(o), info = { status: o.status, coin, expects: fmtAmount(coin, o.amount), wallet: o.wallet, notes: [], seen: [] };
-        if (COINS[coin].kind === 'manual') {
-          if (!binanceOn(env)) info.notes.push('Binance Pay orders are confirmed by hand (add the Binance API key to make them automatic).');
-          else { try { const l = await bnPayList(env, o); info.notes.push('Binance Pay history ok, ' + l.length + ' record(s) since the order was created'); info.seen = l.filter(t => Number(t.amount) > 0).map(t => ({ amount: String(t.amount) + ' ' + (t.currency || ''), when: t.transactionTime ? new Date(Number(t.transactionTime)).toISOString() : '', match: micro(t.amount) === o.amount })); } catch (e) { info.notes.push('Binance said: ' + String((e && e.message) || e)); } }
-        }
-        else if (coin === 'usdt_trc20') {
-          const r = await trc20In(env, o, true); info.notes = r.notes;
-          if (binanceOn(env)) { try { const l = await bnDepositList(env, o); info.notes.push('Binance deposits ok, ' + l.length + ' record(s)'); l.forEach(t => info.seen.push({ amount: String(t.amount) + ' USDT (Binance ' + (Number(t.transferType) === 1 ? 'internal' : t.network) + ')', when: t.insertTime ? new Date(Number(t.insertTime)).toISOString() : '', match: micro(t.amount) === o.amount })); } catch (e) { info.notes.push('Binance said: ' + String((e && e.message) || e)); } }
-          info.seen = info.seen.concat(r.list.map(t => ({ amount: (Number(t.value) / 1e6).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''), when: new Date(t.ts).toISOString(), match: String(t.value) === String(o.amount) })));
-          if (!r.list.length && !info.seen.length) info.notes.push('No incoming USDT found for this wallet since the order was created. Check the wallet address in Settings is the one that received the money.');
-          else if (!info.seen.some(t => t.match)) info.notes.push('Money arrived but not the exact amount ' + info.expects + ' (compare the list).');
-        } else if (COINS[coin].kind === 'bsc') {
-          try {
-            if (binanceOn(env)) { try { const bl = await bnDepositList(env, o); info.notes.push('Binance deposits ok, ' + bl.length + ' record(s)'); bl.forEach(t => info.seen.push({ amount: String(t.amount) + ' USDT (Binance ' + (Number(t.transferType) === 1 ? 'internal' : t.network) + ')', when: t.insertTime ? new Date(Number(t.insertTime)).toISOString() : '', match: micro(t.amount) === o.amount })); } catch (e) { info.notes.push('Binance said: ' + String((e && e.message) || e)); } }
-            const l = await bscIn(o, info.notes);
-            info.seen = info.seen.concat(l.map(t => ({ amount: (Number(t.value / 1000000000000n) / 1e6).toString(), when: t.conf + ' blocks ago', match: t.exact })));
-            if (!l.length && !info.seen.length) info.notes.push('No incoming BEP20 USDT found for this wallet recently. Make sure the address in Settings is the one that received the money.');
-            else if (!info.seen.some(t => t.match)) info.notes.push('Money arrived but not the exact amount ' + info.expects + '.');
-          } catch (e) { info.notes.push('Could not reach any BNB Chain node: ' + (e && e.message)); }
-        } else if (coin === 'btc') {
-          const l = await btcIn(o, info.notes);
-          info.seen = l.map(t => ({ amount: (t.value / 1e8).toFixed(8), when: t.confirmed ? 'confirmed' : 'waiting for 1 confirmation', match: t.value === o.amount }));
-          if (!l.length) info.notes.push('No Bitcoin payments found for this wallet yet.');
-          else if (!l.some(t => t.value === o.amount)) info.notes.push('Bitcoin arrived but not the exact amount ' + info.expects + '.');
-        } else info.notes.push('No details for this payment method.');
+        const info = await diagnoseOrder(env, o);
         if (o.status === 'pending') { lastLook.delete(o.id); const r2 = await checkOrder(env, o); info.after = r2.status; }
+        else if (o.status === 'expired' && Date.now() - o.expiresAt < 7 * 86400000) {   // a late payment: look again with a wide window
+          try { const tx = await findPayment(env, Object.assign({}, o, { expiresAt: Date.now() })); if (tx) { await markPaid(env, o, tx); info.after = 'paid'; info.notes.push('A matching late payment was found, so the order is now paid.'); } } catch (e) { info.notes.push('Late-payment check: ' + String((e && e.message) || e)); }
+        }
         return json(env, { ok: true, info });
+      }
+      if (path === '/api/admin/accept' && req.method === 'POST') {
+        const b = await req.json().catch(() => ({})), ref = String(b.ref || '');
+        const o = await env.ORDERS.get('order:' + String(b.id || ''), 'json');
+        if (!o) return fail(env, 'Order not found', 404);
+        if (o.status === 'paid') return json(env, { ok: true });
+        if (!/^[A-Za-z0-9:_. -]{3,120}$/.test(ref)) return fail(env, 'Bad payment reference');
+        if (await env.ORDERS.get('tx:' + ref)) return fail(env, 'That payment is already linked to another order');
+        await markPaid(env, o, ref);
+        return json(env, { ok: true });
       }
       if (path === '/api/admin/testmail' && req.method === 'POST') {
         const b = await req.json().catch(() => ({})), to = String(b.to || '').trim().toLowerCase();
@@ -1428,6 +1463,10 @@ async function route(req, env) {
 }
 
 export default {
+  async scheduled(event, env0, ctx) {
+    const env = Object.assign(Object.create(env0), { __ctx: ctx, __base: '' });
+    ctx.waitUntil(sweep(env).catch(e => { /* the next run tries again */ }));
+  },
   async fetch(req, env0, ctx) {
     const env = Object.assign(Object.create(env0), { __ctx: ctx, __base: new URL(req.url).origin });         // lets alerts finish after the reply is sent
     const path = new URL(req.url).pathname.replace(/\/+$/, '');
@@ -1438,9 +1477,5 @@ export default {
     Object.keys(c).forEach(k => h.set(k, c[k]));
     h.set('x-content-type-options', 'nosniff'); h.set('referrer-policy', 'no-referrer'); h.set('x-frame-options', 'DENY'); h.set('permissions-policy', 'camera=(), microphone=(), geolocation=()');
     return new Response(res.body, { status: res.status, headers: h });
-  },
-  // A Cron Trigger is NOT needed any more (it only wasted free daily limits). If you still have one in Cloudflare,
-  // this does nothing and costs nothing. Payments are detected when the customer's page, their account or your
-  // Orders screen looks at the order.
-  async scheduled() { /* intentionally empty */ }
+  }
 };

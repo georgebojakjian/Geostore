@@ -18,7 +18,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 
 1. **Back up first.** Open your OLD dashboard → **Publish → Backup everything**. Keep that file.
 2. **Download the new project** (GitHub → branch `claude/geostore-website-template-bwou47` → Code → Download ZIP) and unzip it.
-3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":18`.
+3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":19`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
 6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`, `manifest.webmanifest`.
@@ -32,8 +32,8 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 ### 1 — Server (Cloudflare)
 1. Cloudflare → Workers & Pages → create a Worker → paste `worker/worker.js` → Deploy.
 2. Settings → **Variables and Secrets**: add a **Secret** named `ADMIN_TOKEN` (a long password only you know). Settings → **Bindings** → add a **KV namespace** named `ORDERS`.
-3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":18`.
-4. Do **not** add a Cron Trigger (the shop does not need one).
+3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":19`.
+4. (Recommended safety net) add a **Cron Trigger** — see “Safety net: automatic checks every 5 minutes” below.
 
 ### 2 — Dashboard
 1. Open `admin/admin.html`. **Settings**:
@@ -214,6 +214,22 @@ Backups made from the dashboard do **not** include the uploaded ZIP files (they 
 
 ## Deleting expired orders
 Unpaid orders that expired are hidden from your customers and from your Orders list. Orders → **🗑 Delete expired orders** removes them for good (paid orders are never touched).
+
+## Safety net: automatic checks every 5 minutes (recommended, free)
+Normally a payment is detected when the customer's page, their account or your Orders screen looks at the order. A Cron Trigger makes the server also check **by itself every 5 minutes**, so an order is confirmed even if the customer closed the page, and you get a Telegram message when Binance shows money that matches **no** order (for example a customer who sent the wrong amount).
+1. Cloudflare → your Worker → **Settings → Triggers → Cron Triggers → Add**.
+2. Type `*/5 * * * *` (every 5 minutes) → **Add**.
+That is all. It uses a few free reads and almost no writes.
+
+## When a payment does not match (what to do, in order)
+1. Wait 2–3 minutes (Binance and the blockchain are sometimes slow).
+2. Orders → find the order (a **waiting** one, or filter **Expired** if it timed out) → **Why not paid?**. It lists every payment the server can see:
+   - **✅ exact match** → the order confirms by itself;
+   - **≈ close** (customer sent a slightly different amount) → the dashboard asks “Accept this payment?” — press OK **only if it is that customer's**;
+   - **nothing** → check the wallet address in Settings, or ask the customer for a screenshot of the transfer.
+3. Late payment on an **expired** order: open Orders → **Expired** → **Why not paid?** — if an exact payment arrived late, the order is confirmed and delivered.
+4. Last resort: **Mark paid** — only after you saw the money in Binance or your wallet.
+Expired orders are hidden from the normal list and from customers; they only appear under the **Expired** filter.
 
 ## Dashboard
 The dashboard now has the dark glass look. **Home** shows revenue, paid orders, estimated profit and “needs you” for **Today / 7D / 30D / 1Y**, a performance chart, payment-method split and the latest orders. **Gift cards → Prices** shows what each amount **costs you** at FazerCards, what you sell it for and your profit. The sun/moon button switches to a light dashboard.

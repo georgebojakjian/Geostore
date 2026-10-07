@@ -265,7 +265,7 @@
     <!-- ORDERS -->
     <section class="view" id="v-orders">
       <h1>Orders</h1><p class="lead">Every order from your shop. Paid orders are delivered automatically — you only act on the ones marked <b>needs you</b>.</p>
-      <div class="bar"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="oSearch" type="search" placeholder="Search email, item or order number…"><div class="seg" id="oFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="need">Needs you</button><button type="button" data-f="paid">Paid</button><button type="button" data-f="pending">Waiting</button></div></div><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-g btn-s" id="srvPurge">🗑 Delete expired orders</button><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></span></div>
+      <div class="bar"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="oSearch" type="search" placeholder="Search email, item or order number…"><div class="seg" id="oFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="need">Needs you</button><button type="button" data-f="paid">Paid</button><button type="button" data-f="pending">Waiting</button><button type="button" data-f="expired">Expired</button></div></div><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-g btn-s" id="srvPurge">🗑 Delete expired orders</button><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></span></div>
       <div class="panel tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Items</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="srvBody"></tbody></table>
         <p class="help" id="srvMsg">Press Refresh to load orders from your server.</p></div>
       <details class="panel"><summary style="cursor:pointer;font-weight:700">Old manual orders (only if you do not use the server)</summary>
@@ -486,7 +486,8 @@
   });
 
   /* ---------- home ---------- */
-  var lastOrders = [];
+  var lastOrders = [], expiredOrders = [];
+  function setOrders(r){ lastOrders = (r.orders || []).filter(function(x){ return x.status !== 'expired'; }); expiredOrders = (r.orders || []).filter(function(x){ return x.status === 'expired'; }); }
   function checklist(){
     var s = state.settings, w = s.autoWallets || {}, anyW = !!(w.usdt_trc20 || w.usdt_bep20 || w.btc || w.binancepay);
     var items = [
@@ -504,7 +505,7 @@
   function renderHome(){
     checklist(); paintStatus();
     $('homeLead').textContent = (state.settings.storeName || 'Your shop') + ' · ' + state.products.length + ' products' + (brandCount() ? ' · ' + brandCount() + ' gift-card brands' : '');
-    if (base() && token()) api('/api/admin/orders').then(function(r){ lastOrders = r.orders; homeOrders(); }).catch(function(e){ $('kRev').textContent = '–'; $('chart').innerHTML = '<p class="empty">' + esc(e.message) + '</p>'; });
+    if (base() && token()) api('/api/admin/orders').then(function(r){ setOrders(r); homeOrders(); }).catch(function(e){ $('kRev').textContent = '–'; $('chart').innerHTML = '<p class="empty">' + esc(e.message) + '</p>'; });
     else homeOrders();
   }
   // an order "needs you" when a Binance Pay claim is waiting, a supplier delivery is stuck, or a Binance→Binance order has waited over 1 hour
@@ -906,15 +907,15 @@
   var expiredN = 0;
   function loadServerOrders(){
     $('srvMsg').textContent = 'Loading…';
-    api('/api/admin/orders').then(function(r){ lastOrders = r.orders; expiredN = r.expiredN || 0; $('srvPurge').textContent = '🗑 Delete expired orders' + (expiredN ? ' (' + expiredN + ')' : ''); homeOrders(); drawOrders(); }).catch(function(e){ $('srvMsg').textContent = '❌ ' + e.message; $('srvBody').innerHTML = ''; });
+    api('/api/admin/orders').then(function(r){ setOrders(r); expiredN = r.expiredN || 0; $('srvPurge').textContent = '🗑 Delete expired orders' + (expiredN ? ' (' + expiredN + ')' : ''); homeOrders(); drawOrders(); }).catch(function(e){ $('srvMsg').textContent = '❌ ' + e.message; $('srvBody').innerHTML = ''; });
   }
   function drawOrders(){
     var q = $('oSearch').value.trim().toLowerCase();
-    var list = lastOrders.filter(function(o){
+    var list = (of === 'expired' ? expiredOrders : lastOrders).filter(function(o){
       if (of === 'need' && !needsYou(o)) return false; if (of === 'paid' && o.status !== 'paid') return false; if (of === 'pending' && o.status !== 'pending') return false;
       return !q || (o.email + ' ' + o.title + ' ' + o.id.slice(0, 8)).toLowerCase().indexOf(q) > -1;
     });
-    $('srvMsg').textContent = lastOrders.length ? list.length + ' of ' + lastOrders.length + ' order(s)' : 'No orders yet.';
+    $('srvMsg').textContent = (of === 'expired' ? expiredOrders : lastOrders).length ? list.length + ' of ' + (of === 'expired' ? expiredOrders : lastOrders).length + ' order(s)' + (of === 'expired' ? ' — expired without payment. If a customer says they paid, press “Why not paid?”.' : '') : (of === 'expired' ? 'No expired orders.' : 'No orders yet.');
     $('srvBody').innerHTML = list.map(function(o){
       var link = base() + '/api/delivery/' + o.id + '?k=' + o.key, need = needsYou(o);
       return '<tr' + (need ? ' style="background:rgba(183,121,31,.08)"' : '') + '><td>' + esc(dstr2(o.createdAt)) + '</td><td>' + esc(o.email) + '</td><td>' + esc(o.title) + '</td><td>' + (o.usd ? '$' + esc(o.usd) : '') + '<div class="help">' + esc(o.amount) + ' ' + esc(o.coin || 'USDT') + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span>' + (need ? ' <span class="pill bad">needs you</span>' : '') +
@@ -922,7 +923,7 @@
         (o.fulfil ? '<div class="help">' + (o.fulfil==='ok' ? '🎁 delivered · cost $' + esc(o.cost) + ' · profit $' + esc(Math.round((o.usd - o.cost)*100)/100) : o.fulfil==='wait' ? '⏳ buying from supplier… ' + esc(o.fulfilErr) : '⚠ ' + esc(o.fulfilErr || 'supplier problem')) + '</div>' : '') + '</td><td><div class="acts">' +
         (o.fulfil && o.fulfil!=='ok' && o.status==='paid' ? '<button class="btn btn-p btn-s" data-retry="' + esc(o.id) + '">Retry delivery</button>' : '') +
         (o.status==='paid' ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(link) + '">Open order</a>' : '') +
-        (o.status==='pending' ? '<button class="btn btn-g btn-s" data-why="' + esc(o.id) + '">Why not paid?</button>' : '') +
+        ((o.status==='pending' || o.status==='expired') ? '<button class="btn btn-g btn-s" data-why="' + esc(o.id) + '">Why not paid?</button>' : '') +
         (o.status!=='paid' ? '<button class="btn btn-g btn-s" data-mp="' + esc(o.id) + '">Mark paid</button>' : '') + '</div></td></tr>';
     }).join('');
   }
@@ -939,7 +940,21 @@
     var rb = e.target.closest('[data-retry]');
     if (rb){ rb.disabled = true; api('/api/admin/retry', {method:'POST', body: JSON.stringify({id: rb.dataset.retry})}).then(function(r){ toast(r.fulfil === 'ok' ? 'Delivered ✅' : 'Still not delivered: ' + (r.error || 'supplier problem')); loadServerOrders(); }).catch(function(er){ toast(er.message); rb.disabled = false; }); return; }
     var wb = e.target.closest('[data-why]');
-    if (wb){ wb.disabled = true; api('/api/admin/diagnose', {method:'POST', body: JSON.stringify({id: wb.dataset.why})}).then(function(r){ var i = r.info; wb.disabled = false; alert('Server expects: ' + i.expects + ' USDT (' + i.coin + ')\nWallet: ' + i.wallet + '\n\n' + i.notes.join('\n') + (i.seen.length ? '\n\nIncoming transfers:\n' + i.seen.map(function(t){ return t.amount + '  ' + t.when + (t.match ? '  ✅ matches' : ''); }).join('\n') : '') + (i.after ? '\n\nOrder is now: ' + i.after : '')); loadServerOrders(); }).catch(function(er){ wb.disabled = false; toast(er.message); }); return; }
+    if (wb){
+      var oid = wb.dataset.why; wb.disabled = true;
+      api('/api/admin/diagnose', {method:'POST', body: JSON.stringify({id: oid})}).then(function(r){
+        var i = r.info; wb.disabled = false;
+        var lines = i.seen.map(function(t){ return (t.match ? '✅ ' : t.near ? '≈ ' : '• ') + t.amount + '   ' + t.when + (t.used ? '   (already used by another order)' : t.match ? '   (exact match)' : t.near ? '   (close to the expected amount)' : ''); });
+        alert('Expected: ' + i.expects + ' (' + i.coin + ')\nWallet: ' + i.wallet + '\n\n' + i.notes.join('\n') + (lines.length ? '\n\nPayments the server can see:\n' + lines.join('\n') : '') + (i.after ? '\n\nOrder is now: ' + i.after : ''));
+        var cand = i.seen.filter(function(t){ return t.near && !t.used; })[0] || i.seen.filter(function(t){ return t.match && !t.used; })[0];
+        if (cand && i.after !== 'paid' && confirm('Accept this payment for the order?\n\n' + cand.amount + '   ' + cand.when + '\n\nOnly do this if you are sure it belongs to this customer.')){
+          api('/api/admin/accept', {method:'POST', body: JSON.stringify({id: oid, ref: cand.ref})}).then(function(){ toast('Order marked paid — delivery is automatic'); loadServerOrders(); }).catch(function(er){ toast(er.message); });
+          return;
+        }
+        loadServerOrders();
+      }).catch(function(er){ wb.disabled = false; toast(er.message); });
+      return;
+    }
     var b = e.target.closest('[data-mp]'); if (!b) return;
     if (!confirm('Mark this order as paid? Only do this after you saw the money in your wallet / Binance.')) return;
     api('/api/admin/markpaid', {method:'POST', body: JSON.stringify({id:b.dataset.mp})}).then(function(){ toast('Marked as paid — delivery is automatic'); loadServerOrders(); }).catch(function(er){ toast(er.message); });
