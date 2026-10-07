@@ -67,7 +67,8 @@
   function stillPicture(){ dead = true; render(1000); }
   function draw1(){ render(1000); }
   window.addEventListener('resize', function(){ resize(); if (dead || reduce || saver) draw1(); });
-  window.addEventListener('scroll', function(){ sy = window.pageYOffset; scrolling = 3; }, {passive: true});
+  var sc = document.documentElement.classList.contains('shell') ? document.getElementById('scr') : null;
+  (sc || window).addEventListener('scroll', function(){ sy = sc ? sc.scrollTop : window.pageYOffset; scrolling = 3; }, {passive: true});
   window.addEventListener('pointermove', function(e){ mx = e.clientX / W; my = e.clientY / H; }, {passive: true});
   new MutationObserver(function(){ if (dead || reduce || saver) draw1(); }).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
   resize();

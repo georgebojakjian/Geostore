@@ -42,10 +42,12 @@
   $('year').textContent = new Date().getFullYear();
   $$('[data-contact]').forEach(function(a){ a.href = 'mailto:' + (S.email || ''); });
 
+  var SHELL = document.documentElement.classList.contains('shell'), SCR = $('scr'), SCRSRC = SHELL ? SCR : window;
+  function curY(){ return SHELL ? SCR.scrollTop : (window.pageYOffset || 0); }
   /* ---------------- scroll lock + modals ---------------- */
   var lockN = 0, lockY = 0, lastFocus = null, onClose = {};
-  function lockScroll(){ if (lockN++ === 0){ lockY = window.pageYOffset || 0; document.body.style.top = (-lockY) + 'px'; document.body.classList.add('locked'); } }
-  function unlockScroll(){ if (lockN > 0 && --lockN === 0){ document.body.classList.remove('locked'); document.body.style.top = ''; window.scrollTo(0, lockY); } }
+  function lockScroll(){ if (SHELL){ if (lockN++ === 0){ lockY = SCR.scrollTop; SCR.style.overflowY = 'hidden'; document.body.classList.add('locked'); } return; } if (lockN++ === 0){ lockY = window.pageYOffset || 0; document.body.style.top = (-lockY) + 'px'; document.body.classList.add('locked'); } }
+  function unlockScroll(){ if (SHELL){ if (lockN > 0 && --lockN === 0){ document.body.classList.remove('locked'); SCR.style.overflowY = ''; SCR.scrollTop = lockY; } return; } if (lockN > 0 && --lockN === 0){ document.body.classList.remove('locked'); document.body.style.top = ''; window.scrollTo(0, lockY); } }
   function openModal(m, from){
     lastFocus = from || document.activeElement;
     if (!m.classList.contains('open')){ m.classList.add('open'); lockScroll(); }
@@ -119,7 +121,7 @@
     window.addEventListener('resize', function(){ if (!on) base = Math.max(base, window.innerHeight); chk(); });
     if (vv){ vv.addEventListener('resize', chk); }
     document.addEventListener('focusout', function(){ setTimeout(function(){ if (!/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '')){ on = false; document.body.classList.remove('typing'); } }, 150); });
-    window.addEventListener('scroll', function(){ if (on && !/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '')){ on = false; document.body.classList.remove('typing'); } }, {passive:true});
+    SCRSRC.addEventListener('scroll', function(){ if (on && !/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '')){ on = false; document.body.classList.remove('typing'); } }, {passive:true});
     window.addEventListener('pageshow', function(){ on = false; document.body.classList.remove('typing'); base = window.innerHeight; });
   })();
   // tapping any bar item first closes an open window, so the bar always works (tapping the open tab again closes it)
@@ -133,13 +135,13 @@
     var href = it.getAttribute('href');
     if (href && href.charAt(0) === '#'){            // Home / Shop: scroll after the window has released the page
       e.preventDefault(); var tg = document.querySelector(href);
-      setTimeout(function(){ window.scrollTo({top: (tg && href !== '#top') ? Math.max(0, tg.getBoundingClientRect().top + window.pageYOffset - 56) : 0, behavior: 'smooth'}); }, 30);
+      setTimeout(function(){ var top = (tg && href !== '#top') ? Math.max(0, tg.getBoundingClientRect().top - (SHELL ? SCR.getBoundingClientRect().top : 0) + curY() - 56) : 0; (SHELL ? SCR : window).scrollTo({top: top, behavior: 'smooth'}); }, 30);
     }
   }, true);
   (function(){
     var hdr = $('hdr'), shop = $('shop'), tick = false;
-    function upd(){ tick = false; var y = window.pageYOffset; hdr.classList.toggle('scrolled', y > 8); var nb = y > shop.offsetTop - 160 ? 'shop' : 'home'; if (nb !== tabBase){ tabBase = nb; tabShow(); } }
-    window.addEventListener('scroll', function(){ if (!tick){ tick = true; requestAnimationFrame(upd); } }, {passive:true}); upd();
+    function upd(){ tick = false; var y = curY(); hdr.classList.toggle('scrolled', y > 8); var nb = y > shop.offsetTop - 160 ? 'shop' : 'home'; if (nb !== tabBase){ tabBase = nb; tabShow(); } }
+    SCRSRC.addEventListener('scroll', function(){ if (!tick){ tick = true; requestAnimationFrame(upd); } }, {passive:true}); upd();
   })();
 
   /* ---------------- images (logos / flags) ---------------- */

@@ -427,3 +427,10 @@ html,body{overscroll-behavior-y:none}
 }
 
 .card .prev::after{top:auto!important;bottom:8px}
+
+/* Installed iPhone/Android app (home-screen): the page never scrolls itself. Only #scr scrolls, so the bar, header and
+   background can never be pushed around by the browser's own scrolling or bouncing. Normal browsers are not affected. */
+html.shell,html.shell body{height:100%;overflow:hidden;overscroll-behavior:none}
+html.shell body{position:fixed;inset:0;width:100%;padding-bottom:0!important}
+html.shell #scr{position:absolute;left:0;right:0;top:0;bottom:var(--tab-h);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+html.shell .tabbar{position:fixed!important;bottom:0!important}

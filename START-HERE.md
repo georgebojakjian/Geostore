@@ -192,6 +192,11 @@ If a receipt cannot be sent you get a Telegram note with the reason, and the ord
 **How it works:** every order has a unique amount (for example 5.14). When your Binance history shows an incoming USDT payment of exactly that amount, the order turns paid. Customers must send the **exact amount**.
 
 **Good to know**
+- **If the check says “Binance blocks this server location (HTTP 403)”** — Binance refuses some countries, and Cloudflare sometimes runs your server in one of them. Try these in order:
+  1. **Smart Placement:** Cloudflare → your Worker → **Settings → Runtime → Placement → Smart** → save. Cloudflare then runs your server near the services it calls. Wait a minute and press **Check Binance connection** again.
+  2. Press the check button two or three times — different Cloudflare locations answer different times.
+  3. **Binance relay (always works if you pick an allowed country):** follow `relay/README.md` — about 10 minutes, free on Vercel, in Frankfurt. It only forwards your two read-only history calls.
+  Meanwhile **Mark paid** keeps working for Binance orders.
 - If Binance refuses requests from Cloudflare's location (an HTTP 451 or “restricted location” message), the server automatically tries Binance's other addresses; if all fail, **Why not paid?** shows the reason and **Mark paid** still works.
 - Keep your Binance account safe (two-step login). Never create a key with withdrawal permission.
 - I could not test this against the real Binance service from here, only against simulated answers. Test with one small real payment before announcing.

@@ -735,7 +735,7 @@ async function findBsc(env, o) {
    With a READ-ONLY Binance API key (Cloudflare secrets BINANCE_KEY + BINANCE_SECRET) the server also sees money that never touches
    the blockchain: Binance Pay transfers and Binance-to-Binance (internal) deposits to your Binance deposit address. */
 const binanceOn = env => !!(env.BINANCE_KEY && env.BINANCE_SECRET);
-const BN_HOSTS = ['https://api.binance.com', 'https://api1.binance.com', 'https://api2.binance.com', 'https://api3.binance.com', 'https://api4.binance.com'];
+const BN_HOSTS = ['https://api-gcp.binance.com', 'https://api.binance.com', 'https://api1.binance.com', 'https://api2.binance.com', 'https://api3.binance.com', 'https://api4.binance.com'];
 const bnCache = new Map();
 async function hmacHex(secret, msg) {
   const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -747,11 +747,15 @@ async function binanceGet(env, path, params) {
   const q = new URLSearchParams(Object.assign({}, params, { timestamp: String(Date.now()), recvWindow: '10000' })).toString();
   const url = path + '?' + q + '&signature=' + await hmacHex(env.BINANCE_SECRET, q);
   let last = 'Binance did not answer';
-  for (const h of BN_HOSTS) {
+  // Optional relay (env.BINANCE_RELAY + RELAY_SECRET): a tiny forwarder you host in a country Binance accepts, used when Cloudflare's location is blocked
+  const targets = (env.BINANCE_RELAY ? [{ relay: true }] : []).concat(BN_HOSTS.map(h => ({ h })));
+  for (const t of targets) {
     try {
-      const r = await fetch(h + url, { headers: { 'X-MBX-APIKEY': env.BINANCE_KEY }, signal: AbortSignal.timeout(8000) });
+      const r = t.relay
+        ? await fetch(String(env.BINANCE_RELAY).replace(/\/+$/, '') + '?p=' + encodeURIComponent(url), { headers: { 'X-MBX-APIKEY': env.BINANCE_KEY, 'x-relay-secret': String(env.RELAY_SECRET || '') }, signal: AbortSignal.timeout(9000) })
+        : await fetch(t.h + url, { headers: { 'X-MBX-APIKEY': env.BINANCE_KEY }, signal: AbortSignal.timeout(8000) });
       const j = await r.json().catch(() => null);
-      if (r.status === 451 || r.status === 403) { last = 'Binance blocks this server location (HTTP ' + r.status + ')'; continue; }
+      if (r.status === 451 || r.status === 403) { last = (t.relay ? 'The relay or Binance refused the request' : 'Binance blocks this server location') + ' (HTTP ' + r.status + ')'; continue; }
       if (!r.ok || (j && j.code && String(j.code) !== '000000' && Number(j.code) < 0)) { last = (j && (j.msg || j.message)) || ('Binance HTTP ' + r.status); if (r.status >= 500) continue; throw new Error(last); }
       bnCache.set(ck, { t: Date.now(), v: j }); if (bnCache.size > 50) bnCache.clear();
       return j;
@@ -1242,7 +1246,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 17, mail: mailOn(env), binance: binanceOn(env) });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 18, mail: mailOn(env), binance: binanceOn(env), relay: !!env.BINANCE_RELAY });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
