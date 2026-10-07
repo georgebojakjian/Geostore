@@ -235,7 +235,7 @@ async function accountRoutes(req, env, path, apiBase) {
     const ids = (acct.orders || []).slice(-50).reverse();
     let found = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
     found = await Promise.all(found.map((o, i) => o.status === 'pending' && i < 5 ? checkOrder(env, o) : (i < 5 ? ensureFulfilled(env, o) : o)));   // detect payments when the customer comes back
-    const orders = found.map(o => publicOrder(env, o, apiBase));
+    const orders = found.filter(o => o.status !== 'expired').map(o => publicOrder(env, o, apiBase));   // expired orders are useless to the customer: not shown
     const spent = round2(orders.filter(o => o.status === 'paid').reduce((a, o) => a + (Number(o.usd) || 0), 0));
     return json(env, { profile: profileOf(acct), orders, spent });
   }
@@ -1061,9 +1061,25 @@ async function adminOrders(env) {
   const ids = ((await env.ORDERS.get('oidx', 'json')) || []).slice(-100).reverse();
   let list = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
   list = await Promise.all(list.map((o, i) => o.status === 'pending' && i < 8 ? checkOrder(env, o) : (i < 8 ? ensureFulfilled(env, o) : o)));   // refresh waiting orders
+  const expiredN = list.filter(o => o.status === 'expired').length; list = list.filter(o => o.status !== 'expired');
   const orders = list.map(o => ({ id: o.id, email: o.email, title: orderTitle(o), item: o.item || '', amount: fmtAmount(orderCoin(o), o.amount), coin: COINS[orderCoin(o)].short, coinName: COINS[orderCoin(o)].name, usd: o.usd || null, status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null, key: o.key, account: o.account || null, claimed: o.claimed || null,
     fulfil: fulfilState(o), fulfilErr: Object.values(o.fulfil || {}).map(f => f.error).filter(Boolean)[0] || '', cost: round2(supplierLines(o).reduce((a, l) => a + (Number(l.supplier.cost) || 0) * qtyOf(l), 0)) || null, fromBinance: !!o.fromBinance }));
-  return json(env, { orders });
+  return json(env, { orders, expiredN });
+}
+// Delete orders that expired without being paid (frees storage; they are of no use to you or the customer)
+async function purgeExpired(env) {
+  const ids = (await env.ORDERS.get('oidx', 'json')) || [], keep = [], dead = [];
+  const orders = await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')));
+  const now = Date.now();
+  ids.forEach((id, i) => {
+    const o = orders[i];
+    if (!o) { dead.push(null); return; }                                  // already gone: just drop from the index
+    const coin = orderCoin(o), gone = o.status === 'expired' || (o.status === 'pending' && now > o.expiresAt + COINS[coin].graceMs + 3600000);
+    if (gone && dead.filter(Boolean).length < 80) dead.push(o); else keep.push(id);
+  });
+  for (const o of dead) if (o) { await env.ORDERS.delete('order:' + o.id); await env.ORDERS.delete(o.amtKey || ('amt:' + o.amount)).catch(() => {}); }
+  if (dead.length) await env.ORDERS.put('oidx', JSON.stringify(keep));
+  return json(env, { ok: true, deleted: dead.filter(Boolean).length, more: dead.filter(Boolean).length >= 80 });
 }
 async function adminCustomers(env, url) {
   const all = ((await env.ORDERS.get('cidx', 'json')) || []).slice().reverse();
@@ -1263,6 +1279,7 @@ async function route(req, env) {
         catch (e) { return fail(env, 'The email service said: ' + String((e && e.message) || e).slice(0, 200)); }
         return json(env, { ok: true });
       }
+      if (path === '/api/admin/purge-expired' && req.method === 'POST') return await purgeExpired(env);
       if (path === '/api/admin/markpaid' && req.method === 'POST') {
         const b = await req.json().catch(() => ({}));
         const o = await env.ORDERS.get('order:' + String(b.id || ''), 'json');

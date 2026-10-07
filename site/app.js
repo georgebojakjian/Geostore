@@ -109,10 +109,18 @@
     return {set: set};
   })();
   function tabShow(){ Tab.set(tabOver || tabBase); }
-  (function(){                                       // keyboard open: hide the bar so it can never sit on top of the keys or the form
-    var t = null, tags = /^(INPUT|TEXTAREA|SELECT)$/;
-    document.addEventListener('focusin', function(e){ if (tags.test(e.target.tagName)){ clearTimeout(t); document.body.classList.add('typing'); } });
-    document.addEventListener('focusout', function(){ clearTimeout(t); t = setTimeout(function(){ if (!tags.test((document.activeElement || {}).tagName || '')) document.body.classList.remove('typing'); }, 120); });
+  (function(){                                       // keyboard open: hide the bar only while the on-screen keyboard is really showing
+    var vv = window.visualViewport, base = window.innerHeight, on = false;
+    function chk(){
+      if (!vv) return;
+      var open = (base - vv.height) > 140 && /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '');
+      if (open !== on){ on = open; document.body.classList.toggle('typing', open); }
+    }
+    window.addEventListener('resize', function(){ if (!on) base = Math.max(base, window.innerHeight); chk(); });
+    if (vv){ vv.addEventListener('resize', chk); }
+    document.addEventListener('focusout', function(){ setTimeout(function(){ if (!/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '')){ on = false; document.body.classList.remove('typing'); } }, 150); });
+    window.addEventListener('scroll', function(){ if (on && !/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '')){ on = false; document.body.classList.remove('typing'); } }, {passive:true});
+    window.addEventListener('pageshow', function(){ on = false; document.body.classList.remove('typing'); base = window.innerHeight; });
   })();
   // tapping any bar item first closes an open window, so the bar always works (tapping the open tab again closes it)
   $('tabbar').addEventListener('click', function(e){

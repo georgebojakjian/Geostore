@@ -258,7 +258,7 @@
     <!-- ORDERS -->
     <section class="view" id="v-orders">
       <h1>Orders</h1><p class="lead">Every order from your shop. Paid orders are delivered automatically — you only act on the ones marked <b>needs you</b>.</p>
-      <div class="bar"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="oSearch" type="search" placeholder="Search email, item or order number…"><div class="seg" id="oFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="need">Needs you</button><button type="button" data-f="paid">Paid</button><button type="button" data-f="pending">Waiting</button></div></div><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></div>
+      <div class="bar"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="oSearch" type="search" placeholder="Search email, item or order number…"><div class="seg" id="oFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="need">Needs you</button><button type="button" data-f="paid">Paid</button><button type="button" data-f="pending">Waiting</button></div></div><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-g btn-s" id="srvPurge">🗑 Delete expired orders</button><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></span></div>
       <div class="panel tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Items</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="srvBody"></tbody></table>
         <p class="help" id="srvMsg">Press Refresh to load orders from your server.</p></div>
       <details class="panel"><summary style="cursor:pointer;font-weight:700">Old manual orders (only if you do not use the server)</summary>
@@ -857,9 +857,10 @@
   /* ---------- orders from the server ---------- */
   var of = 'all';
   function dstr2(ms){ return new Date(ms).toISOString().slice(0,16).replace('T',' '); }
+  var expiredN = 0;
   function loadServerOrders(){
     $('srvMsg').textContent = 'Loading…';
-    api('/api/admin/orders').then(function(r){ lastOrders = r.orders; homeOrders(); drawOrders(); }).catch(function(e){ $('srvMsg').textContent = '❌ ' + e.message; $('srvBody').innerHTML = ''; });
+    api('/api/admin/orders').then(function(r){ lastOrders = r.orders; expiredN = r.expiredN || 0; $('srvPurge').textContent = '🗑 Delete expired orders' + (expiredN ? ' (' + expiredN + ')' : ''); homeOrders(); drawOrders(); }).catch(function(e){ $('srvMsg').textContent = '❌ ' + e.message; $('srvBody').innerHTML = ''; });
   }
   function drawOrders(){
     var q = $('oSearch').value.trim().toLowerCase();
@@ -881,6 +882,11 @@
   }
   function renderOrders(){ renderManual(); }
   $('srvRefresh').addEventListener('click', loadServerOrders);
+  $('srvPurge').addEventListener('click', function(){
+    if (!confirm('Delete all orders that expired without payment? They are of no use and cannot be restored. Paid orders are never touched.')) return;
+    var b = this; b.disabled = true;
+    api('/api/admin/purge-expired', {method:'POST', body:'{}'}).then(function(r){ b.disabled = false; toast(r.deleted + ' expired order(s) deleted' + (r.more ? ' — press again to delete more' : '')); loadServerOrders(); }).catch(function(e){ b.disabled = false; toast(e.message); });
+  });
   $('oSearch').addEventListener('input', drawOrders);
   $('oFilter').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; of = b.dataset.f; $$('#oFilter button').forEach(function(x){ x.classList.toggle('on', x === b); }); drawOrders(); });
   $('srvBody').addEventListener('click', function(e){
