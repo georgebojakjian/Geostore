@@ -191,6 +191,13 @@
           <div class="full"><label for="fTag">One-line description</label><input id="fTag"></div>
           <div><label for="fPrice">Price (USD)</label><input id="fPrice" type="number" min="0" step="0.5" required></div>
           <div><label class="chk" style="margin-top:30px"><input type="checkbox" id="fPub"> Show on the website</label><label class="chk" style="margin-top:8px"><input type="checkbox" id="fWm"> Watermark the live preview <span class="help">(recommended for websites)</span></label></div>
+          <div class="full" id="filesBox">
+            <h3 style="margin-bottom:6px">Project files <span class="pill">optional</span></h3>
+            <p class="help" style="margin-bottom:10px">Selling a whole project (website + dashboard, an Android project…)? Zip each part and upload it here. Customers get download buttons on their order page after payment. Files are stored privately on your server (up to <b>20 MB</b> each). For bigger files use a private download link instead (Google Drive, Mega, Dropbox).</p>
+            <div id="fileList" style="display:grid;gap:8px;margin-bottom:10px"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><label class="btn btn-p btn-s" style="margin:0;cursor:pointer">⬆ Upload a file (ZIP…)<input type="file" id="fileUp" multiple hidden></label><span class="help" id="fileMsg"></span></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><input id="lnkName" placeholder="Name, e.g. Android project" style="max-width:220px"><input id="lnkUrl" placeholder="https://… private download link" style="flex:1;min-width:220px"><button type="button" class="btn btn-g btn-s" id="lnkAdd">Add link</button></div>
+          </div>
           <div class="full" id="codeFields">
             <h3 style="margin-bottom:6px">Styles &amp; code</h3>
             <p class="help" style="margin-bottom:10px">Each style has a <b>public sample</b> (shown in the product card) and the <b>full code</b> (private — customers see it as a view-only preview and receive it after payment).</p>
@@ -626,7 +633,7 @@
   function stockCount(){ var n = $('fStock').value.split('\n').filter(function(x){ return x.trim(); }).length; $('stockCount').textContent = n + ' code(s) listed' + (draft && draft.used ? ' · ' + draft.used + ' already used (manual delivery)' : ''); }
   function toggleType(){
     var dg = draft.type === 'digital';
-    $('codeFields').hidden = dg; $('digFields').hidden = !dg; $('fType').value = draft.type;
+    $('codeFields').hidden = dg; $('filesBox').hidden = dg; $('digFields').hidden = !dg; $('fType').value = draft.type;
     $('fStyleP').parentNode.hidden = dg; $('fGroup').parentNode.hidden = dg;
     if (dg){ $('fIcon').value = draft.icon || ''; $('fStock').value = (draft.stock || []).join('\n'); stockCount(); }
     var sup = !!draft.supplier; $('supNote').hidden = !sup; $('stockBox').hidden = sup; $('fType').disabled = sup;
@@ -640,12 +647,44 @@
     $('fPub').checked = p.published!==false; $('fWm').checked = p.wm !== false; $('fTag').value = p.tagline||'';
     $('fStyleP').value = p.stylePrice||''; $('fGroup').value = p.group||''; $('fGuide').value = p.guide||'';
     $('delP').style.display = p._new ? 'none' : '';
+    draft.files = draft.files || []; draft._delFiles = []; drawFiles();
     toggleType();
     window.scrollTo(0,0);
   }
   $('vRow').addEventListener('click', function(e){ var b = e.target.closest('[data-vi]'); if (!b) return; saveVariantFields(); vi = +b.dataset.vi; renderVariants(); });
   $('vAdd').addEventListener('click', function(){ saveVariantFields(); draft.variants.push({name:'Style ' + (draft.variants.length + 1), sample:TPL, full:TPL}); vi = draft.variants.length - 1; renderVariants(); });
   $('vDel').addEventListener('click', function(){ if (draft.variants.length < 2 || !confirm('Remove this style?')) return; draft.variants.splice(vi, 1); vi = Math.min(vi, draft.variants.length - 1); renderVariants(); });
+  /* ---------- project files ---------- */
+  function fsize(n){ return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+  function rid(){ var a = new Uint8Array(8); crypto.getRandomValues(a); return Array.prototype.map.call(a, function(b){ return ('0' + b.toString(16)).slice(-2); }).join(''); }
+  function drawFiles(){
+    var f = (draft && draft.files) || [];
+    $('fileList').innerHTML = f.map(function(x, i){ return '<div class="pcard" style="margin:0;grid-template-columns:36px 1fr auto;padding:10px 12px;align-items:center"><span style="font-size:1.4rem">' + (x.url ? '🔗' : '📦') + '</span><div><b>' + esc(x.name) + '</b><div class="help">' + (x.url ? esc(x.url.slice(0, 60)) + '…' : fsize(x.size || 0)) + '</div></div><button type="button" class="btn btn-d btn-s" data-fdel="' + i + '">Remove</button></div>'; }).join('');
+  }
+  $('fileList').addEventListener('click', function(e){
+    var b = e.target.closest('[data-fdel]'); if (!b) return;
+    var x = draft.files.splice(+b.dataset.fdel, 1)[0]; if (x && !x.url) draft._delFiles.push(x.id); drawFiles();
+  });
+  $('lnkAdd').addEventListener('click', function(){
+    var n = $('lnkName').value.trim() || 'Download', u = $('lnkUrl').value.trim();
+    if (!/^https:\/\/[^\s"'<>]{4,600}$/.test(u)){ toast('The link must start with https://'); return; }
+    if (draft.files.length >= 8){ toast('Maximum 8 files per product'); return; }
+    draft.files.push({id: rid(), name: n, size: 0, url: u}); $('lnkName').value = ''; $('lnkUrl').value = ''; drawFiles();
+  });
+  $('fileUp').addEventListener('change', function(){
+    var inp = this, list = Array.prototype.slice.call(inp.files || []); inp.value = '';
+    if (!base()){ toast('Connect your server in Settings first'); return; }
+    (function next(){
+      var f = list.shift(); if (!f){ $('fileMsg').textContent = ''; return; }
+      if (draft.files.length >= 8){ toast('Maximum 8 files per product'); return; }
+      if (f.size > 20 * 1024 * 1024){ toast(f.name + ' is bigger than 20 MB — use a download link for big files'); return next(); }
+      var id = rid(); $('fileMsg').textContent = 'Uploading ' + f.name + '…';
+      fetch(base() + '/api/admin/file?pid=' + encodeURIComponent(draft.id) + '&fid=' + id, {method:'PUT', headers:{authorization:'Bearer ' + token(), 'content-type':'application/octet-stream'}, body: f})
+        .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if (!r.ok) throw new Error(j.error || 'Upload failed'); }); })
+        .then(function(){ draft.files.push({id: id, name: f.name, size: f.size}); drawFiles(); toast(f.name + ' uploaded — save the product, then Sync'); next(); })
+        .catch(function(er){ $('fileMsg').textContent = '❌ ' + er.message; });
+    })();
+  });
   $('fType').addEventListener('change', function(){ saveVariantFields(); draft.type = this.value; toggleType(); });
   $('fStock').addEventListener('input', stockCount);
   $('newP').addEventListener('click', function(){
@@ -683,7 +722,9 @@
     var isNew = p._new; delete draft._new;
     if (isNew) state.products.push(draft);
     else { var i = state.products.indexOf(p); state.products[i] = draft; }
+    var dels = draft._delFiles || []; delete draft._delFiles;
     save(true); toast('Product saved'); backToList();
+    dels.forEach(function(fid){ if (base()) fetch(base() + '/api/admin/file?pid=' + encodeURIComponent(p.id) + '&fid=' + fid, {method:'DELETE', headers:{authorization:'Bearer ' + token()}}).catch(function(){}); });
   });
   $('delP').addEventListener('click', function(){
     if (!editing || editing._new) return;
@@ -828,7 +869,7 @@
   // Sync = upload each CHANGED product on its own (small requests), then one small index.
   function hash(str){ var h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (var i = 0, c; i < str.length; i++){ c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); } h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909); h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909); return (h2>>>0).toString(16) + (h1>>>0).toString(16); }
   function srvProduct(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, guide:p.guide||'', type:p.type, published:p.published!==false,
-    variants:p.type==='code' ? p.variants.map(function(v){ return {name:v.name, full:v.full}; }) : [], stock:p.type==='digital' ? p.stock : []}; }
+    variants:p.type==='code' ? p.variants.map(function(v){ return {name:v.name, full:v.full}; }) : [], files:p.files || [], stock:p.type==='digital' ? p.stock : []}; }
   function supForServer(){ var s = state.settings.sup, cats = {}; Object.keys(s.cats).forEach(function(id){ cats[id] = {n: s.cats[id].n}; }); var tc = {}; Object.keys(s.tcats || {}).forEach(function(id){ tc[id] = {n: s.tcats[id].n}; }); return {rule: s.rule, cats: cats, tcats: tc, over: s.over || {}}; }
   var syncing = false;
   function runSync(force){
@@ -850,7 +891,7 @@
       api('/api/admin/index', {method:'POST', body: JSON.stringify({
         storeName: state.settings.storeName, wallets: state.settings.autoWallets || {}, binanceAddr: state.settings.binanceAddr || {}, remove: removed, sup: supForServer(),
         allAccess: {enabled: !!aa.enabled, title: aa.title, price: aa.price},
-        products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, type:p.type, published:p.published!==false, wm:p.wm !== false, supplier:p.supplier ? {cat:p.supplier.cat, card:p.supplier.card} : undefined, variants:p.type==='code' ? p.variants.map(function(v){ return v.name; }) : [], stockN:p.type==='digital' ? p.stock.length : 0}; })
+        products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, type:p.type, published:p.published!==false, wm:p.wm !== false, files:p.files || [], supplier:p.supplier ? {cat:p.supplier.cat, card:p.supplier.card} : undefined, variants:p.type==='code' ? p.variants.map(function(v){ return v.name; }) : [], stockN:p.type==='digital' ? p.stock.length : 0}; })
       })}).then(function(r){ removed.forEach(function(id){ state.sync['gone:' + id] = 1; }); state.dirtySync = false; save(); finish('✅ Synced: ' + total + ' product(s) uploaded, ' + (r.products - total) + ' unchanged. The server is up to date.'); })
         .catch(function(e){ finish('❌ ' + e.message, true); });
     }
@@ -1202,7 +1243,7 @@
   function downloadData(){
     var s = state.settings, pubSettings = {storeName:s.storeName, tagline:s.tagline, email:s.email, whatsapp:s.whatsapp || '', telegram:s.telegram || '', apiUrl:s.apiUrl || '', allAccess:s.allAccess, digitalSection:s.digitalSection, social:s.social || {}, featured:s.featured || '', wallets:s.wallets};
     var pub = {settings: pubSettings, gift: giftData(), products: state.products.map(function(p){
-      var q = {id:p.id, title:p.title, category:p.category, price:p.price, stylePrice:p.stylePrice||0, group:p.group||'', guide:p.guide||'', tagline:p.tagline, type:p.type, published:p.published!==false};
+      var q = {id:p.id, title:p.title, category:p.category, price:p.price, stylePrice:p.stylePrice||0, group:p.group||'', guide:p.guide||'', tagline:p.tagline, type:p.type, published:p.published!==false, files:(p.files || []).map(function(f){ return {name:f.name, size:f.size || 0, link:!!f.url}; })};
       if (p.type === 'digital') q.icon = p.icon || '';
       else q.variants = p.variants.map(function(v){ return {name:v.name, sample:v.sample}; });
       return q;

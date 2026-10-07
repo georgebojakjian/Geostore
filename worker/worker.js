@@ -49,7 +49,7 @@ function corsHeaders(env, path) {
   return {
     'access-control-allow-origin': '*',
     'access-control-allow-headers': 'content-type,authorization',
-    'access-control-allow-methods': 'GET,POST,OPTIONS',
+    'access-control-allow-methods': 'GET,POST,PUT,DELETE,OPTIONS',
     'vary': 'origin'
   };
 }
@@ -913,7 +913,7 @@ async function fullPreview(req, env, id, vi) {
 
 async function deliveryData(env, o, cat) {
   const prods = cat.products || {}, parts = [], jobs = [];
-  const head = (id, p) => '{"id":' + J(id) + ',"title":' + J(p.title) + ',"tagline":' + J(p.tagline || '') + ',';
+  const head = (id, p) => '{"id":' + J(id) + ',"title":' + J(p.title) + ',"tagline":' + J(p.tagline || '') + ',"files":' + J((p.files || []).map(f => ({ id: f.id, name: f.name, size: f.size, url: f.url || undefined }))) + ',';
   async function code(id, styles) {
     const p = prods[id]; if (!p) return null;
     const txt = await env.ORDERS.get('prod:' + id, 'text'); if (!txt) return null;
@@ -942,6 +942,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
 document.addEventListener("submit",function(e){if(!e.defaultPrevented){e.preventDefault();note("Demo form — connect it to your email or server in your real site")}});
 window.open=function(u){note("Demo: this would open "+String(u||"a new page").slice(0,50)+" in your real site");return null}}
 function guard(html){html=String(html||"");var g="<script>("+guardFn.toString()+")()<\/script>",i=html.lastIndexOf("</body>");return i<0?html+g:html.slice(0,i)+g+html.slice(i)}
+function fsize(n){return n>1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB"}
 function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
 function money(n){n=Math.round(n*100)/100;return "$"+(n%1===0?String(n):n.toFixed(2))}
 function fdate(ms){return ms?new Date(ms).toLocaleString([],{dateStyle:"medium",timeStyle:"short"}):""}
@@ -1009,6 +1010,13 @@ window.__render=function(d,app){
       if(list.length){list.forEach(function(c,ci){if(list.length>1){var lb=el("p","d","Code "+(ci+1)+" of "+list.length);lb.style.cssText="margin:14px 0 0;font-weight:700";sec.appendChild(lb)}sec.appendChild(scratchCard(s.title,c,d.order.id+"_"+idx+"_"+ci))});sec.appendChild(el("p","d tiny","Scratch the silver area (or press Reveal). Keep your codes private — whoever has them can use them."))}
       else{var w=el("div","wait");w.appendChild(el("span","spin"));w.appendChild(el("span","","Preparing your code… this takes a few seconds. If it does not appear within a few minutes, contact us with "+(inv.no||d.order.id)+"."));sec.appendChild(w)}
     }else{
+      if(s.files&&s.files.length){var fb=el("div","files");fb.appendChild(el("b","","Project files"));
+        var oid=(location.pathname.match(/\/api\/delivery\/([a-f0-9]{32})/)||[])[1];
+        s.files.forEach(function(f){var a=el("a","btn fbtn","⬇ "+f.name+(f.size?" ("+fsize(f.size)+")":""));
+          if(f.url){a.href=f.url;a.target="_blank";a.rel="noopener noreferrer"}
+          else if(oid&&!window.__standalone){a.href=location.origin+"/api/download/"+oid+"/"+encodeURIComponent(s.id)+"/"+f.id+location.search}
+          else{a.href="#";a.onclick=function(e){e.preventDefault();alert("Open your order page online to download this file.")}}
+          fb.appendChild(a)});sec.appendChild(fb)}
       if(s.guide){var det=el("details","gd");det.open=true;det.appendChild(el("summary","","How to use & connect your data"));var gb=el("div","gb");gb.innerHTML=s.guide;det.appendChild(gb);sec.appendChild(det)}
       (s.variants||[]).forEach(function(v){
         var h3=el("h3","vh",v.name);sec.appendChild(h3);
@@ -1062,6 +1070,7 @@ const SHELL_CSS = ':root{--bg:#f3f7ef;--surface:#fff;--s2:#f0f5ec;--bd:#dbe5d4;-
   '.wait{display:flex;gap:12px;align-items:center;margin-top:12px;padding:14px 16px;border-radius:14px;background:var(--soft);font-weight:600;font-size:.92rem}.spin{width:20px;height:20px;border-radius:50%;border:3px solid var(--bd2);border-top-color:var(--ac);animation:sp 1s linear infinite;flex:none}@keyframes sp{to{transform:rotate(360deg)}}' +
   '.it{width:100%;border-collapse:collapse;margin:8px 0 12px}.it td{padding:10px 4px;border-bottom:1px solid var(--bd)}.it .r{text-align:right;white-space:nowrap}.it .tot td{font-weight:800;font-size:1.05rem;border-bottom:0}' +
   '.pd{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0;font-size:.88rem}.pd dt{color:var(--mu)}.pd dd{margin:0;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem}.pd a{color:var(--ac2)}' +
+  '.files{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 4px}.files b{width:100%;font-size:.95rem}.fbtn{text-decoration:none;word-break:break-all}' +
   '@media print{body{background:#fff;color:#000}.tb,.hero2,.btn,.tbtn{display:none!important}body.pinv .card:not(.invoice){display:none}.card{box-shadow:none;border:0}}' +
   '@media(max-width:560px){.w{padding:12px 12px 60px}.hero2 h1{font-size:1.45rem}.card{padding:14px;border-radius:18px}.pd{grid-template-columns:1fr}.pd dd{margin-bottom:6px}}';
 function shellPage(storeName) {
@@ -1084,12 +1093,44 @@ async function delivery(env, id, url, wantData) {
 
 /* ---------------- admin ---------------- */
 // The dashboard uploads each product on its own (small requests), then the small index.
+/* ---- project files: ZIPs (or any file) delivered after payment; stored privately in KV (max 20 MB each) or given as a private link ---- */
+const FILE_ID = /^[a-f0-9]{8,32}$/, MAX_FILE = 20 * 1024 * 1024;
+function cleanFiles(list) {
+  return (Array.isArray(list) ? list : []).slice(0, 8).map(f => {
+    if (!f || !FILE_ID.test(String(f.id || ''))) return null;
+    const out = { id: String(f.id), name: String(f.name || 'file').replace(/[\u0000-\u001f\\\/"<>|:*?]/g, '_').slice(0, 120) || 'file', size: Math.max(0, Number(f.size) || 0) };
+    if (f.url) { const u = String(f.url); if (!/^https:\/\/[^\s"'<>]{4,600}$/.test(u)) return null; out.url = u; }
+    return out;
+  }).filter(Boolean);
+}
+async function adminFile(req, env, url) {
+  const pid = String(url.searchParams.get('pid') || ''), fid = String(url.searchParams.get('fid') || '');
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(pid) || !FILE_ID.test(fid)) return fail(env, 'Bad file id');
+  if (req.method === 'DELETE') { await env.ORDERS.delete('file:' + pid + ':' + fid); return json(env, { ok: true }); }
+  const buf = await req.arrayBuffer();
+  if (!buf.byteLength) return fail(env, 'The file is empty');
+  if (buf.byteLength > MAX_FILE) return fail(env, 'This file is bigger than 20 MB. Use “Add a download link” for big files (Google Drive, Mega, Dropbox).');
+  await env.ORDERS.put('file:' + pid + ':' + fid, buf);
+  return json(env, { ok: true, size: buf.byteLength });
+}
+const dlHits = new Map();
+async function downloadFile(req, env, m, url) {
+  if (tooMany(dlHits, req.headers.get('cf-connecting-ip') || 'x', 40, 10 * 60000)) return fail(env, 'Too many downloads. Please wait a few minutes.', 429);
+  const [, oid, pid, fid] = m, o = await env.ORDERS.get('order:' + oid, 'json');
+  if (!o || !safeEqual(url.searchParams.get('k') || '', o.key) || o.status !== 'paid') return new Response('Not found', { status: 404 });
+  const items = itemsOf(o), has = items.some(i => i.id === pid || i.id === 'ALL');
+  const cat = await getCatalog(env), meta = cat && cat.products && cat.products[pid], f = meta && (meta.files || []).find(x => x.id === fid && !x.url);
+  if (!has || !f) return new Response('Not found', { status: 404 });
+  const buf = await env.ORDERS.get('file:' + pid + ':' + fid, 'arrayBuffer');
+  if (!buf) return new Response('This file is not available. Please contact us with your order number.', { status: 404 });
+  return new Response(buf, { headers: { 'content-type': 'application/octet-stream', 'content-disposition': 'attachment; filename="' + f.name.replace(/"/g, '') + '"', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
+}
 async function adminProduct(req, env) {
   const p = await req.json().catch(() => null);
   if (!p || !p.id) return fail(env, 'Bad data');
   const id = String(p.id);
   const variants = (Array.isArray(p.variants) ? p.variants : []).map(v => ({ name: String(v.name || ''), full: String(v.full || '') })).filter(v => v.full);
-  await env.ORDERS.put('prod:' + id, J({ guide: String(p.guide || '').slice(0, 30000), variants }));
+  await env.ORDERS.put('prod:' + id, J({ guide: String(p.guide || '').slice(0, 30000), variants, fileIds: cleanFiles(p.files).map(f => ({ id: f.id })) }));
   if (p.type === 'digital') await env.ORDERS.put('stock:' + id, J((Array.isArray(p.stock) ? p.stock : []).map(String).filter(Boolean)));
   return json(env, { ok: true, id });
 }
@@ -1112,11 +1153,11 @@ async function adminIndex(req, env) {
     products[String(p.id)] = {
       title: String(p.title || ''), tagline: String(p.tagline || ''), price: Number(p.price) || 0, stylePrice: Number(p.stylePrice) || 0,
       type: p.type === 'digital' ? 'digital' : 'code', variants: (Array.isArray(p.variants) ? p.variants : []).map(String),
-      stockN: Number(p.stockN) || 0, published: p.published !== false, wm: p.wm !== false,
+      stockN: Number(p.stockN) || 0, published: p.published !== false, wm: p.wm !== false, files: cleanFiles(p.files),
       supplier: p.supplier && p.supplier.cat && p.supplier.card ? { kind: 'giftcard', cat: String(p.supplier.cat).slice(0, 120), card: String(p.supplier.card).slice(0, 120) } : undefined
     };
   });
-  for (const id of (Array.isArray(b.remove) ? b.remove : []).slice(0, 100)) { await env.ORDERS.delete('prod:' + id); await env.ORDERS.delete('stock:' + id); }
+  for (const id of (Array.isArray(b.remove) ? b.remove : []).slice(0, 100)) { const pd = await env.ORDERS.get('prod:' + id, 'json').catch(() => null); for (const f of (pd && pd.fileIds) || []) if (FILE_ID.test(String(f.id))) await env.ORDERS.delete('file:' + id + ':' + f.id); await env.ORDERS.delete('prod:' + id); await env.ORDERS.delete('stock:' + id); }
   const aa = b.allAccess || {}, w = b.wallets || {};
   await env.ORDERS.put('idx', J({
     storeName: String(b.storeName || ''), products,
@@ -1238,12 +1279,15 @@ async function route(req, env) {
     }
     m = path.match(/^\/api\/delivery\/([a-f0-9]{32})(\/data)?$/);
     if (m && req.method === 'GET') return await delivery(env, m[1], url, !!m[2]);
+    m = path.match(/^\/api\/download\/([a-f0-9]{32})\/([A-Za-z0-9_-]{1,64})\/([a-f0-9]{8,32})$/);
+    if (m && req.method === 'GET') return await downloadFile(req, env, m, url);
     if (path.startsWith('/api/account/')) return await accountRoutes(req, env, path, apiBase);
     if (path.startsWith('/api/admin/')) {
       const aip = 'adm|' + (req.headers.get('cf-connecting-ip') || 'x');
       if ((authHits.get(aip) || []).filter(t => Date.now() - t < 10 * 60000).length >= 12) return fail(env, 'Too many failed attempts. Please wait a few minutes.', 429);
       if (!isAdmin(req, env)) { tooMany(authHits, aip, 99, 10 * 60000); return fail(env, 'Wrong or missing admin token', 401); }
       if (path === '/api/admin/product' && req.method === 'POST') return await adminProduct(req, env);
+      if (path === '/api/admin/file' && (req.method === 'PUT' || req.method === 'DELETE')) return await adminFile(req, env, url);
       if (path === '/api/admin/index' && req.method === 'POST') return await adminIndex(req, env);
       if (path === '/api/admin/ping') return json(env, { ok: true });
       if (path === '/api/admin/orders' && req.method === 'GET') return await adminOrders(env);

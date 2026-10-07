@@ -219,7 +219,7 @@
   $('chips').addEventListener('click', function(e){ var b = e.target.closest('.chip'); if (!b) return; cat = b.dataset.c; chipRow($('chips'), cats, cat, 'data-c'); shown = 9; renderCodes(); });
   function cardHTML(p, wide){
     var multi = p.variants.length > 1;
-    return '<article class="card rv" data-open="' + esc(p.id) + '"><div class="prev" data-id="' + esc(p.id) + '" data-w="' + (wide ? 1200 : 800) + '"><span class="tag">' + esc(p.category || 'Code') + '</span>' + (multi ? '<span class="tag r">' + p.variants.length + ' styles</span>' : '') + '</div>' +
+    return '<article class="card rv" data-open="' + esc(p.id) + '"><div class="prev" data-id="' + esc(p.id) + '" data-w="' + (wide ? 1200 : 800) + '"><span class="tag">' + esc(p.category || 'Code') + '</span>' + (multi ? '<span class="tag r">' + p.variants.length + ' styles</span>' : (p.files && p.files.length ? '<span class="tag r">📦 Project files</span>' : '')) + '</div>' +
       '<div class="cbody"><h3>' + esc(p.title) + '</h3><p>' + esc(p.tagline || '') + '</p><div class="crow"><span class="price">' + money(p.price) + (multi ? '<small>all styles</small>' : '') + '</span><span class="btns"><button type="button" class="btn btn-ghost btn-sm" data-view="' + esc(p.id) + '">Preview</button><button type="button" class="btn btn-primary btn-sm" data-add="' + esc(p.id) + '">Add</button></span></div></div></article>';
   }
   function renderCodes(){
@@ -427,6 +427,7 @@
     if (!p) return;
     cur = p; opt = 'all';
     $('pmTitle').textContent = p.title; $('pmSub').textContent = (p.category ? p.category + ' · ' : '') + (p.tagline || '');
+    var pf = $('pmFiles'); pf.hidden = !(p.files && p.files.length); pf.textContent = pf.hidden ? '' : '📦 Includes: ' + p.files.map(function(f){ return f.name + (f.size ? ' (' + (f.size > 1048576 ? (f.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(f.size / 1024)) + ' KB') + ')' : ''); }).join(' · ') + ' — downloadable after payment';
     $('pmVars').hidden = p.variants.length < 2;
     $('pmVars').innerHTML = p.variants.map(function(v, k){ return '<button type="button" class="vt' + (k === 0 ? ' on' : '') + '" data-v="' + k + '">' + esc(v.name) + '</button>'; }).join('');
     $('pmGuideTab').hidden = !p.guide; $('pmGuide').innerHTML = p.guide || '';

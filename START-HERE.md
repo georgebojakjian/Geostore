@@ -18,7 +18,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 
 1. **Back up first.** Open your OLD dashboard → **Publish → Backup everything**. Keep that file.
 2. **Download the new project** (GitHub → branch `claude/geostore-website-template-bwou47` → Code → Download ZIP) and unzip it.
-3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":17`.
+3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":18`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
 6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`, `manifest.webmanifest`.
@@ -32,7 +32,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 ### 1 — Server (Cloudflare)
 1. Cloudflare → Workers & Pages → create a Worker → paste `worker/worker.js` → Deploy.
 2. Settings → **Variables and Secrets**: add a **Secret** named `ADMIN_TOKEN` (a long password only you know). Settings → **Bindings** → add a **KV namespace** named `ORDERS`.
-3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":17`.
+3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":18`.
 4. Do **not** add a Cron Trigger (the shop does not need one).
 
 ### 2 — Dashboard
@@ -195,6 +195,20 @@ If a receipt cannot be sent you get a Telegram note with the reason, and the ord
 - If Binance refuses requests from Cloudflare's location (an HTTP 451 or “restricted location” message), the server automatically tries Binance's other addresses; if all fail, **Why not paid?** shows the reason and **Mark paid** still works.
 - Keep your Binance account safe (two-step login). Never create a key with withdrawal permission.
 - I could not test this against the real Binance service from here, only against simulated answers. Test with one small real payment before announcing.
+
+## Selling whole projects (website + dashboard, Android project…)
+A product can now carry **project files** that the customer downloads after paying.
+1. Zip each part (for example `website.zip` and `dashboard.zip`, or your Android project folder as one ZIP).
+2. Dashboard → **Products** → open (or create) the product → **Project files**:
+   - **⬆ Upload a file** (up to **20 MB** each, up to 8 files). Files are stored privately on your server — customers cannot reach them without a paid order.
+   - **Add link**: for bigger files paste a private download link (Google Drive, Mega, Dropbox, OneDrive). The customer sees it as a button after payment.
+3. If you also want a live demo on the shop, keep a sample page in the product (its public sample + full preview). The shop shows “📦 Project files” on the card and lists the file names; the files themselves are only given after payment.
+4. **Save the product → Sync to server → Download data.js → upload the site folder.**
+5. After payment the order page shows a **Project files** section with one download button per file.
+Backups made from the dashboard do **not** include the uploaded ZIP files (they live on the server), so keep your original ZIPs on your computer.
+
+## Deleting expired orders
+Unpaid orders that expired are hidden from your customers and from your Orders list. Orders → **🗑 Delete expired orders** removes them for good (paid orders are never touched).
 
 ## Dashboard
 The dashboard now has the dark glass look. **Home** shows revenue, paid orders, estimated profit and “needs you” for **Today / 7D / 30D / 1Y**, a performance chart, payment-method split and the latest orders. **Gift cards → Prices** shows what each amount **costs you** at FazerCards, what you sell it for and your profit. The sun/moon button switches to a light dashboard.
