@@ -643,6 +643,30 @@ async function createOrder(req, env, apiBase) {
 }
 
 /* ---------------- check the blockchain ---------------- */
+/* ---------------- email receipts (optional) ----------------
+   Needs two Cloudflare settings: RESEND_KEY (secret, from resend.com) and MAIL_FROM (e.g.  Geostore <orders@yourdomain.com>).
+   Optional: MAIL_REPLY (where customer replies go). Without them nothing is sent and everything else works as before. */
+const mailOn = env => !!(env.RESEND_KEY && env.MAIL_FROM);
+async function sendMail(env, to, subject, html) {
+  const body = { from: String(env.MAIL_FROM), to: [to], subject, html };
+  if (env.MAIL_REPLY) body.reply_to = String(env.MAIL_REPLY);
+  const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { authorization: 'Bearer ' + env.RESEND_KEY, 'content-type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(9000) });
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error((j && (j.message || j.error)) || ('Email service HTTP ' + r.status)); }
+}
+function receiptHTML(store, o, link) {
+  const coin = orderCoin(o), c = COINS[coin], tx = o.txid && o.txid !== 'manual' ? o.txid : '';
+  const txUrl = !tx ? '' : coin === 'btc' ? 'https://mempool.space/tx/' + tx : coin === 'usdt_bep20' ? 'https://bscscan.com/tx/' + tx : 'https://tronscan.org/#/transaction/' + tx;
+  const row = (a, b) => '<tr><td style="padding:9px 0;border-bottom:1px solid #e6ece4;color:#51604b">' + a + '</td><td style="padding:9px 0;border-bottom:1px solid #e6ece4;text-align:right;font-weight:600">' + b + '</td></tr>';
+  const items = itemsOf(o).map(i => row(esc(i.title) + (qtyOf(i) > 1 ? ' × ' + qtyOf(i) : ''), '$' + round2(i.price))).join('');
+  return '<div style="background:#f3f7ef;padding:24px 12px;font-family:Arial,Helvetica,sans-serif"><div style="max-width:560px;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;border:1px solid #dfe8da">' +
+    '<div style="background:#3d9a0e;color:#fff;padding:22px 26px"><div style="font-size:13px;opacity:.9">' + esc(store || 'Geostore') + '</div><div style="font-size:24px;font-weight:800;margin-top:4px">Payment received ✓</div></div>' +
+    '<div style="padding:22px 26px;color:#0e1a0b;font-size:15px"><p style="margin:0 0 14px">Thank you! Your payment is confirmed. Your order, codes and invoice are on your private order page:</p>' +
+    '<p style="margin:0 0 20px"><a href="' + esc(link) + '" style="display:inline-block;background:#3d9a0e;color:#fff;text-decoration:none;font-weight:700;padding:14px 26px;border-radius:999px">Open my order &amp; codes</a></p>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:14px">' + items +
+    row('Total', '<b>$' + round2(o.usd) + '</b>') + row('Paid with', esc(c.name) + ' — ' + esc(fmtAmount(coin, o.amount)) + ' ' + esc(c.short)) +
+    row('Order number', '#' + esc(o.id.slice(0, 8).toUpperCase())) + (tx ? row('Transaction', '<a href="' + esc(txUrl) + '" style="color:#2f7d09">view on the blockchain</a>') : '') + '</table>' +
+    '<p style="margin:18px 0 0;font-size:12.5px;color:#6a7864">Keep this email private: anyone with the button link can open your codes. If a code does not work or something looks wrong, just reply to this email or contact us with your order number.</p></div></div></div>';
+}
 async function markPaid(env, o, txid) {
   o.status = 'paid'; o.paidAt = Date.now(); o.txid = txid || 'manual';
   const dig = itemsOf(o).filter(i => i.type === 'digital' && !i.supplier);
@@ -657,9 +681,15 @@ async function markPaid(env, o, txid) {
     }
   }
   if (supplierLines(o).length) { try { await fulfil(env, o, false); lastFul.set(o.id, Date.now()); } catch (e) { /* the payment is recorded either way; retried later */ } }
+  const wantMail = mailOn(env) && !o.emailed && !!o.email; if (wantMail) o.emailed = true;
   await saveOrder(env, o);
   if (txid) await env.ORDERS.put('tx:' + txid, o.id);
   await env.ORDERS.delete(o.amtKey || ('amt:' + o.amount));
+  if (wantMail) {                                          // one receipt per order; failures only raise a Telegram note
+    const cat0 = await getCatalog(env).catch(() => null), link = (env.__base || '') + '/api/delivery/' + o.id + '?k=' + o.key;
+    bg(env, sendMail(env, o.email, 'Payment received — order #' + o.id.slice(0, 8).toUpperCase(), receiptHTML(cat0 && cat0.storeName, o, link))
+      .catch(e => { notify(env, '⚠️ Receipt email to ' + esc(o.email) + ' failed: ' + esc(String((e && e.message) || e).slice(0, 160))); }));
+  }
   const fs = fulfilState(o);
   notify(env, '✅ <b>Paid</b> #' + o.id.slice(0, 8).toUpperCase() + '\n$' + o.usd + ' · ' + esc(orderTitle(o)) + '\n' + esc(o.email) + (o.fromBinance ? '\n🟡 from Binance' : '') + (fs === 'ok' ? '\n🎁 delivered automatically' : fs === 'wait' ? '\n⏳ buying from supplier…' : fs === 'stuck' ? '\n⚠️ needs you (supplier)' : '\n📦 delivered'));
 }
@@ -1085,7 +1115,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 15 });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 16, mail: mailOn(env) });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
@@ -1223,6 +1253,16 @@ async function route(req, env) {
         if (o.status === 'pending') { lastLook.delete(o.id); const r2 = await checkOrder(env, o); info.after = r2.status; }
         return json(env, { ok: true, info });
       }
+      if (path === '/api/admin/testmail' && req.method === 'POST') {
+        const b = await req.json().catch(() => ({})), to = String(b.to || '').trim().toLowerCase();
+        if (!mailOn(env)) return fail(env, 'Email is not set up yet. Add the RESEND_KEY secret and the MAIL_FROM setting in Cloudflare, then Deploy.');
+        if (!validEmail(to)) return fail(env, 'Please type a valid email address');
+        const cat0 = await getCatalog(env).catch(() => null);
+        const demo = { id: 'abcd1234ef567890abcd1234ef567890', usd: 11.5, coin: 'usdt_trc20', amount: 11540000, txid: 'manual', items: [{ title: 'Sample — iTunes US USD 10', price: 11.5, qty: 1 }] };
+        try { await sendMail(env, to, 'Test receipt — ' + ((cat0 && cat0.storeName) || 'your shop'), receiptHTML(cat0 && cat0.storeName, demo, (env.__base || '') + '/api/health')); }
+        catch (e) { return fail(env, 'The email service said: ' + String((e && e.message) || e).slice(0, 200)); }
+        return json(env, { ok: true });
+      }
       if (path === '/api/admin/markpaid' && req.method === 'POST') {
         const b = await req.json().catch(() => ({}));
         const o = await env.ORDERS.get('order:' + String(b.id || ''), 'json');
@@ -1242,7 +1282,7 @@ async function route(req, env) {
 
 export default {
   async fetch(req, env0, ctx) {
-    const env = Object.assign(Object.create(env0), { __ctx: ctx });         // lets alerts finish after the reply is sent
+    const env = Object.assign(Object.create(env0), { __ctx: ctx, __base: new URL(req.url).origin });         // lets alerts finish after the reply is sent
     const path = new URL(req.url).pathname.replace(/\/+$/, '');
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(env, path) });
     const res = await route(req, env);

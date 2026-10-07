@@ -18,7 +18,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 
 1. **Back up first.** Open your OLD dashboard → **Publish → Backup everything**. Keep that file.
 2. **Download the new project** (GitHub → branch `claude/geostore-website-template-bwou47` → Code → Download ZIP) and unzip it.
-3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":15`.
+3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":16`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
 6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`, `manifest.webmanifest`.
@@ -32,7 +32,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 ### 1 — Server (Cloudflare)
 1. Cloudflare → Workers & Pages → create a Worker → paste `worker/worker.js` → Deploy.
 2. Settings → **Variables and Secrets**: add a **Secret** named `ADMIN_TOKEN` (a long password only you know). Settings → **Bindings** → add a **KV namespace** named `ORDERS`.
-3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":15`.
+3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":16`.
 4. Do **not** add a Cron Trigger (the shop does not need one).
 
 ### 2 — Dashboard
@@ -161,6 +161,22 @@ A website cannot hide the browser's own bottom bar. But when a customer (or you)
 | Server fix from me (`worker.js`) | Cloudflare → your Worker → **Edit code** → paste the whole file → **Deploy** → open `/api/health` and check the version number |
 | Dashboard update from me (`admin.html`) | Open the new `admin.html` → **Publish → Restore backup** with your latest backup file |
 Always make a **Backup everything** before replacing the dashboard file.
+
+## Email receipts (free, about 10 minutes)
+After every paid order the customer gets an email with the invoice and an **Open my order & codes** button (the codes themselves stay on the private page, not in the email). It is optional — nothing breaks if you skip it.
+
+**You need a domain first** (see “Buying a domain”), because mail from a free address like Gmail is blocked as spam.
+1. Create a free account at **resend.com** (free plan: 100 emails a day, 3,000 a month).
+2. In Resend → **Domains → Add Domain** → type your domain. Resend shows a few DNS records. Copy them into **Cloudflare → your domain → DNS → Records** exactly as shown (DNS only / grey cloud), then press **Verify** in Resend (can take a few minutes).
+3. Resend → **API Keys → Create** → copy the key (starts with `re_`).
+4. Cloudflare → your Worker → **Settings → Variables and Secrets**:
+   - add a **Secret** named `RESEND_KEY` with that key,
+   - add a **Variable** (text) named `MAIL_FROM` with your sender, for example: `Geostore <orders@yourdomain.com>` (the part after @ must be your verified domain),
+   - optional text variable `MAIL_REPLY` = the address where customer replies should go (your own email).
+   Press **Deploy**. `/api/health` now shows `"mail":true`.
+5. Dashboard → **Settings → Email receipts** → type your email → **Send a test email**.
+
+If a receipt cannot be sent you get a Telegram note with the reason, and the order is still delivered normally. Each order sends one receipt only.
 
 ## Dashboard
 The dashboard now has the dark glass look. **Home** shows revenue, paid orders, estimated profit and “needs you” for **Today / 7D / 30D / 1Y**, a performance chart, payment-method split and the latest orders. **Gift cards → Prices** shows what each amount **costs you** at FazerCards, what you sell it for and your profit. The sun/moon button switches to a light dashboard.

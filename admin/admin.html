@@ -315,6 +315,11 @@
           <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-p btn-s" id="tgConnect">Connect Telegram</button><button type="button" class="btn btn-g btn-s" id="tgTest">Send test alert</button><button type="button" class="btn btn-g btn-s" id="tgRefresh">↻ Refresh status</button><button type="button" class="btn btn-d btn-s" id="tgOff">Disconnect</button></div>
         </div>
 
+        <div class="panel"><h2>Email receipts</h2>
+          <p class="help" style="margin-bottom:10px">After every paid order your customer gets an email with the invoice and a button to their private order page. Free setup with resend.com (steps in START-HERE.md → “Email receipts”). Press the button to send yourself a test.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input id="mailTo" type="email" placeholder="your email" style="max-width:280px"><button type="button" class="btn btn-p btn-s" id="mailTest">Send a test email</button></div>
+          <p class="help" id="mailMsg" style="margin-top:8px"></p></div>
+
         <div class="panel"><h2>Social media &amp; best sellers</h2>
           <p class="help" style="margin-bottom:14px">Paste the full link (starting with https://). Only the ones you fill in appear as icons at the bottom of your shop. Leave empty to hide.</p>
           <div class="form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px"><div><label for="soc_facebook">Facebook</label><input id="soc_facebook" data-soc="facebook" placeholder="https://…" autocomplete="off"></div><div><label for="soc_instagram">Instagram</label><input id="soc_instagram" data-soc="instagram" placeholder="https://…" autocomplete="off"></div><div><label for="soc_x">X (Twitter)</label><input id="soc_x" data-soc="x" placeholder="https://…" autocomplete="off"></div><div><label for="soc_youtube">YouTube</label><input id="soc_youtube" data-soc="youtube" placeholder="https://…" autocomplete="off"></div><div><label for="soc_tiktok">TikTok</label><input id="soc_tiktok" data-soc="tiktok" placeholder="https://…" autocomplete="off"></div><div><label for="soc_telegram">Telegram channel</label><input id="soc_telegram" data-soc="telegram" placeholder="https://…" autocomplete="off"></div><div><label for="soc_whatsapp">WhatsApp channel</label><input id="soc_whatsapp" data-soc="whatsapp" placeholder="https://…" autocomplete="off"></div><div><label for="soc_snapchat">Snapchat</label><input id="soc_snapchat" data-soc="snapchat" placeholder="https://…" autocomplete="off"></div><div><label for="soc_linkedin">LinkedIn</label><input id="soc_linkedin" data-soc="linkedin" placeholder="https://…" autocomplete="off"></div><div><label for="soc_discord">Discord</label><input id="soc_discord" data-soc="discord" placeholder="https://…" autocomplete="off"></div></div>
@@ -1159,6 +1164,10 @@
         tgState(true).then(function(st){ var w = $('tgWait'); if (w && st && st.webhook && st.webhook.error) w.textContent = 'Telegram error: ' + st.webhook.error; });
       }, 5000);
     }).catch(function(e){ toast(e.message); });
+  });
+  $('mailTest').addEventListener('click', function(){
+    var to = $('mailTo').value.trim() || state.settings.email || ''; $('mailTo').value = to; $('mailMsg').textContent = 'Sending…';
+    api('/api/admin/testmail', {method:'POST', body: JSON.stringify({to: to})}).then(function(){ $('mailMsg').textContent = '✅ Sent to ' + to + ' — check the inbox (and spam).'; }).catch(function(e){ $('mailMsg').textContent = '❌ ' + e.message; });
   });
   $('tgTest').addEventListener('click', function(){ api('/api/admin/telegram/test', {method:'POST', body:'{}'}).then(function(){ toast('Test alert sent — check Telegram'); }).catch(function(e){ toast(e.message); }); });
   $('tgOff').addEventListener('click', function(){ if (!confirm('Disconnect Telegram? You will stop getting alerts and live chat will go offline.')) return; api('/api/admin/telegram/disconnect', {method:'POST', body:'{}'}).then(function(){ toast('Disconnected'); tgState(); }).catch(function(e){ toast(e.message); }); });
