@@ -626,7 +626,9 @@ async function createOrder(req, env, apiBase) {
   let amount = null, amtKey = null;
   for (let i = 0; i < 40 && amount === null; i++) {
     const cand = coin === 'btc' ? base + 1 + randInt(99) : base + (1 + randInt(i < 25 ? 20 : 60)) * 10000, key = 'amt:' + coin + ':' + cand;
-    if (!(await env.ORDERS.get(key))) { amount = cand; amtKey = key; }
+    let busy = !!(await env.ORDERS.get(key));
+    if (!busy && coin !== 'btc') for (const oc of ['usdt_trc20', 'usdt_bep20', 'binancepay']) if (oc !== coin && await env.ORDERS.get('amt:' + oc + ':' + cand)) { busy = true; break; }   // one amount = one order across all USDT methods (Binance transfers carry no network)
+    if (!busy) { amount = cand; amtKey = key; }
   }
   if (amount === null) return fail(env, 'Too many open orders, please try again in a minute', 503);
 
@@ -655,7 +657,7 @@ async function sendMail(env, to, subject, html) {
 }
 function receiptHTML(store, o, link) {
   const coin = orderCoin(o), c = COINS[coin], tx = o.txid && o.txid !== 'manual' ? o.txid : '';
-  const txUrl = !tx ? '' : coin === 'btc' ? 'https://mempool.space/tx/' + tx : coin === 'usdt_bep20' ? 'https://bscscan.com/tx/' + tx : 'https://tronscan.org/#/transaction/' + tx;
+  const txUrl = !tx || /^(bp|bn):/.test(tx) ? '' : coin === 'btc' ? 'https://mempool.space/tx/' + tx : coin === 'usdt_bep20' ? 'https://bscscan.com/tx/' + tx : 'https://tronscan.org/#/transaction/' + tx;
   const row = (a, b) => '<tr><td style="padding:9px 0;border-bottom:1px solid #e6ece4;color:#51604b">' + a + '</td><td style="padding:9px 0;border-bottom:1px solid #e6ece4;text-align:right;font-weight:600">' + b + '</td></tr>';
   const items = itemsOf(o).map(i => row(esc(i.title) + (qtyOf(i) > 1 ? ' × ' + qtyOf(i) : ''), '$' + round2(i.price))).join('');
   return '<div style="background:#f3f7ef;padding:24px 12px;font-family:Arial,Helvetica,sans-serif"><div style="max-width:560px;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;border:1px solid #dfe8da">' +
@@ -664,7 +666,7 @@ function receiptHTML(store, o, link) {
     '<p style="margin:0 0 20px"><a href="' + esc(link) + '" style="display:inline-block;background:#3d9a0e;color:#fff;text-decoration:none;font-weight:700;padding:14px 26px;border-radius:999px">Open my order &amp; codes</a></p>' +
     '<table style="width:100%;border-collapse:collapse;font-size:14px">' + items +
     row('Total', '<b>$' + round2(o.usd) + '</b>') + row('Paid with', esc(c.name) + ' — ' + esc(fmtAmount(coin, o.amount)) + ' ' + esc(c.short)) +
-    row('Order number', '#' + esc(o.id.slice(0, 8).toUpperCase())) + (tx ? row('Transaction', '<a href="' + esc(txUrl) + '" style="color:#2f7d09">view on the blockchain</a>') : '') + '</table>' +
+    row('Order number', '#' + esc(o.id.slice(0, 8).toUpperCase())) + (tx ? row('Transaction', txUrl ? '<a href="' + esc(txUrl) + '" style="color:#2f7d09">view on the blockchain</a>' : 'Binance transfer') : '') + '</table>' +
     '<p style="margin:18px 0 0;font-size:12.5px;color:#6a7864">Keep this email private: anyone with the button link can open your codes. If a code does not work or something looks wrong, just reply to this email or contact us with your order number.</p></div></div></div>';
 }
 async function markPaid(env, o, txid) {
@@ -729,7 +731,62 @@ async function findBsc(env, o) {
   }
   return null;
 }
-async function findPayment(env, o) {
+/* ---------------- Binance account detection (optional) ----------------
+   With a READ-ONLY Binance API key (Cloudflare secrets BINANCE_KEY + BINANCE_SECRET) the server also sees money that never touches
+   the blockchain: Binance Pay transfers and Binance-to-Binance (internal) deposits to your Binance deposit address. */
+const binanceOn = env => !!(env.BINANCE_KEY && env.BINANCE_SECRET);
+const BN_HOSTS = ['https://api.binance.com', 'https://api1.binance.com', 'https://api2.binance.com', 'https://api3.binance.com', 'https://api4.binance.com'];
+const bnCache = new Map();
+async function hmacHex(secret, msg) {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return [...new Uint8Array(await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(msg)))].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function binanceGet(env, path, params) {
+  const ck = path + '|' + J(params), c = bnCache.get(ck);
+  if (c && Date.now() - c.t < 5000) return c.v;                        // many open orders share one lookup
+  const q = new URLSearchParams(Object.assign({}, params, { timestamp: String(Date.now()), recvWindow: '10000' })).toString();
+  const url = path + '?' + q + '&signature=' + await hmacHex(env.BINANCE_SECRET, q);
+  let last = 'Binance did not answer';
+  for (const h of BN_HOSTS) {
+    try {
+      const r = await fetch(h + url, { headers: { 'X-MBX-APIKEY': env.BINANCE_KEY }, signal: AbortSignal.timeout(8000) });
+      const j = await r.json().catch(() => null);
+      if (r.status === 451 || r.status === 403) { last = 'Binance blocks this server location (HTTP ' + r.status + ')'; continue; }
+      if (!r.ok || (j && j.code && String(j.code) !== '000000' && Number(j.code) < 0)) { last = (j && (j.msg || j.message)) || ('Binance HTTP ' + r.status); if (r.status >= 500) continue; throw new Error(last); }
+      bnCache.set(ck, { t: Date.now(), v: j }); if (bnCache.size > 50) bnCache.clear();
+      return j;
+    } catch (e) { last = String((e && e.message) || e); if (/Invalid|signature|permission|IP|key/i.test(last)) throw new Error(last); }
+  }
+  throw new Error(last);
+}
+const micro = x => Math.round(Number(x) * 1e6);
+async function bnPayList(env, o) { const j = await binanceGet(env, '/sapi/v1/pay/transactions', { startTimestamp: String(o.createdAt - 120000), endTimestamp: String(Date.now() + 60000), limit: '100' }); return Array.isArray(j && j.data) ? j.data : []; }
+async function bnDepositList(env, o) { const j = await binanceGet(env, '/sapi/v1/capital/deposit/hisrec', { coin: 'USDT', startTime: String(o.createdAt - 120000), limit: '1000' }); return Array.isArray(j) ? j : []; }
+async function findBinancePay(env, o) {
+  for (const t of await bnPayList(env, o)) {
+    const cur = String(t.currency || (t.fundsDetail && t.fundsDetail[0] && t.fundsDetail[0].currency) || ''), amt = Number(t.amount !== undefined ? t.amount : (t.fundsDetail && t.fundsDetail[0] && t.fundsDetail[0].amount));
+    if (cur !== 'USDT' || !(amt > 0) || micro(amt) !== o.amount) continue;
+    const ts = Number(t.transactionTime) || 0; if (ts && ts < o.createdAt - 60000) continue;
+    const id = 'bp:' + (t.transactionId || t.orderId || ts);
+    if (!(await env.ORDERS.get('tx:' + id))) return id;
+  }
+  return null;
+}
+const BN_NET = { usdt_trc20: 'TRX', usdt_bep20: 'BSC' };
+async function findBinanceDeposit(env, o) {
+  const coin = orderCoin(o);
+  for (const t of await bnDepositList(env, o)) {
+    if (micro(t.amount) !== o.amount || ![1, 6].includes(Number(t.status))) continue;
+    const internal = Number(t.transferType) === 1;
+    if (!internal && String(t.network || '') !== BN_NET[coin]) continue;                 // on-chain: must be this network
+    if (t.address && !internal && String(t.address) !== o.wallet) continue;
+    if (Number(t.insertTime) && Number(t.insertTime) < o.createdAt - 60000) continue;
+    const id = internal || !t.txId ? 'bn:' + t.id : String(t.txId);
+    if (!(await env.ORDERS.get('tx:' + id))) return id;
+  }
+  return null;
+}
+async function findOnChain(env, o) {
   const coin = orderCoin(o), until = o.expiresAt + COINS[coin].graceMs;
   if (COINS[coin].kind === 'manual') return null;
   if (COINS[coin].kind === 'bsc') return await findBsc(env, o);
@@ -793,6 +850,19 @@ async function trc20In(env, o, dbg) {
   }
   return dbg ? { list: out, notes } : out;
 }
+async function findPayment(env, o) {
+  const coin = orderCoin(o), C = COINS[coin];
+  if (C.kind === 'manual') return binanceOn(env) ? await findBinancePay(env, o) : null;
+  let tx = null, err = null;
+  try { tx = await findOnChain(env, o); } catch (e) { err = e; }
+  if (tx) return tx;
+  if (binanceOn(env)) {
+    const cat = await getCatalog(env);
+    if (cat && cat.binanceAddr && cat.binanceAddr[coin]) { try { tx = await findBinanceDeposit(env, o); } catch (e) { err = err || e; } if (tx) return tx; }
+  }
+  if (err) throw err;
+  return null;
+}
 async function checkOrder(env, o) {
   if (o.status !== 'pending') return o;
   const coin = orderCoin(o), C = COINS[coin], now = Date.now();
@@ -801,7 +871,7 @@ async function checkOrder(env, o) {
     await env.ORDERS.delete(o.amtKey || ('amt:' + o.amount));
     return o;
   }
-  if (now - (lastLook.get(o.id) || 0) < C.throttle) return o;   // memory only: no storage write
+  if (now - (lastLook.get(o.id) || 0) < (C.throttle || (binanceOn(env) ? 6000 : 0))) return o;   // memory only: no storage write
   lastLook.set(o.id, now);
   if (lastLook.size > 1000) lastLook.clear();
   let txid = null;
@@ -862,7 +932,7 @@ async function deliveryData(env, o, cat) {
   }
   (await Promise.all(jobs)).forEach(x => { if (x) parts.push(x); });
   const coin = orderCoin(o), inv = { no: 'INV-' + o.id.slice(0, 8).toUpperCase(), createdAt: o.createdAt, paidAt: o.paidAt || null, items: itemsOf(o).map(i => ({ title: i.title, price: i.price, qty: qtyOf(i), unit: i.unit || null })), total: o.usd, coin: COINS[coin].name, network: COINS[coin].network, amount: fmtAmount(coin, o.amount), txid: o.txid && o.txid !== 'manual' ? o.txid : '' };
-  inv.txUrl = !inv.txid ? '' : coin === 'btc' ? 'https://mempool.space/tx/' + inv.txid : coin === 'usdt_bep20' ? 'https://bscscan.com/tx/' + inv.txid : 'https://tronscan.org/#/transaction/' + inv.txid;
+  inv.txUrl = !inv.txid || /^(bp|bn):/.test(inv.txid) ? '' : coin === 'btc' ? 'https://mempool.space/tx/' + inv.txid : coin === 'usdt_bep20' ? 'https://bscscan.com/tx/' + inv.txid : 'https://tronscan.org/#/transaction/' + inv.txid;
   return '{"order":' + J({ id: o.id.slice(0, 8), email: o.email, invoice: inv }) + ',"store":' + J(cat.storeName || '') + ',"logo":' + J(LOGO_DATA) + ',"sections":[' + parts.join(',') + ']}';
 }
 const LOGO_DATA = 'data:image/png;base64,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';
@@ -1131,7 +1201,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 16, mail: mailOn(env) });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 17, mail: mailOn(env), binance: binanceOn(env) });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
@@ -1139,7 +1209,7 @@ async function route(req, env) {
       const cat = await getCatalog(env);
       const prices = {}; if (cat && cat.products) Object.keys(cat.products).forEach(id => { const q = cat.products[id]; prices[id] = { price: q.price, stylePrice: q.stylePrice || 0 }; });
       return json(env, { storeName: cat ? cat.storeName : '', prices, allAccess: cat && cat.allAccess ? { price: cat.allAccess.price } : null, accounts: !!(env.ADMIN_TOKEN || env.SESSION_SECRET),
-        coins: Object.keys(COINS).filter(c => walletFor(env, cat, c)).map(c => ({ id: c, name: COINS[c].name, network: COINS[c].network, kind: COINS[c].kind || (c === 'btc' ? 'btc' : 'tron'), minutes: COINS[c].minutes, binance: !!(cat && cat.binanceAddr && cat.binanceAddr[c]) })), chat: !!(env.TELEGRAM_BOT_TOKEN && (await tgOwner(env))) });
+        coins: Object.keys(COINS).filter(c => walletFor(env, cat, c)).map(c => ({ id: c, name: COINS[c].name, network: COINS[c].network, kind: COINS[c].kind || (c === 'btc' ? 'btc' : 'tron'), minutes: COINS[c].minutes, binance: !!(cat && cat.binanceAddr && cat.binanceAddr[c]) })), binanceAuto: binanceOn(env), chat: !!(env.TELEGRAM_BOT_TOKEN && (await tgOwner(env))) });
     }
     let pm = path.match(/^\/api\/preview\/([A-Za-z0-9_-]{1,64})\/(\d{1,2})$/);
     if (pm && req.method === 'GET') return await fullPreview(req, env, pm[1], +pm[2]);
@@ -1247,18 +1317,23 @@ async function route(req, env) {
         const o = await env.ORDERS.get('order:' + String(b.id || ''), 'json');
         if (!o) return fail(env, 'Order not found', 404);
         const coin = orderCoin(o), info = { status: o.status, coin, expects: fmtAmount(coin, o.amount), wallet: o.wallet, notes: [], seen: [] };
-        if (COINS[coin].kind === 'manual') info.notes.push('Binance Pay orders are confirmed by hand.');
+        if (COINS[coin].kind === 'manual') {
+          if (!binanceOn(env)) info.notes.push('Binance Pay orders are confirmed by hand (add the Binance API key to make them automatic).');
+          else { try { const l = await bnPayList(env, o); info.notes.push('Binance Pay history ok, ' + l.length + ' record(s) since the order was created'); info.seen = l.filter(t => Number(t.amount) > 0).map(t => ({ amount: String(t.amount) + ' ' + (t.currency || ''), when: t.transactionTime ? new Date(Number(t.transactionTime)).toISOString() : '', match: micro(t.amount) === o.amount })); } catch (e) { info.notes.push('Binance said: ' + String((e && e.message) || e)); } }
+        }
         else if (coin === 'usdt_trc20') {
           const r = await trc20In(env, o, true); info.notes = r.notes;
-          info.seen = r.list.map(t => ({ amount: (Number(t.value) / 1e6).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''), when: new Date(t.ts).toISOString(), match: String(t.value) === String(o.amount) }));
-          if (!r.list.length) info.notes.push('No incoming USDT found for this wallet since the order was created. Check the wallet address in Settings is the one that received the money.');
-          else if (!r.list.some(t => String(t.value) === String(o.amount))) info.notes.push('Money arrived but not the exact amount ' + info.expects + ' (compare the list).');
+          if (binanceOn(env)) { try { const l = await bnDepositList(env, o); info.notes.push('Binance deposits ok, ' + l.length + ' record(s)'); l.forEach(t => info.seen.push({ amount: String(t.amount) + ' USDT (Binance ' + (Number(t.transferType) === 1 ? 'internal' : t.network) + ')', when: t.insertTime ? new Date(Number(t.insertTime)).toISOString() : '', match: micro(t.amount) === o.amount })); } catch (e) { info.notes.push('Binance said: ' + String((e && e.message) || e)); } }
+          info.seen = info.seen.concat(r.list.map(t => ({ amount: (Number(t.value) / 1e6).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''), when: new Date(t.ts).toISOString(), match: String(t.value) === String(o.amount) })));
+          if (!r.list.length && !info.seen.length) info.notes.push('No incoming USDT found for this wallet since the order was created. Check the wallet address in Settings is the one that received the money.');
+          else if (!info.seen.some(t => t.match)) info.notes.push('Money arrived but not the exact amount ' + info.expects + ' (compare the list).');
         } else if (COINS[coin].kind === 'bsc') {
           try {
+            if (binanceOn(env)) { try { const bl = await bnDepositList(env, o); info.notes.push('Binance deposits ok, ' + bl.length + ' record(s)'); bl.forEach(t => info.seen.push({ amount: String(t.amount) + ' USDT (Binance ' + (Number(t.transferType) === 1 ? 'internal' : t.network) + ')', when: t.insertTime ? new Date(Number(t.insertTime)).toISOString() : '', match: micro(t.amount) === o.amount })); } catch (e) { info.notes.push('Binance said: ' + String((e && e.message) || e)); } }
             const l = await bscIn(o, info.notes);
-            info.seen = l.map(t => ({ amount: (Number(t.value / 1000000000000n) / 1e6).toString(), when: t.conf + ' blocks ago', match: t.exact }));
-            if (!l.length) info.notes.push('No incoming BEP20 USDT found for this wallet recently. Make sure the address in Settings is the one that received the money.');
-            else if (!l.some(t => t.exact)) info.notes.push('Money arrived but not the exact amount ' + info.expects + '.');
+            info.seen = info.seen.concat(l.map(t => ({ amount: (Number(t.value / 1000000000000n) / 1e6).toString(), when: t.conf + ' blocks ago', match: t.exact })));
+            if (!l.length && !info.seen.length) info.notes.push('No incoming BEP20 USDT found for this wallet recently. Make sure the address in Settings is the one that received the money.');
+            else if (!info.seen.some(t => t.match)) info.notes.push('Money arrived but not the exact amount ' + info.expects + '.');
           } catch (e) { info.notes.push('Could not reach any BNB Chain node: ' + (e && e.message)); }
         } else if (coin === 'btc') {
           const l = await btcIn(o, info.notes);
@@ -1278,6 +1353,13 @@ async function route(req, env) {
         try { await sendMail(env, to, 'Test receipt — ' + ((cat0 && cat0.storeName) || 'your shop'), receiptHTML(cat0 && cat0.storeName, demo, (env.__base || '') + '/api/health')); }
         catch (e) { return fail(env, 'The email service said: ' + String((e && e.message) || e).slice(0, 200)); }
         return json(env, { ok: true });
+      }
+      if (path === '/api/admin/binance/test' && req.method === 'POST') {
+        if (!binanceOn(env)) return fail(env, 'Binance is not connected. Add the BINANCE_KEY and BINANCE_SECRET secrets in Cloudflare, then Deploy.');
+        const out = [], t0 = Date.now() - 3600000, probe = { createdAt: t0 };
+        try { const l = await bnDepositList(env, probe); out.push('Deposit history: OK (' + l.length + ' record(s) in the last hour)'); } catch (e) { out.push('Deposit history: ' + String((e && e.message) || e)); }
+        try { const l = await bnPayList(env, probe); out.push('Binance Pay history: OK (' + l.length + ' record(s) in the last hour)'); } catch (e) { out.push('Binance Pay history: ' + String((e && e.message) || e)); }
+        return json(env, { ok: !out.some(x => !/OK/.test(x)), lines: out });
       }
       if (path === '/api/admin/purge-expired' && req.method === 'POST') return await purgeExpired(env);
       if (path === '/api/admin/markpaid' && req.method === 'POST') {

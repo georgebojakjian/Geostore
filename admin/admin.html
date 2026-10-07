@@ -315,6 +315,11 @@
           <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-p btn-s" id="tgConnect">Connect Telegram</button><button type="button" class="btn btn-g btn-s" id="tgTest">Send test alert</button><button type="button" class="btn btn-g btn-s" id="tgRefresh">↻ Refresh status</button><button type="button" class="btn btn-d btn-s" id="tgOff">Disconnect</button></div>
         </div>
 
+        <div class="panel"><h2>Binance auto-detect (Binance Pay and Binance-to-Binance transfers)</h2>
+          <p class="help" style="margin-bottom:10px">Connect a <b>read-only</b> Binance key and the shop confirms Binance Pay payments and Binance-to-Binance transfers (TRC20 / BEP20 deposit address) <b>by itself</b>. Steps are in START-HERE.md → “Binance auto-detect”. After adding the two secrets in Cloudflare and pressing Deploy, press the button.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button type="button" class="btn btn-p btn-s" id="bnTest">Check Binance connection</button></div>
+          <p class="help" id="bnMsg" style="margin-top:8px"></p></div>
+
         <div class="panel"><h2>Email receipts</h2>
           <p class="help" style="margin-bottom:10px">After every paid order your customer gets an email with the invoice and a button to their private order page. Free setup with resend.com (steps in START-HERE.md → “Email receipts”). Press the button to send yourself a test.</p>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input id="mailTo" type="email" placeholder="your email" style="max-width:280px"><button type="button" class="btn btn-p btn-s" id="mailTest">Send a test email</button></div>
@@ -1170,6 +1175,10 @@
         tgState(true).then(function(st){ var w = $('tgWait'); if (w && st && st.webhook && st.webhook.error) w.textContent = 'Telegram error: ' + st.webhook.error; });
       }, 5000);
     }).catch(function(e){ toast(e.message); });
+  });
+  $('bnTest').addEventListener('click', function(){
+    $('bnMsg').textContent = 'Checking…';
+    api('/api/admin/binance/test', {method:'POST', body:'{}'}).then(function(r){ $('bnMsg').innerHTML = (r.ok ? '✅ Connected. ' : '⚠ ') + r.lines.map(esc).join(' · '); }).catch(function(e){ $('bnMsg').textContent = '❌ ' + e.message; });
   });
   $('mailTest').addEventListener('click', function(){
     var to = $('mailTo').value.trim() || state.settings.email || ''; $('mailTo').value = to; $('mailMsg').textContent = 'Sending…';

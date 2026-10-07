@@ -630,11 +630,13 @@
   });
   function selCoin(){ return coins.filter(function(c){ return c.id === coinSel; })[0] || {}; }
   function binanceNotice(){
+    if (CFG.binanceAuto) return '<div class="notice"><span class="ico">⚡</span><div><b>Paying from your Binance account?</b><br>Binance-to-Binance transfers are detected <b>automatically</b>, usually within a minute or two. Send exactly the amount shown. <b>If your order is not confirmed within 1 hour, please contact us</b> with your order number.' + contactRow() + '</div></div>';
     return '<div class="notice"><span class="ico">⏳</span><div><b>Paying from your Binance account?</b><br>A transfer from Binance to our Binance address is an <b>internal transfer</b>, so it can take a while to be confirmed. <b>If your order is not confirmed within 1 hour, please contact us</b> with your order number and we will confirm it right away.' + contactRow() + '</div></div>';
   }
   function drawInfo(){
     var box = $('mInfo'); if (!box) return;
     var c = selCoin(), u = METHOD_UI[c.id]; if (!c.id || !u){ box.innerHTML = ''; return; }
+    if (c.id === 'binancepay' && CFG.binanceAuto) u = Object.assign({}, u, {note:'Send inside the Binance app with Binance Pay. Detected automatically.', eta:'Usually confirmed within a minute or two'});
     box.innerHTML = '<div class="minfo"><span class="ic ' + u.cls + '">' + esc(u.glyph) + '</span><div><b>' + esc(c.name) + '</b><span>' + esc(u.note) + '</span><small>' + (c.network ? esc(c.network) + ' · ' : '') + esc(u.eta || '') + '</small></div></div>';
   }
   function drawFrom(){
@@ -693,7 +695,7 @@
     var manual = o.kind === 'manual', isBtc = o.kind === 'btc';
     var rows = (o.items || []).map(function(i){ return '<div><span>' + esc(i.title) + (i.qty > 1 ? ' ×' + i.qty : '') + '</span><span>' + money(i.price) + '</span></div>'; }).join('') + '<div><span>Total</span><span>' + money(o.usd) + '</span></div>';
     var warns = manual ?
-      '<div><span>①</span><span>Open <b>Binance → Pay → Send</b> and enter the Pay ID below.</span></div><div><span>②</span><span>Send exactly <b>' + esc(o.amount) + ' USDT</b>, then press “I have paid”.</span></div><div><span>③</span><span>We check it by hand. You will see your order here as soon as it is confirmed.</span></div>' :
+      '<div><span>①</span><span>Open <b>Binance → Pay → Send</b> and enter the Pay ID below.</span></div><div><span>②</span><span>Send exactly <b>' + esc(o.amount) + ' USDT</b>, then press “I have paid”.</span></div><div><span>③</span><span>' + (CFG.binanceAuto ? 'We detect it automatically — usually within a minute or two. Pressing “I have paid” is only needed if it takes longer.' : 'We check it by hand. You will see your order here as soon as it is confirmed.') + '</span></div>' :
       '<div><span>①</span><span>Send <b>only ' + esc(o.coinName) + '</b> on the <b>' + esc(o.network) + '</b> network. Other networks are lost.</span></div>' +
       '<div><span>②</span><span>Send the <b>exact amount</b> shown (it includes a few extra cents that identify your order). If you pay from an exchange, add its withdrawal fee on top so exactly <b>' + esc(o.amount) + '</b> arrives.</span></div>' +
       '<div><span>③</span><span>' + (isBtc ? 'Bitcoin needs 1 confirmation (about 10–30 minutes).' : 'This window updates by itself in under a minute after you pay.') + '</span></div>';
@@ -732,7 +734,7 @@
     var total = o.expiresAt - o.createdAt, left = o.expiresAt - Date.now();
     timer.firstChild.style.width = Math.max(0, Math.min(100, left / total * 100)) + '%';
     if (o.kind === 'manual'){
-      stt.textContent = o.claimed ? 'Thanks! We are checking your payment now…' : 'Pay in Binance, then press “I have paid”. Time left ' + leftText(left);
+      stt.textContent = o.claimed ? 'Thanks! We are checking your payment now…' : CFG.binanceAuto ? 'Waiting for your Binance payment… ' + leftText(left) + ' left' : 'Pay in Binance, then press “I have paid”. Time left ' + leftText(left);
       var cb = $('payClaim'); if (cb){ cb.disabled = !!o.claimed; cb.textContent = o.claimed ? 'Payment reported ✓' : 'I have paid'; }
     } else if (left <= 0){ st.classList.add('err'); stt.textContent = 'Time is up. If you already sent the payment it may still be detected — keep this window open for a few minutes.'; }
     else stt.textContent = 'Waiting for your payment… ' + leftText(left) + ' left';
@@ -754,7 +756,7 @@
     return '<div class="oc"><div class="oh"><b>' + esc(o.title) + '</b>' + pillFor(o.status) + '</div><div class="mono muted" style="font-size:.78rem">' + dt(o.createdAt) + ' · ' + esc(o.id.slice(0, 8).toUpperCase()) + ' · ' + money(o.usd) + ' · ' + esc(o.amount) + ' ' + esc(o.coinName.split(' ')[0]) + '</div>' +
       '<div class="oa">' + (o.status === 'paid' ? '<a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="' + esc(o.deliveryUrl) + '">Open codes &amp; invoice</a>' : '') + (o.status === 'pending' ? '<button type="button" class="btn btn-primary btn-sm" data-pay="' + esc(o.id) + '">Continue payment</button>' : '') + '</div></div>';
   }
-  function explorer(o){ return !o.txid || o.txid === 'manual' ? 'confirmed by us' : '<a class="link" target="_blank" rel="noopener" href="' + (o.coin === 'btc' ? 'https://mempool.space/tx/' : o.coin === 'usdt_bep20' ? 'https://bscscan.com/tx/' : 'https://tronscan.org/#/transaction/') + encodeURIComponent(o.txid) + '">' + esc(o.txid.slice(0, 10)) + '…</a>'; }
+  function explorer(o){ return !o.txid || o.txid === 'manual' ? 'confirmed by us' : /^(bp|bn):/.test(o.txid) ? 'Binance transfer' : '<a class="link" target="_blank" rel="noopener" href="' + (o.coin === 'btc' ? 'https://mempool.space/tx/' : o.coin === 'usdt_bep20' ? 'https://bscscan.com/tx/' : 'https://tronscan.org/#/transaction/') + encodeURIComponent(o.txid) + '">' + esc(o.txid.slice(0, 10)) + '…</a>'; }
   function openAccount(from){ $('acctTitle').textContent = me ? 'My account' : 'Account'; openModal($('acctM'), from); me ? renderIn() : renderOut('in'); }
   function renderOut(tabName){
     if (!API){ $('acctBody').innerHTML = '<p class="empty">Customer accounts switch on as soon as the payment server is connected.</p>'; return; }

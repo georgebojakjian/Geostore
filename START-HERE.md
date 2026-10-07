@@ -18,7 +18,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 
 1. **Back up first.** Open your OLD dashboard → **Publish → Backup everything**. Keep that file.
 2. **Download the new project** (GitHub → branch `claude/geostore-website-template-bwou47` → Code → Download ZIP) and unzip it.
-3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":16`.
+3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":17`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
 6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`, `manifest.webmanifest`.
@@ -32,7 +32,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 ### 1 — Server (Cloudflare)
 1. Cloudflare → Workers & Pages → create a Worker → paste `worker/worker.js` → Deploy.
 2. Settings → **Variables and Secrets**: add a **Secret** named `ADMIN_TOKEN` (a long password only you know). Settings → **Bindings** → add a **KV namespace** named `ORDERS`.
-3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":16`.
+3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":17`.
 4. Do **not** add a Cron Trigger (the shop does not need one).
 
 ### 2 — Dashboard
@@ -177,6 +177,24 @@ After every paid order the customer gets an email with the invoice and an **Open
 5. Dashboard → **Settings → Email receipts** → type your email → **Send a test email**.
 
 If a receipt cannot be sent you get a Telegram note with the reason, and the order is still delivered normally. Each order sends one receipt only.
+
+## Binance auto-detect (fully automatic Binance Pay and Binance → Binance payments)
+**What it solves:** a customer who pays from **their Binance account to your Binance account** (Binance Pay, or your Binance deposit address on TRC20/BEP20) never touches the blockchain, so normal detection cannot see it. With a **read-only** Binance API key the server reads your Binance history and confirms those orders by itself. It also removes the need for a second wallet: Binance deposit addresses accept small amounts.
+
+**Set it up (10 minutes)**
+1. Binance → **Profile → API Management → Create API** → *System generated* → name it `geostore` → finish the security check.
+2. On the new key keep **only “Enable Reading”** ticked. Do **not** tick trading, withdrawals or anything else. For IP access choose **Unrestricted** (Cloudflare has no fixed address) — this is safe only because the key can read, never move money.
+3. Copy the **API key** and the **Secret key** (Binance shows the secret once).
+4. Cloudflare → your Worker → **Settings → Variables and Secrets** → add two **Secrets**: `BINANCE_KEY` and `BINANCE_SECRET` → **Deploy**. `/api/health` should show `"binance":true`.
+5. Dashboard → Settings → **Binance auto-detect** → **Check Binance connection**. You want two green lines (deposit history and Binance Pay history).
+6. Get your Binance **deposit addresses** (Binance → Wallet → Deposit → USDT → network TRON (TRC20) / BNB Smart Chain (BEP20)) and put them in Settings → Where customers pay you, with the **“This is a Binance deposit address”** box ticked. Your Binance Pay ID goes in the Binance Pay box. Save → Sync.
+
+**How it works:** every order has a unique amount (for example 5.14). When your Binance history shows an incoming USDT payment of exactly that amount, the order turns paid. Customers must send the **exact amount**.
+
+**Good to know**
+- If Binance refuses requests from Cloudflare's location (an HTTP 451 or “restricted location” message), the server automatically tries Binance's other addresses; if all fail, **Why not paid?** shows the reason and **Mark paid** still works.
+- Keep your Binance account safe (two-step login). Never create a key with withdrawal permission.
+- I could not test this against the real Binance service from here, only against simulated answers. Test with one small real payment before announcing.
 
 ## Dashboard
 The dashboard now has the dark glass look. **Home** shows revenue, paid orders, estimated profit and “needs you” for **Today / 7D / 30D / 1Y**, a performance chart, payment-method split and the latest orders. **Gift cards → Prices** shows what each amount **costs you** at FazerCards, what you sell it for and your profit. The sun/moon button switches to a light dashboard.
