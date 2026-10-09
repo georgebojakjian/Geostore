@@ -88,6 +88,8 @@ async function pushIndex(env, key, val, max) {
   if (arr.indexOf(val) < 0) arr.push(val);
   await env.ORDERS.put(key, JSON.stringify(arr.slice(-max)));
 }
+// the visitor's address: when the shop forwards requests through its own web address (Netlify), the real address arrives in this header
+const ipOf = req => req.headers.get('x-nf-client-connection-ip') || req.headers.get('cf-connecting-ip') || 'x';
 let catMem = { t: 0, v: null };                       // the catalogue can be large: keep it in memory for a few seconds instead of re-reading it for every request
 const getCatalog = async env => { if (catMem.v && Date.now() - catMem.t < 8000) return catMem.v; const v = await env.ORDERS.get('idx', 'json'); catMem = { t: Date.now(), v }; return v; };
 const saveOrder = (env, o, ttl) => env.ORDERS.put('order:' + o.id, JSON.stringify(o), ttl ? { expirationTtl: ttl } : undefined);
@@ -229,7 +231,7 @@ async function ptsRefund(env, o) {
 }
 
 async function accountRoutes(req, env, path, apiBase) {
-  const ip = req.headers.get('cf-connecting-ip') || 'x';
+  const ip = ipOf(req);
   const body = req.method === 'POST' ? (await req.json().catch(() => null) || {}) : {};
   if (path === '/api/account/register' && req.method === 'POST') {
     if (tooMany(authHits, 'reg|' + ip, 5, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
@@ -382,7 +384,7 @@ async function topupOffers(env, cat, catId) {
 }
 const topupSell = (sup, catId, offer, cost) => giftSell(sup, 'T-' + catId, offer, cost);
 async function topupRoute(req, env, url) {
-  if (tooMany(giftHits, req.headers.get('cf-connecting-ip') || 'x', 90, 10 * 60000)) return fail(env, 'Too many requests. Please wait a moment.', 429);
+  if (tooMany(giftHits, ipOf(req), 90, 10 * 60000)) return fail(env, 'Too many requests. Please wait a moment.', 429);
   const catId = String(url.searchParams.get('cat') || '');
   if (!/^[A-Za-z0-9_-]{1,80}$/.test(catId)) return fail(env, 'Not found', 404);
   const cat = await getCatalog(env);
@@ -403,7 +405,7 @@ async function validatorFor(env, catId, name) {
 }
 const tvHits = new Map();
 async function topupValidate(req, env) {
-  if (tooMany(tvHits, req.headers.get('cf-connecting-ip') || 'x', 20, 10 * 60000)) return fail(env, 'Too many checks. Please wait a few minutes.', 429);
+  if (tooMany(tvHits, ipOf(req), 20, 10 * 60000)) return fail(env, 'Too many checks. Please wait a few minutes.', 429);
   const b = await req.json().catch(() => null) || {}, catId = String(b.cat || '');
   if (!/^[A-Za-z0-9_-]{1,80}$/.test(catId)) return fail(env, 'Not found', 404);
   const cat = await getCatalog(env);
@@ -429,7 +431,7 @@ async function giftOffers(env, cat, catId) {
 }
 const giftHits = new Map();
 async function giftRoute(req, env, url) {
-  if (tooMany(giftHits, req.headers.get('cf-connecting-ip') || 'x', 90, 10 * 60000)) return fail(env, 'Too many requests. Please wait a moment.', 429);
+  if (tooMany(giftHits, ipOf(req), 90, 10 * 60000)) return fail(env, 'Too many requests. Please wait a moment.', 429);
   const catId = String(url.searchParams.get('cat') || '');
   if (!/^[A-Za-z0-9_-]{1,80}$/.test(catId)) return fail(env, 'Not found', 404);
   const cat = await getCatalog(env);
@@ -568,7 +570,7 @@ const chatHits = new Map(), pollHits = new Map();
 const SID = /^[a-f0-9]{16,32}$/;
 async function chatSend(req, env) {
   if (!env.TELEGRAM_BOT_TOKEN || !(await tgOwner(env))) return fail(env, 'Live chat is offline right now. Please use WhatsApp or email.', 503);
-  const ip = req.headers.get('cf-connecting-ip') || 'x', b = await req.json().catch(() => ({}));
+  const ip = ipOf(req), b = await req.json().catch(() => ({}));
   const sid = String(b.sid || ''), text = String(b.text || '').trim().slice(0, 600);
   if (!SID.test(sid) || !text) return fail(env, 'Bad message');
   if (tooMany(chatHits, ip, 20, 10 * 60000) || tooMany(chatHits, 's|' + sid, 20, 10 * 60000)) return fail(env, 'You are sending messages too fast. Please wait a moment.', 429);
@@ -580,7 +582,7 @@ async function chatSend(req, env) {
 async function chatPoll(req, env, url) {
   const sid = String(url.searchParams.get('sid') || ''), after = Number(url.searchParams.get('after')) || 0;
   if (!SID.test(sid)) return fail(env, 'Bad session');
-  if (tooMany(pollHits, req.headers.get('cf-connecting-ip') || 'x', 200, 10 * 60000)) return fail(env, 'Too many requests', 429);
+  if (tooMany(pollHits, ipOf(req), 200, 10 * 60000)) return fail(env, 'Too many requests', 429);
   const list = (await env.ORDERS.get('chat:' + sid, 'json')) || [];
   return json(env, { ok: true, msgs: list.filter(m => m.t > after), online: !!env.TELEGRAM_BOT_TOKEN });
 }
@@ -612,8 +614,10 @@ async function telegramHook(req, env, secretInPath) {
 }
 async function createOrder(req, env, apiBase) {
   // each order costs 3 writes of the free daily allowance, so one visitor (and the whole shop) is capped
-  if (tooMany(ipHits, req.headers.get('cf-connecting-ip') || 'x', 4, 10 * 60000) || tooMany(ipHits, '*all*', 60, 10 * 60000)) return fail(env, 'Too many orders right now. Please wait a few minutes and try again.', 429);
+  if (tooMany(ipHits, ipOf(req), 4, 10 * 60000) || tooMany(ipHits, '*all*', 60, 10 * 60000)) return fail(env, 'Too many orders right now. Please wait a few minutes and try again.', 429);
   const b = await req.json().catch(() => null) || {};
+  const rid = /^[a-f0-9]{8,40}$/.test(String(b.rid || '')) ? String(b.rid) : '';       // the shop may send the same click twice on a bad connection: answer with the first order
+  if (rid) { const oid0 = await env.ORDERS.get('rid:' + rid, 'text'); const o0 = oid0 && await env.ORDERS.get('order:' + oid0, 'json'); if (o0) return json(env, publicOrder(env, o0, apiBase)); }
   const cat = await getCatalog(env);
   if (!cat) return fail(env, 'The store has not been synced yet', 503);
 
@@ -682,6 +686,7 @@ async function createOrder(req, env, apiBase) {
   // the "amt:" key both reserves the amount AND is the list of open orders the cron job checks
   await env.ORDERS.put(amtKey, o.id, { expirationTtl: ((fromBinance ? Math.max(C.minutes, 180) : C.minutes) + C.graceMs / 60000 + 5) * 60 });
   await pushIndex(env, 'oidx', o.id, 400);
+  if (rid) await env.ORDERS.put('rid:' + rid, o.id, { expirationTtl: 900 });
   if (acct) { acct.orders = (acct.orders || []).concat(o.id).slice(-200); if (ptsUsed > 0) ptsAdd(acct, -ptsUsed, 'Used on order #' + o.id.slice(0, 8).toUpperCase()); await env.ORDERS.put('acct:' + acct.email, JSON.stringify(acct)); }
   notify(env, '🛒 <b>New order</b> #' + o.id.slice(0, 8).toUpperCase() + '\n$' + o.usd + ' · ' + esc(C.name) + (fromBinance ? ' · 🟡 paying from Binance' : '') + '\n' + esc(orderTitle(o)) + '\n' + esc(email) + '\n⏳ waiting for payment');
   return json(env, publicOrder(env, o, apiBase));
@@ -966,7 +971,7 @@ function watermarkHTML(name) {
   return div + '<script>(function(){var h=' + J(div) + ';setInterval(function(){if(!document.getElementById("__wm"))document.documentElement.insertAdjacentHTML("beforeend",h)},700)})()<\/script>';
 }
 async function fullPreview(req, env, id, vi) {
-  const ip = req.headers.get('cf-connecting-ip') || 'x';
+  const ip = ipOf(req);
   if (tooMany(prevHits, ip, 40, 10 * 60000)) return fail(env, 'Too many previews. Please wait a few minutes.', 429);
   const cat = await getCatalog(env), p = cat && cat.products && cat.products[id];
   if (!p || p.type === 'digital' || p.hidden) return fail(env, 'Not found', 404);
@@ -1205,7 +1210,7 @@ async function adminFile(req, env, url) {
 }
 const dlHits = new Map();
 async function downloadFile(req, env, m, url) {
-  if (tooMany(dlHits, req.headers.get('cf-connecting-ip') || 'x', 40, 10 * 60000)) return fail(env, 'Too many downloads. Please wait a few minutes.', 429);
+  if (tooMany(dlHits, ipOf(req), 40, 10 * 60000)) return fail(env, 'Too many downloads. Please wait a few minutes.', 429);
   const [, oid, pid, fid] = m, o = await env.ORDERS.get('order:' + oid, 'json');
   if (!o || !safeEqual(url.searchParams.get('k') || '', o.key) || o.status !== 'paid') return new Response('Not found', { status: 404 });
   const items = itemsOf(o), has = items.some(i => i.id === pid || i.id === 'ALL');
@@ -1255,7 +1260,7 @@ async function adminIndex(req, env) {
   const aa = b.allAccess || {}, w = b.wallets || {};
   catMem = { t: 0, v: null };
   await env.ORDERS.put('idx', J({
-    storeName: String(b.storeName || ''), products,
+    storeName: String(b.storeName || ''), site: siteOk(b.site), products,
     wallets: { usdt_trc20: String(w.usdt_trc20 || '').trim().slice(0, 120), usdt_bep20: String(w.usdt_bep20 || '').trim().slice(0, 120), btc: String(w.btc || '').trim().slice(0, 120), binancepay: String(w.binancepay || '').trim().slice(0, 160) },
     sup: cleanSup(b.sup),
     binanceAddr: { usdt_trc20: !!(b.binanceAddr && b.binanceAddr.usdt_trc20), usdt_bep20: !!(b.binanceAddr && b.binanceAddr.usdt_bep20) },
@@ -1440,7 +1445,7 @@ async function rebuildReviews(env) {
   extraMem.v = null;
 }
 async function submitReview(req, env) {
-  if (tooMany(ipHits, 'rv|' + (req.headers.get('cf-connecting-ip') || 'x'), 6, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
+  if (tooMany(ipHits, 'rv|' + (ipOf(req)), 6, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
   const b = await req.json().catch(() => null) || {};
   if (!(await featCfg(env)).reviews) return fail(env, 'Reviews are switched off', 403);
   const id = String(b.id || ''); if (!/^[a-f0-9]{32}$/.test(id)) return fail(env, 'Order not found', 404);
@@ -1469,7 +1474,7 @@ async function adminReviewAct(req, env) {
 
 /* "notify me" when a sold-out item is back */
 async function notifyMe(req, env) {
-  if (tooMany(ipHits, 'nm|' + (req.headers.get('cf-connecting-ip') || 'x'), 8, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
+  if (tooMany(ipHits, 'nm|' + (ipOf(req)), 8, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
   const b = await req.json().catch(() => null) || {}, pid = String(b.pid || ''), email = String(b.email || '').trim().toLowerCase();
   if (!validEmail(email)) return fail(env, 'Please enter a valid email address');
   const cat = await getCatalog(env), p = cat && cat.products && cat.products[pid];
@@ -1491,8 +1496,8 @@ async function restock(env, pid) {
 }
 
 /* abandoned cart: one reminder per customer, only if they did not order, with a working unsubscribe link */
-async function saveCart(req, env) {
-  const ip = req.headers.get('cf-connecting-ip') || 'x';
+async function saveCart(req, env, apiBase) {
+  const ip = ipOf(req);
   if (tooMany(ipHits, 'cart|' + ip, 10, 10 * 60000)) return fail(env, 'Too many attempts', 429);
   const b = await req.json().catch(() => null) || {}, email = String(b.email || '').trim().toLowerCase();
   if (!validEmail(email) || !mailOn(env) || !(await featCfg(env)).cart) return json(env, { ok: true, saved: false });
@@ -1507,7 +1512,7 @@ async function saveCart(req, env) {
   if (!items.length) return json(env, { ok: true, saved: false });
   const k = 'cart:' + email, old = await env.ORDERS.get(k, 'json');
   if (await env.ORDERS.get('nocart:' + email, 'text')) return json(env, { ok: true, saved: false });
-  const c = { t: Date.now(), items, usd: round2(items.reduce((a, i) => a + i.p, 0)), site, base: new URL(req.url).origin, l: langOf(b.lang), sent: old ? !!old.sent : false };
+  const c = { t: Date.now(), items, usd: round2(items.reduce((a, i) => a + i.p, 0)), site, base: apiBase || new URL(req.url).origin, l: langOf(b.lang), sent: old ? !!old.sent : false };
   await env.ORDERS.put(k, J(c), { expirationTtl: 7 * 86400 });
   if (!old) await pushIndex(env, 'kidx', email, 300);
   return json(env, { ok: true, saved: true });
@@ -1539,7 +1544,8 @@ async function sweepCarts(env) {
 /* ---------------- router ---------------- */
 async function route(req, env) {
   const url = new URL(req.url);
-  const apiBase = url.origin;
+  let apiBase = url.origin;
+  if (req.headers.get('x-nf-client-connection-ip')) { const c0 = await getCatalog(env).catch(() => null); if (c0 && c0.site) apiBase = c0.site; }   // came through the shop's own address: links in emails use it too
   const path = url.pathname.replace(/\/+$/, '');
   try {
     if (path === '/api/health') {
@@ -1568,12 +1574,12 @@ async function route(req, env) {
     if (path === '/api/reviews' && req.method === 'GET') { const p = await env.ORDERS.get('rev:pub', 'text'); return new Response(p || '{"avg":0,"count":0,"list":[]}', { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=60', 'access-control-allow-origin': '*' } }); }
     if (path === '/api/review' && req.method === 'POST') return await submitReview(req, env);
     if (path === '/api/notify-me' && req.method === 'POST') return await notifyMe(req, env);
-    if (path === '/api/cart' && req.method === 'POST') return await saveCart(req, env);
+    if (path === '/api/cart' && req.method === 'POST') return await saveCart(req, env, apiBase);
     if (path === '/api/cart/stop' && req.method === 'GET') return await cartStop(env, url);
     if (path === '/api/order' && req.method === 'POST') return await createOrder(req, env, apiBase);
     let cm = path.match(/^\/api\/order\/([a-f0-9]{32})\/claim$/);
     if (cm && req.method === 'POST') {
-      if (tooMany(ipHits, 'claim|' + (req.headers.get('cf-connecting-ip') || 'x'), 20, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
+      if (tooMany(ipHits, 'claim|' + (ipOf(req)), 20, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
       const o = await env.ORDERS.get('order:' + cm[1], 'json'), b = await req.json().catch(() => ({}));
       if (!o) return fail(env, 'Order not found', 404);
       if (o.status === 'pending' && !o.claimed && COINS[orderCoin(o)].kind === 'manual') { o.claimed = { at: Date.now(), ref: String(b.ref || '').slice(0, 80) }; await saveOrder(env, o); notify(env, '🟡 <b>Binance Pay</b> — customer says they paid #' + o.id.slice(0, 8).toUpperCase() + '\n$' + o.usd + ' · ' + esc(o.email) + (o.claimed.ref ? '\nref: ' + esc(o.claimed.ref) : '') + '\nCheck Binance, then Orders → Mark paid.'); }
@@ -1592,7 +1598,7 @@ async function route(req, env) {
     if (m && req.method === 'GET') return await downloadFile(req, env, m, url);
     if (path.startsWith('/api/account/')) return await accountRoutes(req, env, path, apiBase);
     if (path.startsWith('/api/admin/')) {
-      const aip = 'adm|' + (req.headers.get('cf-connecting-ip') || 'x');
+      const aip = 'adm|' + (ipOf(req));
       if ((authHits.get(aip) || []).filter(t => Date.now() - t < 10 * 60000).length >= 12) return fail(env, 'Too many failed attempts. Please wait a few minutes.', 429);
       if (!isAdmin(req, env)) { tooMany(authHits, aip, 99, 10 * 60000); return fail(env, 'Wrong or missing admin token', 401); }
       if (path === '/api/admin/product' && req.method === 'POST') return await adminProduct(req, env);

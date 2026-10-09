@@ -344,6 +344,7 @@
         <div class="panel"><h2>Server connection</h2><div class="form">
           <div class="full"><label for="sApi">Payment server URL (from Cloudflare, e.g. https://geostore-api.yourname.workers.dev). Leave empty for manual mode.</label><input id="sApi" placeholder="https://geostore-api.yourname.workers.dev"></div>
           <div class="full"><label for="sTok">Admin token (private — saved only in this browser, never published)</label><input id="sTok" type="password" autocomplete="off" placeholder="the ADMIN_TOKEN you chose in Cloudflare"></div>
+          <div class="full"><label for="sSite">Your shop address (the website customers visit, e.g. https://geostorecodes.com). <b>Fixes slow or failing checkout on phones</b>: the shop then talks to your server through its own address.</label><input id="sSite" placeholder="https://geostorecodes.com" autocomplete="off"></div>
           <div class="full"><button type="button" class="btn btn-g btn-s" id="srvTest">Test connection</button> <span class="help" id="srvStatus" style="margin-left:8px"></span></div></div></div>
 
         <div class="panel" id="ptsPanel"><h2>⭐ Points wallet</h2><p class="help">Customers earn points on every paid order and spend them as a discount at checkout. Saved straight to your server (no Sync needed). You can see and edit each customer\'s points in the Customers tab.</p><div class="form">
@@ -868,7 +869,7 @@
     if (base() && token()) { tgState(); loadPts(); loadFeat(); }
     var s = state.settings, aa = s.allAccess, w = s.autoWallets || {};
     $('sWalU').value = w.usdt_trc20||''; $('sWalE').value = w.usdt_bep20||''; var ba = s.binanceAddr || {}; $('sBinU').checked = !!ba.usdt_trc20; $('sBinE').checked = !!ba.usdt_bep20; $('sWa').value = s.whatsapp || ''; var so = s.social || {}; $$('[data-soc]').forEach(function(i){ i.value = so[i.dataset.soc] || ''; }); $('sFeat').value = s.featured || ''; $('sTgU').value = s.telegram || ''; $('sWalB').value = w.btc||''; $('sWalP').value = w.binancepay||'';
-    $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
+    $('sSite').value = s.siteUrl||''; $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
     $('sWal').value = Object.keys(s.wallets||{}).map(function(k){ return k + ' | ' + s.wallets[k]; }).join('\n');
     var an = s.arNames || {}; $('sArN').value = Object.keys(an).map(function(k){ return k + ' | ' + an[k]; }).join('\n');
     $('sDig').checked = s.digitalSection !== false; $('aaOn').checked = !!aa.enabled; $('aaTitle').value = aa.title||''; $('aaPrice').value = aa.price==null?'':aa.price; $('aaDesc').value = aa.description||'';
@@ -881,6 +882,7 @@
     if (we && !WAL.usdt_bep20.test(we)){ toast('The USDT BEP20 address does not look right (starts with 0x, 42 characters)'); return; }
     if (wb && !WAL.btc.test(wb)){ toast('The Bitcoin address does not look right'); return; }
     if (wp && !WAL.binancepay.test(wp)){ toast('The Binance Pay ID should be digits only'); return; }
+    s.siteUrl = $('sSite').value.trim().replace(/\/+$/,''); if (s.siteUrl && !/^https:\/\/[A-Za-z0-9.-]+$/.test(s.siteUrl)){ toast('The shop address must look like https://geostorecodes.com'); return; }
     s.apiUrl = $('sApi').value.trim().replace(/\/+$/,''); try { localStorage.setItem('geostore_admin_token', $('sTok').value.trim()); } catch(er) {}
     s.storeName = $('sName').value.trim(); s.email = $('sEmail').value.trim(); s.tagline = $('sTag').value.trim();
     var w = {}; $('sWal').value.split('\n').forEach(function(line){ var i = line.indexOf('|'); if (i>0){ var k = line.slice(0,i).trim(), v = line.slice(i+1).trim(); if (k && v) w[k]=v; } });
@@ -950,7 +952,7 @@
       var aa = state.settings.allAccess || {}, removed = (state.removed || []).filter(function(id){ return state.sync['gone:' + id] !== 1; });
       srvStatus('Finishing…');
       api('/api/admin/index', {method:'POST', body: JSON.stringify({
-        storeName: state.settings.storeName, wallets: state.settings.autoWallets || {}, binanceAddr: state.settings.binanceAddr || {}, remove: removed, sup: supForServer(),
+        storeName: state.settings.storeName, site: state.settings.siteUrl || '', wallets: state.settings.autoWallets || {}, binanceAddr: state.settings.binanceAddr || {}, remove: removed, sup: supForServer(),
         allAccess: {enabled: !!aa.enabled, title: aa.title, price: aa.price},
         products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, type:p.type, published:p.published!==false, wm:p.wm !== false, files:p.files || [], supplier:p.supplier ? {cat:p.supplier.cat, card:p.supplier.card} : undefined, variants:p.type==='code' ? p.variants.map(function(v){ return v.name; }) : [], stockN:p.type==='digital' ? p.stock.length : 0}; })
       })}).then(function(r){ removed.forEach(function(id){ state.sync['gone:' + id] = 1; }); state.dirtySync = false; save(); finish('✅ Synced: ' + total + ' product(s) uploaded, ' + (r.products - total) + ' unchanged. The server is up to date.'); })
@@ -1340,7 +1342,7 @@
     return {brands: Object.keys(by).map(function(k){ return by[k]; }), topups: Object.keys(tc).map(function(id){ return {id: id, name: tc[id].n, logo: tc[id].logo || ''}; })};
   }
   function dataJsText(){
-    var s = state.settings, pubSettings = {storeName:s.storeName, tagline:s.tagline, email:s.email, whatsapp:s.whatsapp || '', telegram:s.telegram || '', apiUrl:s.apiUrl || '', allAccess:s.allAccess, digitalSection:s.digitalSection, social:s.social || {}, featured:s.featured || '', wallets:s.wallets, arNames:s.arNames || {}};
+    var s = state.settings, pubSettings = {storeName:s.storeName, tagline:s.tagline, email:s.email, whatsapp:s.whatsapp || '', telegram:s.telegram || '', apiUrl:s.apiUrl || '', allAccess:s.allAccess, digitalSection:s.digitalSection, social:s.social || {}, featured:s.featured || '', wallets:s.wallets, arNames:s.arNames || {}, proxy: !!(s.siteUrl && s.apiUrl)};
     var pub = {settings: pubSettings, gift: giftData(), products: state.products.map(function(p){
       var q = {id:p.id, title:p.title, category:p.category, price:p.price, stylePrice:p.stylePrice||0, group:p.group||'', guide:p.guide||'', tagline:p.tagline, type:p.type, published:p.published!==false, files:(p.files || []).map(function(f){ return {name:f.name, size:f.size || 0, link:!!f.url}; })};
       if (p.type === 'digital') q.icon = p.icon || '';
@@ -1349,7 +1351,10 @@
     })};
     return '/* Geostore public data — generated by the admin dashboard. Upload this file with your site. */\nwindow.GEOSTORE_DATA = ' + JSON.stringify(pub, null, 1) + ';\n';
   }
+  // forwards /api on the shop's own address to your server (Netlify reads this file)
+  function redirectsText(){ var u = (state.settings.apiUrl || '').replace(/\/+$/, ''); return state.settings.siteUrl && /^https:\/\//.test(u) ? '/api/*  ' + u + '/api/:splat  200!\n' : ''; }
   function downloadData(){
+    if (redirectsText()) download('_redirects', redirectsText(), 'text/plain');
     download('data.js', dataJsText(), 'text/javascript');
     state.dirtySite = false; save(); toast('data.js downloaded — put it in your site folder and upload the folder');
   }
@@ -1397,6 +1402,14 @@
         return fetch(api2, {method:'PUT', headers: Object.assign({'content-type':'application/json'}, hdr), body: JSON.stringify({message:'Update shop data from the dashboard', content: b64utf8(dataJsText()), branch: br, sha: cur.sha})});
       })
       .then(function(r){ return r.json().then(function(j){ if (!r.ok) throw new Error(j.message || ('GitHub said ' + r.status)); return j; }); })
+      .then(function(){
+        var rt = redirectsText(); if (!rt) return;
+        var api3 = 'https://api.github.com/repos/' + repo + '/contents/site/_redirects';
+        msg.textContent = 'Sending the fast-connection file…';
+        return fetch(api3 + '?ref=' + encodeURIComponent(br), {headers: hdr}).then(function(r){ return r.status === 404 ? {} : r.json(); }).then(function(cur2){
+          return fetch(api3, {method:'PUT', headers: Object.assign({'content-type':'application/json'}, hdr), body: JSON.stringify({message:'Update fast-connection file', content: b64utf8(rt), branch: br, sha: cur2.sha})});
+        }).then(function(r){ return r.json().then(function(j){ if (!r.ok) throw new Error(j.message || ('GitHub said ' + r.status)); }); });
+      })
       .then(function(){ state.dirtySite = false; save(); btn.disabled = false; msg.textContent = '✅ Sent. Netlify updates your website automatically in about a minute.'; toast('Website update sent'); })
       .catch(function(e){ btn.disabled = false; msg.textContent = '❌ ' + e.message + ' — check the repository name, branch and token (the token needs “Contents: read and write”).'; });
   });

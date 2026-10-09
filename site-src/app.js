@@ -4,6 +4,26 @@
   var D = window.GEOSTORE_DATA || {settings:{},products:[]};
   var S = D.settings || {};
   var API = String(S.apiUrl || '').replace(/\/+$/, '');
+  /* Network route: on some phone networks the *.workers.dev address is very slow or blocked. When the shop forwards /api through its own
+     address (S.proxy, set up by the dashboard), we use that first and fall back to the direct address, and the other way round if it fails. */
+  var PROXY = S.proxy && /^https?:/.test(location.protocol) ? location.origin : '';
+  function net(path, opt){
+    opt = opt || {};
+    var bases = PROXY ? [PROXY, API] : [API], pref = 0; try { pref = +sessionStorage.getItem('geo_route') || 0; } catch(e) {}
+    if (PROXY && pref === 1) bases = [API, PROXY];
+    function go(i){
+      var ac = window.AbortController ? new AbortController() : null, t = ac ? setTimeout(function(){ ac.abort(); }, i === 0 && bases.length > 1 ? 12000 : 40000) : 0;
+      var o = Object.assign({}, opt); if (ac) o.signal = ac.signal;
+      return fetch(bases[i] + path, o).then(function(r){
+        clearTimeout(t);
+        var bad = r.status >= 502 || (r.status === 404 && !/json/.test(r.headers.get('content-type') || ''));
+        if (bad && i + 1 < bases.length) return go(i + 1);
+        try { sessionStorage.setItem('geo_route', String(PROXY && bases[i] === API ? 1 : 0)); } catch(e) {}
+        return r;
+      }, function(er){ clearTimeout(t); if (i + 1 < bases.length) return go(i + 1); throw er; });
+    }
+    return go(0);
+  }
   if (API && !/^https:\/\//.test(API)) API = '';
   var $ = function(id){ return document.getElementById(id); };
   var $$ = function(sel, root){ return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -450,7 +470,7 @@
   function loadFull(p, i){
     if (!API || p.type === 'digital') return Promise.resolve(null);
     var k = p.id + '/' + i; if (fullCache[k]) return Promise.resolve(fullCache[k]);
-    return fetch(API + '/api/preview/' + encodeURIComponent(p.id) + '/' + i).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){
+    return net('/api/preview/' + encodeURIComponent(p.id) + '/' + i).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){
       if (!j || !j.k || !j.d) return null;
       var bin = atob(j.d), a = new Uint8Array(bin.length), kk = j.k;
       for (var x = 0; x < bin.length; x++) a[x] = bin.charCodeAt(x) ^ kk.charCodeAt(x % kk.length);
@@ -640,7 +660,7 @@
   function authH(){ var h = {'content-type':'application/json'}; if (token) h.authorization = 'Bearer ' + token; return h; }
   function apiCall(path, body, method){
     if (!API) return Promise.reject(new Error('The shop is not connected to its payment server yet.'));
-    return fetch(API + path, {method: method || (body ? 'POST' : 'GET'), headers: authH(), body: body ? JSON.stringify(body) : undefined, signal: (window.AbortSignal && AbortSignal.timeout) ? AbortSignal.timeout(40000) : undefined})
+    return net(path, {method: method || (body ? 'POST' : 'GET'), headers: authH(), body: body ? JSON.stringify(body) : undefined})
       .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if (!r.ok){ var er = new Error(j.error || 'Something went wrong'); er.status = r.status; throw er; } return j; }); },
         function(){ throw new Error('Could not reach the server. Check your connection and try again.'); });
   }
@@ -652,7 +672,7 @@
   };
   if (API){
     coins = [{id:'usdt_trc20', name:'USDT (TRC20)', network:'TRON (TRC20)', kind:'tron'}];
-    fetch(API + '/api/config').then(function(r){ return r.json(); }).then(function(c){ CFG = c || {}; try { exInit(); } catch(x) {} if (typeof chatInit === 'function') chatInit(); if (c && c.coins && c.coins.length){ coins = c.coins; if (!coins.some(function(x){ return x.id === coinSel; })) coinSel = null; if (view === 'method') renderMethods(); } livePrices(c); }).catch(function(){});
+    net('/api/config').then(function(r){ return r.json(); }).then(function(c){ CFG = c || {}; try { exInit(); } catch(x) {} if (typeof chatInit === 'function') chatInit(); if (c && c.coins && c.coins.length){ coins = c.coins; if (!coins.some(function(x){ return x.id === coinSel; })) coinSel = null; if (view === 'method') renderMethods(); } livePrices(c); }).catch(function(){});
   }
   /* trust extras: real delivery time, real reviews (only shown when they exist) */
   (function(){
@@ -671,7 +691,7 @@
     }
     if (ex.oos && ex.oos.length && typeof renderGift === 'function'){ try { renderGift(); } catch(x) {} }
     if (ex.rv && ex.rv.count){
-      fetch(API + '/api/reviews').then(function(r){ return r.json(); }).then(function(j){
+      net('/api/reviews').then(function(r){ return r.json(); }).then(function(j){
         if (!j || !j.count) return;
         $('rvSum').innerHTML = '<b class="stars">' + stars(j.avg) + '</b> <b>' + j.avg.toFixed(1) + '</b> / 5 · ' + j.count + (j.count === 1 ? ' review' : ' reviews') + ' from verified buyers';
         $('rvList').innerHTML = j.list.map(function(r){ return '<figure class="rcard"><div class="stars">' + stars(r.r) + '</div>' + (r.x ? '<blockquote>' + esc(r.x) + '</blockquote>' : '') + '<figcaption><b>' + esc(r.n) + '</b> · ' + esc(r.i || '') + '<span class="vb">✓ Verified purchase</span></figcaption></figure>'; }).join('');
@@ -805,11 +825,13 @@
     if (coins.length === 1 && !(ptsCfg() && me && ptsUsable(totalOf(L)))){ coinSel = coins[0].id; createOrder(); return; }
     renderMethods();
   }
+  var ridV = '';
+  function orderRid(){ if (!ridV){ var a = new Uint8Array(12); (window.crypto || window.msCrypto).getRandomValues(a); ridV = Array.prototype.map.call(a, function(b){ return ('0' + b.toString(16)).slice(-2); }).join(''); } return ridV; }
   function createOrder(){
     var msg = $('coMsg'), btn = $('coPay'); if (btn){ btn.classList.add('busy'); var bt = btn.querySelector('small'); if (bt) bt.textContent = 'Creating your order…'; } msg.classList.remove('err'); msg.textContent = 'Creating your order…';
     var slow = setTimeout(function(){ var m3 = $('coMsg'); if (m3 && view === 'method') m3.textContent = 'Still working… please keep this window open.'; }, 6000);
-    apiCall('/api/order', {email: pendingEmail, lang: LANGNOW(), usePoints: usePts ? ptsUsable(totalOf(lines())) : 0, coin: coinSel || 'usdt_trc20', fromBinance: !!(fromBinance && selCoin().binance), items: cart.map(function(i){ return i.f ? {id:i.id, v:i.v, q:1, f:i.f} : {id:i.id, v:i.v, q:i.q || 1}; })})
-      .then(function(o){ clearTimeout(slow); rememberOrder(o.id); cart = []; saveCart(); usePts = false; renderMethods.fresh = 0; if (me && o.ptsUsed) { me.points = Math.max(0, (+me.points || 0) - o.ptsUsed); store('geostore_me', me); } showPay(o); })
+    apiCall('/api/order', {rid: orderRid(), email: pendingEmail, lang: LANGNOW(), usePoints: usePts ? ptsUsable(totalOf(lines())) : 0, coin: coinSel || 'usdt_trc20', fromBinance: !!(fromBinance && selCoin().binance), items: cart.map(function(i){ return i.f ? {id:i.id, v:i.v, q:1, f:i.f} : {id:i.id, v:i.v, q:i.q || 1}; })})
+      .then(function(o){ clearTimeout(slow); rememberOrder(o.id); cart = []; saveCart(); usePts = false; renderMethods.fresh = 0; ridV = ''; if (me && o.ptsUsed) { me.points = Math.max(0, (+me.points || 0) - o.ptsUsed); store('geostore_me', me); } showPay(o); })
       .catch(function(er){ clearTimeout(slow); slideReset(btn); var m2 = $('coMsg'); if (m2){ m2.classList.add('err'); m2.textContent = er.message || 'Could not create the order. Please try again.'; } });
   }
   function rememberOrder(id){ var ids = store('geostore_orders') || []; if (ids.indexOf(id) < 0){ ids.push(id); store('geostore_orders', ids.slice(-20)); } }
@@ -1004,7 +1026,7 @@
     if (!CFG.chat || !API || !every) return;
     CH.timer = setTimeout(function(){
       if (document.hidden){ chatPoll(); return; }
-      fetch(API + '/api/chat/poll?sid=' + CH.sid + '&after=' + CH.after).then(function(r){ return r.json(); }).then(function(j){
+      net('/api/chat/poll?sid=' + CH.sid + '&after=' + CH.after).then(function(r){ return r.json(); }).then(function(j){
         var n = 0; (j.msgs || []).forEach(function(m){ if (m.t > CH.after){ CH.after = m.t; CH.log.push({k:'them', t:m.t, text:String(m.text || '')}); n++; } });
         if (n){ chatSave(); if (CH.open) chatDraw(); else { CH.unread += n; chatBadge(); } }
       }).catch(function(){}).then(chatPoll);

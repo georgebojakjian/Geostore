@@ -258,6 +258,14 @@ The **☁ Cloud copy** saves your whole dashboard on your server automatically, 
 4. Be patient: a new site usually takes days to appear and weeks to rank. What helps most: real pages for what people search (“buy iTunes gift card with USDT”), your social links, being mentioned on other sites, and happy customers.
 The shop already has: a title and description, a canonical address, social-share tags, structured data (company, website, FAQ), `robots.txt`, `sitemap.xml`, and Terms / Privacy / Refund / Contact pages.
 
+## Fix: checkout slow or "Could not reach the server" on phones
+
+Some phone networks make the Cloudflare address (`…workers.dev`) very slow or unreachable, even though a computer works fine. The fix is to let the shop talk to your server **through your own website address**, which phones reach easily. One-time setup:
+1. Paste the new `worker/worker.js` into Cloudflare → **Deploy**.
+2. Open the new `admin/admin.html` → **Settings → Server connection** → in **Your shop address** type `https://geostorecodes.com` → **Save settings**.
+3. **Publish → Sync to server**, then **Download data.js**. This now also downloads a small file named `_redirects`. Put **both** (`data.js` and `_redirects`) in your `site` folder and upload the folder to Netlify. (If you use “Send to GitHub”, both files are sent automatically. If your browser saved it as `_redirects.txt`, rename it to `_redirects`.)
+4. Test on your phone with mobile data. If the new route ever fails, the shop automatically tries the old address, so nothing gets worse.
+
 ## Points wallet, reviews, Arabic and the other growth features (new)
 
 **Deploy these (3 steps, same as always):** (1) paste the new `worker/worker.js` into Cloudflare → **Deploy**; (2) open the new `admin/admin.html`; (3) upload the whole `site` folder to Netlify. Open `…/api/health` — it should show `"version":22`.
