@@ -289,7 +289,7 @@
         <div class="stat"><small>Disabled (loaded)</small><b id="cDis">–</b></div>
       </div>
       <div class="bar"><input class="search" id="cSearch" type="search" placeholder="Search name, email, phone, country…"><span style="display:flex;gap:8px"><button class="btn btn-g btn-s" id="cRefresh">↻ Refresh</button><button class="btn btn-g btn-s" id="cCsv">⬇ Export CSV</button></span></div>
-      <div class="panel tw"><table><thead><tr><th>Joined</th><th>Name</th><th>Email</th><th>Phone</th><th>Country</th><th>Orders</th><th>Status</th><th></th></tr></thead><tbody id="cBody"></tbody></table>
+      <div class="panel tw"><table><thead><tr><th>Joined</th><th>Name</th><th>Email</th><th>Phone</th><th>Country</th><th>Orders</th><th>Points</th><th>Status</th><th></th></tr></thead><tbody id="cBody"></tbody></table>
         <p class="help" id="cMsg">Press Refresh to load your customers.</p><p><button class="btn btn-g btn-s" id="cMore" hidden>Load more</button></p></div>
       <div class="panel" id="cDetail" hidden></div>
     </section>
@@ -342,6 +342,16 @@
           <div class="full"><label for="sApi">Payment server URL (from Cloudflare, e.g. https://geostore-api.yourname.workers.dev). Leave empty for manual mode.</label><input id="sApi" placeholder="https://geostore-api.yourname.workers.dev"></div>
           <div class="full"><label for="sTok">Admin token (private — saved only in this browser, never published)</label><input id="sTok" type="password" autocomplete="off" placeholder="the ADMIN_TOKEN you chose in Cloudflare"></div>
           <div class="full"><button type="button" class="btn btn-g btn-s" id="srvTest">Test connection</button> <span class="help" id="srvStatus" style="margin-left:8px"></span></div></div></div>
+
+        <div class="panel" id="ptsPanel"><h2>⭐ Points wallet</h2><p class="help">Customers earn points on every paid order and spend them as a discount at checkout. Saved straight to your server (no Sync needed). You can see and edit each customer\'s points in the Customers tab.</p><div class="form">
+          <div class="full"><label class="chk"><input type="checkbox" id="ptOn"> Turn the points wallet on</label></div>
+          <div><label for="ptPer">Points earned for each $1 paid</label><input id="ptPer" type="number" min="0" step="any"></div>
+          <div><label for="ptVal">Value of 1 point (USD) — e.g. 0.01 means 100 points = $1</label><input id="ptVal" type="number" min="0" step="any"></div>
+          <div><label for="ptMin">Minimum order to earn points (USD, 0 = any)</label><input id="ptMin" type="number" min="0" step="any"></div>
+          <div><label for="ptMax">Maximum order amount that earns points (USD, 0 = no limit)</label><input id="ptMax" type="number" min="0" step="any"></div>
+          <div><label for="ptPct">Most of an order points can pay (%)</label><input id="ptPct" type="number" min="0" max="100" step="1"></div>
+          <div><label for="ptRed">Smallest number of points a customer can spend</label><input id="ptRed" type="number" min="0" step="1"></div>
+          <div class="full"><button type="button" class="btn btn-p btn-s" id="ptSave">Save points settings</button> <span class="help" id="ptMsg" style="margin-left:8px"></span><p class="help" id="ptEx"></p></div></div></div>
 
         <div class="panel"><h2>All-Access pass</h2><div class="form">
           <div class="full"><label class="chk"><input type="checkbox" id="aaOn"> Sell an All-Access pass (one payment → every code and website)</label></div>
@@ -817,8 +827,25 @@
   }
 
   /* ---------- settings ---------- */
+  function ptsExample(){
+    var per = +$('ptPer').value || 0, val = +$('ptVal').value || 0;
+    $('ptEx').textContent = per && val ? 'Example: a $20 order earns ' + Math.floor(20 * per) + ' points (worth $' + (Math.floor(20 * per) * val).toFixed(2) + ' back = ' + (Math.floor(20 * per) * val / 20 * 100).toFixed(1) + '% cashback).' : '';
+  }
+  ['ptPer','ptVal'].forEach(function(i){ $(i).addEventListener('input', ptsExample); });
+  function loadPts(keep){
+    if (!(base() && token())){ $('ptMsg').textContent = 'Connect your payment server first (above).'; return; }
+    api('/api/admin/points').then(function(c){
+      $('ptOn').checked = !!c.on; $('ptPer').value = c.perUsd; $('ptVal').value = c.valueUsd; $('ptMin').value = c.minOrder; $('ptMax').value = c.maxOrder; $('ptPct').value = c.maxPct; $('ptRed').value = c.minRedeem; if (!keep) $('ptMsg').textContent = ''; ptsExample();
+    }).catch(function(e){ $('ptMsg').textContent = '❌ ' + e.message; });
+  }
+  $('ptSave').addEventListener('click', function(){
+    var b = {on: $('ptOn').checked, perUsd: +$('ptPer').value, valueUsd: +$('ptVal').value, minOrder: +$('ptMin').value, maxOrder: +$('ptMax').value, maxPct: +$('ptPct').value, minRedeem: +$('ptRed').value};
+    if (!(b.perUsd >= 0) || !(b.valueUsd >= 0) || b.maxPct > 100){ toast('Please check the numbers'); return; }
+    $('ptMsg').textContent = 'Saving…';
+    api('/api/admin/points', {method:'POST', body: JSON.stringify(b)}).then(function(){ $('ptMsg').textContent = '✅ Saved — live on your shop now'; loadPts(true); }).catch(function(e){ $('ptMsg').textContent = '❌ ' + e.message; });
+  });
   function renderSettings(){
-    if (base() && token()) tgState();
+    if (base() && token()) { tgState(); loadPts(); }
     var s = state.settings, aa = s.allAccess, w = s.autoWallets || {};
     $('sWalU').value = w.usdt_trc20||''; $('sWalE').value = w.usdt_bep20||''; var ba = s.binanceAddr || {}; $('sBinU').checked = !!ba.usdt_trc20; $('sBinE').checked = !!ba.usdt_bep20; $('sWa').value = s.whatsapp || ''; var so = s.social || {}; $$('[data-soc]').forEach(function(i){ i.value = so[i.dataset.soc] || ''; }); $('sFeat').value = s.featured || ''; $('sTgU').value = s.telegram || ''; $('sWalB').value = w.btc||''; $('sWalP').value = w.binancepay||'';
     $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
@@ -985,8 +1012,8 @@
     var list = custs.filter(function(c){ return !q || (c.name + ' ' + c.email + ' ' + c.phone + ' ' + c.country).toLowerCase().indexOf(q) > -1; });
     $('cTotal').textContent = custTotal; $('cOrd').textContent = custs.filter(function(c){ return c.orders > 0; }).length; $('cDis').textContent = custs.filter(function(c){ return c.disabled; }).length;
     $('cBody').innerHTML = list.map(function(c){
-      return '<tr><td>'+esc(dstr(c.createdAt))+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+esc(c.phone)+'</td><td>'+esc(c.country)+'</td><td>'+c.orders+'</td><td><span class="pill '+(c.disabled?'pending':'paid')+'">'+(c.disabled?'Disabled':'Active')+'</span></td><td><button class="btn btn-g btn-s" data-cv="'+esc(c.email)+'">Open</button></td></tr>';
-    }).join('') || '<tr><td colspan="8" class="empty">No customers found.</td></tr>';
+      return '<tr><td>'+esc(dstr(c.createdAt))+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+esc(c.phone)+'</td><td>'+esc(c.country)+'</td><td>'+c.orders+'</td><td>⭐ '+(c.points||0)+'</td><td><span class="pill '+(c.disabled?'pending':'paid')+'">'+(c.disabled?'Disabled':'Active')+'</span></td><td><button class="btn btn-g btn-s" data-cv="'+esc(c.email)+'">Open</button></td></tr>';
+    }).join('') || '<tr><td colspan="9" class="empty">No customers found.</td></tr>';
     $('cMsg').textContent = custs.length + ' of ' + custTotal + ' customer(s) loaded' + (q ? ' · ' + list.length + ' match your search' : '');
     $('cMore').hidden = custNext == null;
   }
@@ -996,7 +1023,7 @@
   $('cCsv').addEventListener('click', function(){
     if (!custs.length){ toast('Load your customers first (Refresh)'); return; }
     function cell(v){ v = String(v == null ? '' : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }
-    var rows = [['Joined','Name','Email','Phone','Country','Orders','Status']].concat(custs.map(function(c){ return [dstr(c.createdAt), c.name, c.email, c.phone, c.country, c.orders, c.disabled ? 'Disabled' : 'Active']; }));
+    var rows = [['Joined','Name','Email','Phone','Country','Orders','Points','Status']].concat(custs.map(function(c){ return [dstr(c.createdAt), c.name, c.email, c.phone, c.country, c.orders, c.points || 0, c.disabled ? 'Disabled' : 'Active']; }));
     download('customers-' + new Date().toISOString().slice(0,10) + '.csv', '﻿' + rows.map(function(r){ return r.map(cell).join(','); }).join('\r\n'), 'text/csv');
   });
   function openCustomer(email){
@@ -1006,10 +1033,17 @@
       box.innerHTML = '<div class="bar"><h2 style="margin:0">' + esc(p.name || p.email) + ' <span class="pill ' + (p.disabled ? 'pending' : 'paid') + '">' + (p.disabled ? 'Disabled' : 'Active') + '</span></h2><button class="btn btn-g btn-s" id="cdClose">Close</button></div>' +
         '<p class="help">' + esc(p.email) + ' · member since ' + esc(dstr(p.createdAt)) + ' · ' + r.orders.length + ' order(s) · total paid <b>$' + esc(r.spent) + '</b></p>' +
         '<form class="form" id="cdForm" style="margin:14px 0"><div><label>Name</label><input id="cdName" value="' + esc(p.name) + '"></div><div><label>Phone</label><input id="cdPhone" value="' + esc(p.phone) + '"></div><div><label>Country</label><input id="cdCountry" value="' + esc(p.country) + '"></div><div><label>Private note (only you can see it)</label><input id="cdNote" value="' + esc(p.note) + '"></div><div class="full" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p btn-s" type="submit">Save details</button><button class="btn btn-g btn-s" type="button" id="cdToggle">' + (p.disabled ? 'Enable account' : 'Disable account') + '</button><button class="btn btn-g btn-s" type="button" id="cdPw">Set a new password…</button><button class="btn btn-d btn-s" type="button" id="cdDel">Delete account</button></div></form>' +
+        '<div class="panel" style="margin:14px 0"><h2 style="font-size:1rem">⭐ Points: <span id="cdPts">' + (p.points||0) + '</span></h2><div class="form"><div><label>Set the balance to exactly</label><input id="cdPSet" type="number" min="0" step="1" placeholder="e.g. 500"></div><div><label>…or add / remove (use − to remove)</label><input id="cdPDel" type="number" step="1" placeholder="e.g. 100 or -50"></div><div><label>Reason (the customer sees it)</label><input id="cdPWhy" maxlength="60" placeholder="e.g. Gift, correction"></div><div class="full"><button class="btn btn-p btn-s" id="cdPBtn" type="button">Update points</button></div></div>' +
+          '<div class="tw"><table><thead><tr><th>Date</th><th>Change</th><th>Balance</th><th>Why</th></tr></thead><tbody>' + ((r.ptsLog||[]).map(function(l){ return '<tr><td>'+esc(dstr(l.t))+'</td><td>'+(l.d>0?'+':'')+l.d+'</td><td>'+l.bal+'</td><td>'+esc(l.why)+'</td></tr>'; }).join('') || '<tr><td colspan="4" class="empty">No points activity yet.</td></tr>') + '</tbody></table></div></div>' +
         '<h2 style="font-size:1rem">Orders</h2><div class="tw"><table><thead><tr><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>' +
         (r.orders.map(function(o){ return '<tr><td>' + esc(dstr(o.createdAt)) + '</td><td>' + esc(o.title) + '</td><td>$' + esc(o.usd) + '<div class="help">' + esc(o.amount) + ' ' + esc(o.coinName.split(' ')[0]) + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span></td><td>' + (o.deliveryUrl ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(o.deliveryUrl) + '">Open order</a>' : '') + '</td></tr>'; }).join('') || '<tr><td colspan="5" class="empty">No orders yet.</td></tr>') + '</tbody></table></div>';
       function act(body, ok, reload){ body.email = email; return api('/api/admin/customer', {method:'POST', body: JSON.stringify(body)}).then(function(){ toast(ok); reload(); }).catch(function(e){ toast(e.message); }); }
       $('cdClose').onclick = function(){ box.hidden = true; };
+      $('cdPBtn').onclick = function(){
+        var st = $('cdPSet').value.trim(), dl = $('cdPDel').value.trim(), body = {action:'points', reason:$('cdPWhy').value};
+        if (st !== '') body.set = +st; else if (dl !== '') body.delta = +dl; else { toast('Type a balance or a number to add/remove'); return; }
+        act(body, 'Points updated', function(){ loadCustomers(false); openCustomer(email); });
+      };
       $('cdForm').onsubmit = function(e){ e.preventDefault(); act({action:'profile', name:$('cdName').value, phone:$('cdPhone').value, country:$('cdCountry').value, note:$('cdNote').value}, 'Saved', function(){ loadCustomers(false); openCustomer(email); }); };
       $('cdToggle').onclick = function(){ act({action: p.disabled ? 'enable' : 'disable'}, p.disabled ? 'Account enabled' : 'Account disabled', function(){ loadCustomers(false); openCustomer(email); }); };
       $('cdPw').onclick = function(){ var pw = prompt('New password for ' + email + ' (at least 8 characters).\nTell the customer; they can change it later in their profile:'); if (pw) act({action:'setpassword', password:pw}, 'Password changed — the old one no longer works', function(){}); };

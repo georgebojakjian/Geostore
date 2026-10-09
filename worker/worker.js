@@ -117,7 +117,7 @@ function publicOrder(env, o, apiBase) {
     id: o.id, status: o.status, title: orderTitle(o), items: itemsOf(o).map(i => ({ title: i.title, price: i.price, qty: qtyOf(i), mode: i.mode, styles: i.styles })), fromBinance: !!o.fromBinance,
     usd: o.usd, coin, coinName: c.name, amount: fmtAmount(coin, o.amount), wallet: o.wallet || env.WALLET || '',
     network: c.network, kind: c.kind || (coin === 'btc' ? 'btc' : 'tron'), claimed: !!o.claimed, expiresAt: o.expiresAt, createdAt: o.createdAt, paidAt: o.paidAt || null, txid: o.txid || null,
-    fulfil: fulfilState(o), deliveryUrl: o.status === 'paid' ? apiBase + '/api/delivery/' + o.id + '?k=' + o.key : null
+    ptsUsed: o.ptsUsed || 0, ptsOff: o.ptsOff || 0, ptsEarned: o.ptsEarned || 0, fulfil: fulfilState(o), deliveryUrl: o.status === 'paid' ? apiBase + '/api/delivery/' + o.id + '?k=' + o.key : null
   };
 }
 
@@ -203,7 +203,29 @@ async function authCustomer(req, env) {
   const acct = await env.ORDERS.get('acct:' + p.e, 'json');
   return acct && !acct.disabled && acct.hash.slice(0, 8) === p.v ? acct : null;
 }
-const profileOf = a => ({ email: a.email, name: a.name || '', phone: a.phone || '', country: a.country || '', createdAt: a.createdAt, orders: (a.orders || []).length });
+const profileOf = a => ({ email: a.email, name: a.name || '', phone: a.phone || '', country: a.country || '', createdAt: a.createdAt, orders: (a.orders || []).length, points: Math.max(0, Math.floor(Number(a.pts) || 0)) });
+
+/* ---------------- points wallet ----------------
+   Settings live in KV "pts:cfg" (saved live from the dashboard, no Sync needed).
+   perUsd: points earned per $1 · valueUsd: what 1 point is worth at checkout · minOrder/maxOrder: only orders of at least minOrder earn,
+   and only the first maxOrder dollars of an order count · maxPct: biggest share of an order that points can pay for · minRedeem: smallest redeem. */
+async function ptsCfg(env) {
+  const c = await env.ORDERS.get('pts:cfg', 'json').catch(() => null) || {};
+  const n = (v, d, lo, hi) => { v = Number(v); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; };
+  return { on: !!c.on, perUsd: n(c.perUsd, 10, 0, 100000), valueUsd: n(c.valueUsd, 0.01, 0, 1000), minOrder: n(c.minOrder, 0, 0, 1e6), maxOrder: n(c.maxOrder, 0, 0, 1e6), maxPct: n(c.maxPct, 50, 0, 100), minRedeem: Math.floor(n(c.minRedeem, 100, 0, 1e9)) };
+}
+const ptsEarn = (cfg, usd) => { if (!cfg.on || !(usd > 0) || usd < cfg.minOrder) return 0; const base = cfg.maxOrder > 0 ? Math.min(usd, cfg.maxOrder) : usd; return Math.floor(base * cfg.perUsd); };
+function ptsAdd(acct, d, why) {
+  acct.pts = Math.max(0, Math.floor(Number(acct.pts) || 0) + d);
+  acct.ptsLog = ((acct.ptsLog || []).concat({ t: Date.now(), d, why: String(why).slice(0, 80), bal: acct.pts })).slice(-40);
+}
+// bring points back when an unpaid order that used them expires (once)
+async function ptsRefund(env, o) {
+  if (!(o.ptsUsed > 0) || o.ptsRefunded || !o.account) return;
+  const k = 'acct:' + o.account, a = await env.ORDERS.get(k, 'json'); if (!a) return;
+  ptsAdd(a, o.ptsUsed, 'Order #' + o.id.slice(0, 8).toUpperCase() + ' expired — points returned'); o.ptsRefunded = true;
+  await env.ORDERS.put(k, J(a));
+}
 
 async function accountRoutes(req, env, path, apiBase) {
   const ip = req.headers.get('cf-connecting-ip') || 'x';
@@ -237,7 +259,7 @@ async function accountRoutes(req, env, path, apiBase) {
     found = await Promise.all(found.map((o, i) => o.status === 'pending' && i < 5 ? checkOrder(env, o) : (i < 5 ? ensureFulfilled(env, o) : o)));   // detect payments when the customer comes back
     const orders = found.filter(o => o.status !== 'expired').map(o => publicOrder(env, o, apiBase));   // expired orders are useless to the customer: not shown
     const spent = round2(orders.filter(o => o.status === 'paid').reduce((a, o) => a + (Number(o.usd) || 0), 0));
-    return json(env, { profile: profileOf(acct), orders, spent });
+    return json(env, { profile: profileOf(acct), orders, spent, pts: await ptsCfg(env), ptsLog: (acct.ptsLog || []).slice(-15).reverse() });
   }
   if (path === '/api/account/update' && req.method === 'POST') {
     acct.name = String(body.name || '').trim().slice(0, 80); acct.phone = String(body.phone || '').trim().slice(0, 40); acct.country = String(body.country || '').trim().slice(0, 60);
@@ -616,6 +638,21 @@ async function createOrder(req, env, apiBase) {
   const sup = await checkSupplierLines(env, cat, priced.lines);
   if (sup) return fail(env, sup, 409);
 
+  // points: the customer may pay part of the order with points (needs an account)
+  let ptsUsed = 0, ptsOff = 0;
+  const wantPts = Math.floor(Number(b.usePoints) || 0);
+  if (wantPts > 0) {
+    const cfg = await ptsCfg(env);
+    if (!cfg.on || !acct) return fail(env, 'Points can only be used when signed in', 400);
+    if (wantPts < cfg.minRedeem) return fail(env, 'The smallest amount of points you can use is ' + cfg.minRedeem, 400);
+    if (wantPts > Math.floor(Number(acct.pts) || 0)) return fail(env, 'You do not have that many points', 400);
+    const cap = Math.floor(priced.usd * cfg.maxPct) / 100;                  // whole cents, never the full price
+    ptsOff = Math.min(Math.round(wantPts * cfg.valueUsd * 100) / 100, cap);
+    ptsUsed = cfg.valueUsd > 0 ? Math.min(wantPts, Math.ceil(ptsOff / cfg.valueUsd - 1e-9)) : 0;
+    if (!(ptsOff > 0) || priced.usd - ptsOff < 0.5) return fail(env, 'Points cannot cover this order. Try fewer points.', 400);
+    priced.full = priced.usd; priced.usd = Math.round((priced.usd - ptsOff) * 100) / 100;
+  }
+
   // amount in the coin's smallest unit, plus a tiny unique offset so every open order is identifiable on-chain
   let base;
   if (coin === 'btc') {
@@ -635,11 +672,12 @@ async function createOrder(req, env, apiBase) {
   const now = Date.now();
   const fromBinance = !!b.fromBinance && !!(cat.binanceAddr && cat.binanceAddr[coin]);
   const o = { id: hex(16), key: hex(16), base: apiBase, fromBinance, email, items: priced.lines, usd: priced.usd, coin, amount, amtKey, wallet, status: 'pending', createdAt: now, expiresAt: now + (fromBinance ? Math.max(C.minutes, 180) : C.minutes) * 60000, account: acct ? acct.email : null };
+  if (ptsUsed > 0) { o.ptsUsed = ptsUsed; o.ptsOff = ptsOff; o.usdFull = priced.full; }
   await saveOrder(env, o, 7 * 86400);
   // the "amt:" key both reserves the amount AND is the list of open orders the cron job checks
   await env.ORDERS.put(amtKey, o.id, { expirationTtl: ((fromBinance ? Math.max(C.minutes, 180) : C.minutes) + C.graceMs / 60000 + 5) * 60 });
   await pushIndex(env, 'oidx', o.id, 400);
-  if (acct) { acct.orders = (acct.orders || []).concat(o.id).slice(-200); await env.ORDERS.put('acct:' + acct.email, JSON.stringify(acct)); }
+  if (acct) { acct.orders = (acct.orders || []).concat(o.id).slice(-200); if (ptsUsed > 0) ptsAdd(acct, -ptsUsed, 'Used on order #' + o.id.slice(0, 8).toUpperCase()); await env.ORDERS.put('acct:' + acct.email, JSON.stringify(acct)); }
   notify(env, '🛒 <b>New order</b> #' + o.id.slice(0, 8).toUpperCase() + '\n$' + o.usd + ' · ' + esc(C.name) + (fromBinance ? ' · 🟡 paying from Binance' : '') + '\n' + esc(orderTitle(o)) + '\n' + esc(email) + '\n⏳ waiting for payment');
   return json(env, publicOrder(env, o, apiBase));
 }
@@ -684,6 +722,18 @@ async function markPaid(env, o, txid) {
   }
   if (supplierLines(o).length) { try { await fulfil(env, o, false); lastFul.set(o.id, Date.now()); } catch (e) { /* the payment is recorded either way; retried later */ } }
   const wantMail = mailOn(env) && !o.emailed && !!o.email; if (wantMail) o.emailed = true;
+  if (o.account && !o.ptsDone) {                           // points: earn once; a late payment on an order whose points were returned takes them again
+    o.ptsDone = true;
+    try {
+      const ak = 'acct:' + o.account, a = await env.ORDERS.get(ak, 'json');
+      if (a) {
+        if (o.ptsRefunded && o.ptsUsed > 0) { ptsAdd(a, -o.ptsUsed, 'Late payment on order #' + o.id.slice(0, 8).toUpperCase()); o.ptsRefunded = false; }
+        const g = ptsEarn(await ptsCfg(env), Number(o.usd) || 0);
+        if (g > 0) { ptsAdd(a, g, 'Earned on order #' + o.id.slice(0, 8).toUpperCase()); o.ptsEarned = g; }
+        await env.ORDERS.put(ak, J(a));
+      }
+    } catch (e) { /* points are a bonus: never block a paid order */ }
+  }
   await saveOrder(env, o);
   if (txid) await env.ORDERS.put('tx:' + txid, o.id);
   await env.ORDERS.delete(o.amtKey || ('amt:' + o.amount));
@@ -878,7 +928,7 @@ async function checkOrder(env, o) {
   if (o.status !== 'pending') return o;
   const coin = orderCoin(o), C = COINS[coin], now = Date.now();
   if (now > o.expiresAt + C.graceMs) {
-    o.status = 'expired'; await saveOrder(env, o);
+    o.status = 'expired'; await ptsRefund(env, o); await saveOrder(env, o);
     await env.ORDERS.delete(o.amtKey || ('amt:' + o.amount));
     return o;
   }
@@ -1246,7 +1296,7 @@ async function adminCustomers(env, url) {
   const all = ((await env.ORDERS.get('cidx', 'json')) || []).slice().reverse();
   const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0);
   const customers = (await Promise.all(all.slice(offset, offset + 100).map(e => env.ORDERS.get('acct:' + e, 'json')))).filter(Boolean)
-    .map(a => ({ email: a.email, name: a.name || '', phone: a.phone || '', country: a.country || '', createdAt: a.createdAt, orders: (a.orders || []).length, disabled: !!a.disabled }));
+    .map(a => ({ email: a.email, name: a.name || '', phone: a.phone || '', country: a.country || '', createdAt: a.createdAt, orders: (a.orders || []).length, points: Math.max(0, Math.floor(Number(a.pts) || 0)), disabled: !!a.disabled }));
   return json(env, { customers, total: all.length, next: offset + 100 < all.length ? offset + 100 : null });
 }
 async function adminCustomer(req, env, url, apiBase) {
@@ -1256,7 +1306,7 @@ async function adminCustomer(req, env, url, apiBase) {
   let found = (await Promise.all((acct.orders || []).slice(-100).reverse().map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
   found = await Promise.all(found.map((o, i) => o.status === 'pending' && i < 5 ? checkOrder(env, o) : o));
   const orders = found.map(o => publicOrder(env, o, apiBase));
-  return json(env, { profile: Object.assign(profileOf(acct), { disabled: !!acct.disabled, note: acct.note || '' }), orders, spent: round2(orders.filter(o => o.status === 'paid').reduce((a, o) => a + (Number(o.usd) || 0), 0)) });
+  return json(env, { ptsLog: (acct.ptsLog || []).slice(-30).reverse(), profile: Object.assign(profileOf(acct), { disabled: !!acct.disabled, note: acct.note || '' }), orders, spent: round2(orders.filter(o => o.status === 'paid').reduce((a, o) => a + (Number(o.usd) || 0), 0)) });
 }
 // one endpoint for everything you can do to a customer account
 async function adminCustomerAct(req, env) {
@@ -1270,6 +1320,12 @@ async function adminCustomerAct(req, env) {
     acct.name = String(b.name || '').trim().slice(0, 80); acct.phone = String(b.phone || '').trim().slice(0, 40);
     acct.country = String(b.country || '').trim().slice(0, 60); acct.note = String(b.note || '').slice(0, 1000);
     await env.ORDERS.put(key, J(acct));
+  } else if (act === 'points') {                          // set an exact balance, or add/remove with delta
+    const reason = String(b.reason || '').trim().slice(0, 60) || 'Edited by the shop';
+    if (b.set !== undefined && b.set !== null && b.set !== '') { const v = Math.floor(Number(b.set)); if (!(v >= 0 && v <= 1e9)) return fail(env, 'Enter a number of points (0 or more)'); ptsAdd(acct, v - Math.floor(Number(acct.pts) || 0), reason); }
+    else { const d = Math.floor(Number(b.delta)); if (!Number.isFinite(d) || d === 0 || Math.abs(d) > 1e9) return fail(env, 'Enter how many points to add or remove'); ptsAdd(acct, d, reason); }
+    await env.ORDERS.put(key, J(acct));
+    return json(env, { ok: true, points: acct.pts });
   } else if (act === 'setpassword') {
     const pw = String(b.password || '');
     if (pw.length < 8 || pw.length > 200) return fail(env, 'Password must be at least 8 characters');
@@ -1292,14 +1348,15 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 20, mail: mailOn(env), binance: binanceOn(env), relay: !!env.BINANCE_RELAY });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 21, mail: mailOn(env), binance: binanceOn(env), relay: !!env.BINANCE_RELAY });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
     if (path === '/api/config' && req.method === 'GET') {
       const cat = await getCatalog(env);
       const prices = {}; if (cat && cat.products) Object.keys(cat.products).forEach(id => { const q = cat.products[id]; prices[id] = { price: q.price, stylePrice: q.stylePrice || 0 }; });
-      return json(env, { storeName: cat ? cat.storeName : '', prices, allAccess: cat && cat.allAccess ? { price: cat.allAccess.price } : null, accounts: !!(env.ADMIN_TOKEN || env.SESSION_SECRET),
+      const pc = await ptsCfg(env);
+      return json(env, { pts: pc.on ? pc : { on: false }, storeName: cat ? cat.storeName : '', prices, allAccess: cat && cat.allAccess ? { price: cat.allAccess.price } : null, accounts: !!(env.ADMIN_TOKEN || env.SESSION_SECRET),
         coins: Object.keys(COINS).filter(c => walletFor(env, cat, c)).map(c => ({ id: c, name: COINS[c].name, network: COINS[c].network, kind: COINS[c].kind || (c === 'btc' ? 'btc' : 'tron'), minutes: COINS[c].minutes, binance: !!(cat && cat.binanceAddr && cat.binanceAddr[c]) })), binanceAuto: binanceOn(env), chat: !!(env.TELEGRAM_BOT_TOKEN && (await tgOwner(env))) });
     }
     let pm = path.match(/^\/api\/preview\/([A-Za-z0-9_-]{1,64})\/(\d{1,2})$/);
@@ -1341,6 +1398,11 @@ async function route(req, env) {
       if (path === '/api/admin/index' && req.method === 'POST') return await adminIndex(req, env);
       if (path === '/api/admin/ping') return json(env, { ok: true });
       if (path === '/api/admin/orders' && req.method === 'GET') return await adminOrders(env);
+      if (path === '/api/admin/points' && req.method === 'GET') return json(env, await ptsCfg(env));
+      if (path === '/api/admin/points' && req.method === 'POST') {
+        const b = await req.json().catch(() => ({})); await env.ORDERS.put('pts:cfg', J(Object.assign(await ptsCfg(env), b, { on: !!b.on })));
+        return json(env, await ptsCfg(env));
+      }
       if (path === '/api/admin/customers' && req.method === 'GET') return await adminCustomers(env, url);
       if (path === '/api/admin/customer' && req.method === 'GET') return await adminCustomer(req, env, url, apiBase);
       if (path === '/api/admin/customer' && req.method === 'POST') return await adminCustomerAct(req, env);

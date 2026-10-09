@@ -613,6 +613,17 @@
   /* ---------------- checkout + payment ---------------- */
   var token = store('geostore_token') || '', me = store('geostore_me') || null, poll = null, tick = null, curOrder = null;
   var coins = [], coinSel = null, view = 'cart', fromBinance = false, CFG = {};
+  var usePts = false;
+  function ptsCfg(){ var c = CFG.pts; return c && c.on ? c : null; }
+  function ptsEarnFor(usd){ var c = ptsCfg(); if (!c || !(usd > 0) || usd < c.minOrder) return 0; return Math.floor((c.maxOrder > 0 ? Math.min(usd, c.maxOrder) : usd) * c.perUsd); }
+  // how many points can be spent on this total (balance, per-order limit, smallest redeem)
+  function ptsUsable(total){
+    var c = ptsCfg(); if (!c || !me || !c.valueUsd) return 0;
+    var cap = Math.floor(total * c.maxPct) / 100, n = Math.min(Math.floor(+me.points || 0), Math.floor(cap / c.valueUsd + 1e-9));
+    while (n > 0 && total - Math.round(n * c.valueUsd * 100) / 100 < 0.5) n--;
+    return n >= c.minRedeem && n > 0 ? n : 0;
+  }
+  function ptsOffFor(n){ var c = ptsCfg(); return c ? Math.round(n * c.valueUsd * 100) / 100 : 0; }
   function authH(){ var h = {'content-type':'application/json'}; if (token) h.authorization = 'Bearer ' + token; return h; }
   function apiCall(path, body, method){
     if (!API) return Promise.reject(new Error('The shop is not connected to its payment server yet.'));
@@ -640,26 +651,45 @@
     var L = lines(), total = totalOf(L), b = $('cartBody');
     if (!L.length){ b.innerHTML = '<div class="empty" style="padding:30px 0">Your cart is empty.<br>Pick a gift card, a website or a code to get started.</div>'; saveCart(); return; }
     b.innerHTML = L.map(function(l){ return '<div class="cl"><span>' + esc(l.title) + '</span>' + (l.qty && !l.noqty ? '<span class="qty"><button type="button" data-cqd="' + esc(l.id) + '" aria-label="Fewer">−</button><b>' + l.qty + '</b><button type="button" data-cqu="' + esc(l.id) + '" aria-label="More">+</button></span>' : '<span></span>') + '<b>' + money(l.price) + '</b><button type="button" class="rm" data-rm="' + esc(l.id) + '" aria-label="Remove">×</button></div>'; }).join('') +
-      '<div class="total"><span>Total</span><span>' + money(total) + '</span></div>' +
+      '<div class="total"><span>Total</span><span>' + money(total) + '</span></div>' + ptsHint(total) +
       (me ? '<p class="note" style="margin:0 0 12px">Signed in as <b>' + esc(me.email) + '</b> — this order is saved to your account.</p>' : '<div class="field"><label for="coEmail">Your email (your order is saved to it)</label><input id="coEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"></div>') +
       '<button type="button" class="btn btn-primary btn-block" id="coNext">' + (API ? 'Continue to payment' : "I've paid — confirm order") + '</button><p class="msg" id="coMsg"></p>' +
       (me ? '' : '<p class="note">Have an account? <a href="#" class="link" id="cartSignin">Sign in</a> to keep your orders together.</p>');
     saveCart();
+  }
+  function ptsHint(total){
+    var c = ptsCfg(); if (!c) return '';
+    var g = ptsEarnFor(total); if (!g) return '';
+    return '<div class="ptsnote">⭐ ' + (me ? 'You will earn <b>' + g + ' points</b> with this order' : 'Sign in to earn <b>' + g + ' points</b> with this order') + '</div>';
+  }
+  function ptsBox(total){
+    var c = ptsCfg(); if (!c || !me) return '';
+    var n = ptsUsable(total), bal = Math.floor(+me.points || 0);
+    if (!n) return '<div class="ptsbox off"><span class="pi">⭐</span><div><b>' + bal + ' points</b><small>' + (bal ? 'Not enough to use on this order yet (minimum ' + c.minRedeem + ').' : 'You earn points on every paid order.') + '</small></div></div>';
+    return '<label class="ptsbox"><span class="pi">⭐</span><div><b>Use ' + n + ' points</b><small>Saves ' + money(ptsOffFor(n)) + ' · you have ' + bal + '</small></div><input type="checkbox" id="usePts"' + (usePts ? ' checked' : '') + ' aria-label="Use my points"><span class="sw"></span></label>';
   }
   function renderMethods(){
     var L = lines(), total = totalOf(L);
     setCartTitle('Choose how to pay');
     if (!coinSel && coins.length) coinSel = coins[0].id;
     $('cartBody').innerHTML = '<div class="steps-h"><i class="on"></i><i class="on"></i><i></i></div>' +
-      '<div class="sumrows">' + L.map(function(l){ return '<div><span>' + esc(l.title) + '</span><span>' + money(l.price) + '</span></div>'; }).join('') + '<div><span>Total</span><span>' + money(total) + '</span></div></div>' +
+      '<div class="sumrows">' + L.map(function(l){ return '<div><span>' + esc(l.title) + '</span><span>' + money(l.price) + '</span></div>'; }).join('') + '<div><span>Total</span><span>' + money(total) + '</span></div><div id="ptsRow"></div></div>' +
       '<div class="methods">' + coins.map(function(c){
         var u = METHOD_UI[c.id] || {cls:'usdt', glyph:'●', badge:''};
         return '<button type="button" class="method' + (c.id === coinSel ? ' on' : '') + '" data-coin="' + esc(c.id) + '">' + (u.badge ? '<span class="bd">' + esc(u.badge) + '</span>' : '') + '<span class="ic ' + u.cls + '">' + esc(u.glyph) + '</span><b>' + esc(c.name) + '</b><span class="ck">✓</span></button>';
       }).join('') + '</div>' +
-      '<div id="mInfo"></div><div id="fromBox"></div>' +
+      '<div id="ptsWrap">' + ptsBox(total) + '</div><div id="mInfo"></div><div id="fromBox"></div>' +
       '<button type="button" class="btn-pay" id="coPay"><span class="bp-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Pay ' + money(total) + '</span><span class="bp-r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>' +
       '<p class="trust-line">🔒 Secure crypto payment · Your code is delivered automatically</p><p class="msg" id="coMsg"></p><button type="button" class="back" style="margin-top:6px" data-tocart>← Back to cart</button>';
-    view = 'method'; drawInfo(); drawFrom();
+    view = 'method'; drawInfo(); drawFrom(); ptsRefresh();
+    if (ptsCfg() && me && !renderMethods.fresh){ renderMethods.fresh = 1; apiCall('/api/account/me').then(function(r){ me = r.profile; store('geostore_me', me); if (r.pts) CFG.pts = r.pts; if (view === 'method') renderMethods(); }).catch(function(){}); }
+  }
+  function ptsRefresh(){
+    var total = totalOf(lines()), n = usePts ? ptsUsable(total) : 0, row = $('ptsRow'), pay = $('coPay');
+    if (!n) usePts = false;
+    if (row) row.innerHTML = n ? '<span>⭐ ' + n + ' points</span><span>−' + money(ptsOffFor(n)) + '</span>' : '';
+    if (row) row.style.display = n ? 'flex' : 'none';
+    var lbl = pay && pay.querySelector('.bp-l'); if (lbl) lbl.lastChild.textContent = 'Pay ' + money(round2(total - (n ? ptsOffFor(n) : 0)));
   }
   var pendingEmail = '';
   $('cartBody').addEventListener('pointerdown', function(e){          // tactile feel: ripple + a tiny vibration where the phone supports it
@@ -697,6 +727,7 @@
     var fb = e.target.closest('[data-from]'); if (fb){ fromBinance = fb.dataset.from === 'yes'; drawFrom(); }
     if (e.target.id === 'cartSignin'){ e.preventDefault(); closeModal($('cartM')); openAccount(); }
     if (e.target.closest('[data-tocart]')){ view = 'cart'; setCartTitle('Your cart'); renderCart(); }
+    if (e.target.id === 'usePts'){ usePts = e.target.checked; ptsRefresh(); }
     if (e.target.id === 'coNext') goCheckout();
     if (e.target.closest('#coPay')) createOrder();
     if (e.target.id === 'payClaim') claimManual();
@@ -714,13 +745,13 @@
       msg.textContent = 'Your email app opened with the order details — press Send to finish.'; return;
     }
     if (!coins.length){ msg.classList.add('err'); msg.textContent = 'Payments are not set up yet. Please try again later.'; return; }
-    if (coins.length === 1){ coinSel = coins[0].id; createOrder(); return; }
+    if (coins.length === 1 && !(ptsCfg() && me && ptsUsable(totalOf(L)))){ coinSel = coins[0].id; createOrder(); return; }
     renderMethods();
   }
   function createOrder(){
     var msg = $('coMsg'), btn = $('coPay'); if (btn){ btn.disabled = true; btn.classList.add('busy'); } msg.classList.remove('err'); msg.textContent = 'Creating your order…';
-    apiCall('/api/order', {email: pendingEmail, coin: coinSel || 'usdt_trc20', fromBinance: !!(fromBinance && selCoin().binance), items: cart.map(function(i){ return i.f ? {id:i.id, v:i.v, q:1, f:i.f} : {id:i.id, v:i.v, q:i.q || 1}; })})
-      .then(function(o){ rememberOrder(o.id); cart = []; saveCart(); showPay(o); })
+    apiCall('/api/order', {email: pendingEmail, usePoints: usePts ? ptsUsable(totalOf(lines())) : 0, coin: coinSel || 'usdt_trc20', fromBinance: !!(fromBinance && selCoin().binance), items: cart.map(function(i){ return i.f ? {id:i.id, v:i.v, q:1, f:i.f} : {id:i.id, v:i.v, q:i.q || 1}; })})
+      .then(function(o){ rememberOrder(o.id); cart = []; saveCart(); usePts = false; renderMethods.fresh = 0; if (me && o.ptsUsed) { me.points = Math.max(0, (+me.points || 0) - o.ptsUsed); store('geostore_me', me); } showPay(o); })
       .catch(function(er){ if (btn){ btn.disabled = false; btn.classList.remove('busy'); } var m2 = $('coMsg'); if (m2){ m2.classList.add('err'); m2.textContent = er.message || 'Could not create the order. Please try again.'; } });
   }
   function rememberOrder(id){ var ids = store('geostore_orders') || []; if (ids.indexOf(id) < 0){ ids.push(id); store('geostore_orders', ids.slice(-20)); } }
@@ -818,8 +849,13 @@
       me = r.profile; store('geostore_me', me); updateNav();
       var paid = r.orders.filter(function(o){ return o.status === 'paid'; });
       var tl = [['orders', 'Orders (' + r.orders.length + ')'], ['pay', 'Payments'], ['profile', 'Profile']], body = '';
+      if (r.pts) CFG.pts = r.pts; if (ptsCfg()) tl.splice(2, 0, ['pts', '⭐ ' + (r.profile.points || 0)]);
       if (acctTab === 'orders') body = r.orders.length ? r.orders.map(orderCard).join('') : '<p class="empty">No orders yet. Your purchases will appear here.</p>';
       if (acctTab === 'pay') body = paid.length ? '<div class="tw"><table class="pt"><thead><tr><th>Date</th><th>Items</th><th>Paid</th><th>Transaction</th></tr></thead><tbody>' + paid.map(function(o){ return '<tr><td>' + dt(o.paidAt || o.createdAt) + '</td><td>' + esc(o.title) + '</td><td>' + money(o.usd) + '<div class="mono muted" style="font-size:.74rem">' + esc(o.amount) + ' ' + esc(o.coinName.split(' ')[0]) + '</div></td><td>' + explorer(o) + '</td></tr>'; }).join('') + '</tbody></table></div><p class="note">Total spent: <b>' + money(r.spent) + '</b></p>' : '<p class="empty">No payments yet.</p>';
+      if (acctTab === 'pts' && ptsCfg()) { var pc = ptsCfg(); body =
+        '<div class="wallet"><div class="wl-top"><img src="logo-64.webp" alt="" width="34" height="34"><span data-brand>' + esc(S.storeName || 'Geostore') + '</span><em>Points wallet</em></div><div class="wl-bal"><b>' + (r.profile.points || 0) + '</b><span>points</span></div><div class="wl-val">Worth ' + money(round2((r.profile.points || 0) * pc.valueUsd)) + ' off your next order</div><div class="wl-nm">' + esc(r.profile.name || r.profile.email) + '</div></div>' +
+        '<ul class="wl-how"><li>Earn <b>' + pc.perUsd + ' points</b> for every $1 you pay' + (pc.minOrder ? ' (orders of ' + money(pc.minOrder) + ' or more)' : '') + (pc.maxOrder ? ', up to ' + money(pc.maxOrder) + ' per order' : '') + '.</li><li>Every <b>' + Math.round(1 / (pc.valueUsd || 1)) + ' points = $1</b> off at checkout' + (pc.maxPct < 100 ? ' (up to ' + pc.maxPct + '% of an order)' : '') + '.</li><li>Points arrive as soon as your payment is confirmed.</li></ul>' +
+        '<h4 class="sh">Recent activity</h4>' + ((r.ptsLog || []).length ? '<div class="wl-log">' + r.ptsLog.map(function(l){ return '<div><span>' + esc(l.why) + '<small>' + dt(l.t) + '</small></span><b class="' + (l.d > 0 ? 'up' : 'dn') + '">' + (l.d > 0 ? '+' : '') + l.d + '</b></div>'; }).join('') + '</div>' : '<p class="empty">No points yet — your first order will earn some.</p>'); }
       if (acctTab === 'profile') body =
         '<div class="stats2"><div><small>Member since</small><b>' + new Date(r.profile.createdAt).toLocaleDateString() + '</b></div><div><small>Orders</small><b>' + r.orders.length + '</b></div><div><small>Total spent</small><b>' + money(r.spent) + '</b></div></div>' +
         '<form id="profForm"><div class="two"><div class="field"><label>Name</label><input id="pfName" value="' + esc(r.profile.name) + '"></div><div class="field"><label>Email</label><input value="' + esc(r.profile.email) + '" disabled></div><div class="field"><label>Phone</label><input id="pfPhone" value="' + esc(r.profile.phone) + '"></div><div class="field"><label>Country</label><input id="pfCountry" value="' + esc(r.profile.country) + '"></div></div><button class="btn btn-primary" type="submit">Save details</button> <span class="msg" id="pfMsg"></span></form>' +
