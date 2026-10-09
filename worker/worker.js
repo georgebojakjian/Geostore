@@ -88,7 +88,8 @@ async function pushIndex(env, key, val, max) {
   if (arr.indexOf(val) < 0) arr.push(val);
   await env.ORDERS.put(key, JSON.stringify(arr.slice(-max)));
 }
-const getCatalog = env => env.ORDERS.get('idx', 'json');
+let catMem = { t: 0, v: null };                       // the catalogue can be large: keep it in memory for a few seconds instead of re-reading it for every request
+const getCatalog = async env => { if (catMem.v && Date.now() - catMem.t < 8000) return catMem.v; const v = await env.ORDERS.get('idx', 'json'); catMem = { t: Date.now(), v }; return v; };
 const saveOrder = (env, o, ttl) => env.ORDERS.put('order:' + o.id, JSON.stringify(o), ttl ? { expirationTtl: ttl } : undefined);
 const fmtAmount = (coin, a) => coin === 'btc' ? (a / 1e8).toFixed(8) : (a % 10000 === 0 ? (a / 1e6).toFixed(2) : (a / 1e6).toFixed(3));  // new orders are whole cents so any wallet can type them
 function tooMany(map, key, max, windowMs) {
@@ -169,7 +170,7 @@ async function btcRate() {
     ['https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd', j => j.bitcoin && j.bitcoin.usd]
   ];
   for (const [u, pick] of tries) {
-    try { const r = await fetch(u); if (r.ok) { const v = Number(pick(await r.json())); if (v > 0) { rateCache = { t: Date.now(), v }; return v; } } } catch (e) { /* try next */ }
+    try { const r = await fetch(u, { signal: AbortSignal.timeout(4000) }); if (r.ok) { const v = Number(pick(await r.json())); if (v > 0) { rateCache = { t: Date.now(), v }; return v; } } } catch (e) { /* try next */ }
   }
   return 0;
 }
@@ -662,11 +663,14 @@ async function createOrder(req, env, apiBase) {
     base = Math.round(priced.usd / rate * 1e8);
   } else base = Math.ceil(Math.round(priced.usd * 1e6) / 10000) * 10000;   // whole cents
   let amount = null, amtKey = null;
-  for (let i = 0; i < 40 && amount === null; i++) {
-    const cand = coin === 'btc' ? base + 1 + randInt(99) : base + (1 + randInt(i < 25 ? 20 : 60)) * 10000, key = 'amt:' + coin + ':' + cand;
-    let busy = !!(await env.ORDERS.get(key));
-    if (!busy && coin !== 'btc') for (const oc of ['usdt_trc20', 'usdt_bep20', 'binancepay']) if (oc !== coin && await env.ORDERS.get('amt:' + oc + ':' + cand)) { busy = true; break; }   // one amount = one order across all USDT methods (Binance transfers carry no network)
-    if (!busy) { amount = cand; amtKey = key; }
+  for (let round = 0; round < 6 && amount === null; round++) {            // look at several candidate amounts at the same time (faster than one by one)
+    const cands = [...new Set(Array.from({ length: 8 }, () => coin === 'btc' ? base + 1 + randInt(99) : base + (1 + randInt(round < 3 ? 20 : 60)) * 10000))];
+    const free = await Promise.all(cands.map(async cand => {
+      if (await env.ORDERS.get('amt:' + coin + ':' + cand)) return false;
+      if (coin !== 'btc') for (const oc of ['usdt_trc20', 'usdt_bep20', 'binancepay']) if (oc !== coin && await env.ORDERS.get('amt:' + oc + ':' + cand)) return false;   // one amount = one order across all USDT methods
+      return true;
+    }));
+    const i = free.indexOf(true); if (i >= 0) { amount = cands[i]; amtKey = 'amt:' + coin + ':' + amount; }
   }
   if (amount === null) return fail(env, 'Too many open orders, please try again in a minute', 503);
 
@@ -1249,6 +1253,7 @@ async function adminIndex(req, env) {
   });
   for (const id of (Array.isArray(b.remove) ? b.remove : []).slice(0, 100)) { const pd = await env.ORDERS.get('prod:' + id, 'json').catch(() => null); for (const f of (pd && pd.fileIds) || []) if (FILE_ID.test(String(f.id))) await env.ORDERS.delete('file:' + id + ':' + f.id); await env.ORDERS.delete('prod:' + id); await env.ORDERS.delete('stock:' + id); }
   const aa = b.allAccess || {}, w = b.wallets || {};
+  catMem = { t: 0, v: null };
   await env.ORDERS.put('idx', J({
     storeName: String(b.storeName || ''), products,
     wallets: { usdt_trc20: String(w.usdt_trc20 || '').trim().slice(0, 120), usdt_bep20: String(w.usdt_bep20 || '').trim().slice(0, 120), btc: String(w.btc || '').trim().slice(0, 120), binancepay: String(w.binancepay || '').trim().slice(0, 160) },

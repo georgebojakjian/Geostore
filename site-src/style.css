@@ -510,3 +510,20 @@ html.shell .chat{bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--
 [dir=rtl] .brand span{direction:ltr;unicode-bidi:plaintext}
 [dir=rtl] .nav-links{gap:4px}
 [dir=rtl] .brand{flex:none}
+
+/* slide to pay */
+.slide{--x:0px;position:relative;width:100%;height:60px;margin-top:8px;border-radius:999px;background:linear-gradient(180deg,var(--accent),var(--accent2));color:var(--on-accent);box-shadow:0 10px 22px -12px var(--accent);overflow:hidden;user-select:none;-webkit-user-select:none;direction:ltr;touch-action:pan-y}
+.slide .sl-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-left:56px;pointer-events:none;transition:opacity .25s;opacity:calc(1 - var(--x)/160)}
+.slide .sl-txt b{font-size:1.05rem}.slide .sl-txt small{font-size:.74rem;opacity:.85}
+.slide::after{content:"";position:absolute;top:0;bottom:0;width:60px;left:-60px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:slsh 2.6s infinite;pointer-events:none}
+@keyframes slsh{0%{left:-60px}60%,100%{left:110%}}
+.slide.drag::after,.slide.done::after{display:none}
+.slide .sl-knob{position:absolute;top:4px;left:4px;width:52px;height:52px;border-radius:50%;background:#fff;color:var(--accent2);display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.25);transform:translateX(var(--x));transition:transform .28s cubic-bezier(.2,.8,.2,1);touch-action:none;cursor:grab}
+.slide.drag .sl-knob{transition:none;cursor:grabbing}
+.slide .sl-knob svg{width:22px;height:22px;grid-area:1/1}.slide .ck{opacity:0;transform:scale(.4);transition:.25s}
+.slide.done .ar{opacity:0}.slide.done .ck{opacity:1;transform:none}
+.slide.done{background:var(--accent2)}.slide.done .sl-txt{opacity:1}.slide.busy .sl-knob{animation:slpulse 1s ease-in-out infinite}
+@keyframes slpulse{50%{box-shadow:0 0 0 8px rgba(255,255,255,.3)}}
+.slide:focus-visible{outline:3px solid var(--ring);outline-offset:3px}
+[dir=rtl] .slide{direction:rtl}[dir=rtl] .slide .sl-knob{left:auto;right:4px;transform:translateX(calc(var(--x)*-1))}[dir=rtl] .slide .sl-txt{padding-left:0;padding-right:56px}[dir=rtl] .slide .ar{transform:scaleX(-1)}
+@media(prefers-reduced-motion:reduce){.slide::after{display:none}}

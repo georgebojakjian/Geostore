@@ -640,7 +640,7 @@
   function authH(){ var h = {'content-type':'application/json'}; if (token) h.authorization = 'Bearer ' + token; return h; }
   function apiCall(path, body, method){
     if (!API) return Promise.reject(new Error('The shop is not connected to its payment server yet.'));
-    return fetch(API + path, {method: method || (body ? 'POST' : 'GET'), headers: authH(), body: body ? JSON.stringify(body) : undefined})
+    return fetch(API + path, {method: method || (body ? 'POST' : 'GET'), headers: authH(), body: body ? JSON.stringify(body) : undefined, signal: (window.AbortSignal && AbortSignal.timeout) ? AbortSignal.timeout(40000) : undefined})
       .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if (!r.ok){ var er = new Error(j.error || 'Something went wrong'); er.status = r.status; throw er; } return j; }); },
         function(){ throw new Error('Could not reach the server. Check your connection and try again.'); });
   }
@@ -718,7 +718,7 @@
         return '<button type="button" class="method' + (c.id === coinSel ? ' on' : '') + '" data-coin="' + esc(c.id) + '">' + (u.badge ? '<span class="bd">' + esc(u.badge) + '</span>' : '') + '<span class="ic ' + u.cls + '">' + esc(u.glyph) + '</span><b>' + esc(c.name) + '</b><span class="ck">✓</span></button>';
       }).join('') + '</div>' +
       '<div id="ptsWrap">' + ptsBox(total) + '</div><div id="mInfo"></div><div id="fromBox"></div>' +
-      '<button type="button" class="btn-pay" id="coPay"><span class="bp-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Pay ' + money(total) + '</span><span class="bp-r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>' +
+      '<div class="slide" id="coPay" role="button" tabindex="0" aria-label="Slide to pay"><span class="sl-txt"><b>Pay ' + money(total) + '</b><small>Slide to confirm</small></span><span class="sl-knob"><svg class="ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div>' +
       '<p class="trust-line">🔒 Crypto only · we never see card details · private order link</p><p class="msg" id="coMsg"></p><button type="button" class="back" style="margin-top:6px" data-tocart>← Back to cart</button>';
     view = 'method'; drawInfo(); drawFrom(); ptsRefresh();
     if (ptsCfg() && me && !renderMethods.fresh){ renderMethods.fresh = 1; apiCall('/api/account/me').then(function(r){ me = r.profile; store('geostore_me', me); if (r.pts) CFG.pts = r.pts; if (view === 'method') renderMethods(); }).catch(function(){}); }
@@ -728,15 +728,33 @@
     if (!n) usePts = false;
     if (row) row.innerHTML = n ? '<span>⭐ ' + n + ' points</span><span>−' + money(ptsOffFor(n)) + '</span>' : '';
     if (row) row.style.display = n ? 'flex' : 'none';
-    var lbl = pay && pay.querySelector('.bp-l'); if (lbl) lbl.lastChild.textContent = 'Pay ' + money(round2(total - (n ? ptsOffFor(n) : 0)));
+    var lbl = pay && pay.querySelector('.sl-txt b'); if (lbl) lbl.textContent = 'Pay ' + money(round2(total - (n ? ptsOffFor(n) : 0)));
   }
   var pendingEmail = '';
-  $('cartBody').addEventListener('pointerdown', function(e){          // tactile feel: ripple + a tiny vibration where the phone supports it
-    var b = e.target.closest('.btn-pay'); if (!b || b.disabled) return;
-    var r = b.getBoundingClientRect(), s2 = document.createElement('i'), d = Math.max(r.width, r.height) * 1.2;
-    s2.className = 'rip'; s2.style.cssText = 'width:' + d + 'px;height:' + d + 'px;left:' + (e.clientX - r.left - d / 2) + 'px;top:' + (e.clientY - r.top - d / 2) + 'px';
-    b.appendChild(s2); setTimeout(function(){ s2.remove(); }, 650);
-    try { if (navigator.vibrate) navigator.vibrate(12); } catch(x) {}
+  /* slide-to-pay: drag the knob to the end to confirm (Enter/Space also works for keyboards) */
+  var sl = null;
+  function slideSet(el, x){ el.style.setProperty('--x', x + 'px'); }
+  function slideReset(el){ el = el || $('coPay'); if (!el) return; el.classList.remove('done', 'busy', 'drag'); slideSet(el, 0); var t = el.querySelector('small'); if (t) t.textContent = 'Slide to confirm'; }
+  function slideDone(el){
+    var k = el.querySelector('.sl-knob'); slideSet(el, el.clientWidth - k.offsetWidth - 8); el.classList.remove('drag'); el.classList.add('done');
+    try { if (navigator.vibrate) navigator.vibrate(18); } catch(x) {}
+    createOrder();
+  }
+  $('cartBody').addEventListener('pointerdown', function(e){
+    var k = e.target.closest('.sl-knob'); if (!k) return; var el = k.parentNode;
+    if (el.classList.contains('done') || el.classList.contains('busy')) return;
+    sl = {el:el, sx:e.clientX, max:el.clientWidth - k.offsetWidth - 8, dir:document.documentElement.dir === 'rtl' ? -1 : 1, x:0};
+    try { k.setPointerCapture(e.pointerId); } catch(x) {}
+    el.classList.add('drag'); e.preventDefault();
+  });
+  $('cartBody').addEventListener('pointermove', function(e){
+    if (!sl) return; sl.x = Math.max(0, Math.min(sl.max, (e.clientX - sl.sx) * sl.dir)); slideSet(sl.el, sl.x);
+  });
+  function slideEnd(){ if (!sl) return; var s0 = sl; sl = null; if (s0.x >= s0.max * 0.88) slideDone(s0.el); else { s0.el.classList.remove('drag'); slideSet(s0.el, 0); } }
+  $('cartBody').addEventListener('pointerup', slideEnd); $('cartBody').addEventListener('pointercancel', slideEnd);
+  $('cartBody').addEventListener('keydown', function(e){
+    var el = e.target.closest && e.target.closest('#coPay');
+    if (el && (e.key === 'Enter' || e.key === ' ') && !el.classList.contains('done')){ e.preventDefault(); slideDone(el); }
   });
   function selCoin(){ return coins.filter(function(c){ return c.id === coinSel; })[0] || {}; }
   function binanceNotice(){
@@ -768,7 +786,6 @@
     if (e.target.closest('[data-tocart]')){ view = 'cart'; setCartTitle('Your cart'); renderCart(); }
     if (e.target.id === 'usePts'){ usePts = e.target.checked; ptsRefresh(); }
     if (e.target.id === 'coNext') goCheckout();
-    if (e.target.closest('#coPay')) createOrder();
     if (e.target.id === 'payClaim') claimManual();
     if (e.target.closest('[data-copy]')){ var c = e.target.closest('[data-copy]'), src = $(c.dataset.copy); copyText(src.dataset.v || src.textContent, function(){ var o = c.textContent; c.textContent = 'Copied ✓'; setTimeout(function(){ c.textContent = o; }, 1500); }); }
   });
@@ -789,10 +806,11 @@
     renderMethods();
   }
   function createOrder(){
-    var msg = $('coMsg'), btn = $('coPay'); if (btn){ btn.disabled = true; btn.classList.add('busy'); } msg.classList.remove('err'); msg.textContent = 'Creating your order…';
+    var msg = $('coMsg'), btn = $('coPay'); if (btn){ btn.classList.add('busy'); var bt = btn.querySelector('small'); if (bt) bt.textContent = 'Creating your order…'; } msg.classList.remove('err'); msg.textContent = 'Creating your order…';
+    var slow = setTimeout(function(){ var m3 = $('coMsg'); if (m3 && view === 'method') m3.textContent = 'Still working… please keep this window open.'; }, 6000);
     apiCall('/api/order', {email: pendingEmail, lang: LANGNOW(), usePoints: usePts ? ptsUsable(totalOf(lines())) : 0, coin: coinSel || 'usdt_trc20', fromBinance: !!(fromBinance && selCoin().binance), items: cart.map(function(i){ return i.f ? {id:i.id, v:i.v, q:1, f:i.f} : {id:i.id, v:i.v, q:i.q || 1}; })})
-      .then(function(o){ rememberOrder(o.id); cart = []; saveCart(); usePts = false; renderMethods.fresh = 0; if (me && o.ptsUsed) { me.points = Math.max(0, (+me.points || 0) - o.ptsUsed); store('geostore_me', me); } showPay(o); })
-      .catch(function(er){ if (btn){ btn.disabled = false; btn.classList.remove('busy'); } var m2 = $('coMsg'); if (m2){ m2.classList.add('err'); m2.textContent = er.message || 'Could not create the order. Please try again.'; } });
+      .then(function(o){ clearTimeout(slow); rememberOrder(o.id); cart = []; saveCart(); usePts = false; renderMethods.fresh = 0; if (me && o.ptsUsed) { me.points = Math.max(0, (+me.points || 0) - o.ptsUsed); store('geostore_me', me); } showPay(o); })
+      .catch(function(er){ clearTimeout(slow); slideReset(btn); var m2 = $('coMsg'); if (m2){ m2.classList.add('err'); m2.textContent = er.message || 'Could not create the order. Please try again.'; } });
   }
   function rememberOrder(id){ var ids = store('geostore_orders') || []; if (ids.indexOf(id) < 0){ ids.push(id); store('geostore_orders', ids.slice(-20)); } }
   function leftText(ms){ if (ms <= 0) return 'expired'; var m = Math.floor(ms / 60000), s = Math.floor(ms % 60000 / 1000); return m + ':' + (s < 10 ? '0' : '') + s; }
