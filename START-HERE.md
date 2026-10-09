@@ -21,7 +21,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":19`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
-6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`, `manifest.webmanifest`.
+6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`, `manifest.webmanifest`, `logo-64.webp`, `app.js.map`, `bg.js.map`. (`pack-1.js` and `pack-2.js` are still needed. They now load after the first screen so the page appears faster.)
 
 > Always upload the **whole folder** — the shop is now several files.
 
@@ -230,6 +230,9 @@ That is all. It uses a few free reads and almost no writes.
 3. Late payment on an **expired** order: open Orders → **Expired** → **Why not paid?** — if an exact payment arrived late, the order is confirmed and delivered.
 4. Last resort: **Mark paid** — only after you saw the money in Binance or your wallet.
 Expired orders are hidden from the normal list and from customers; they only appear under the **Expired** filter.
+
+## Page speed (Google PageSpeed)
+The shop is built for speed: the style sheet is part of the page itself, the scripts are shrunk, big code packs load after the first screen, and placeholders hold the layout so nothing jumps. After a change from me, upload the **whole `site` folder** again (it already contains the finished files). Developers: the readable sources are in `site-src/`; `cd tools && npm install && node build-site.mjs` rebuilds `site/`.
 
 ## Dashboard
 The dashboard now has the dark glass look. **Home** shows revenue, paid orders, estimated profit and “needs you” for **Today / 7D / 30D / 1Y**, a performance chart, payment-method split and the latest orders. **Gift cards → Prices** shows what each amount **costs you** at FazerCards, what you sell it for and your profit. The sun/moon button switches to a light dashboard.
