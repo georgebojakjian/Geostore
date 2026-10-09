@@ -1292,7 +1292,7 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 19, mail: mailOn(env), binance: binanceOn(env), relay: !!env.BINANCE_RELAY });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 20, mail: mailOn(env), binance: binanceOn(env), relay: !!env.BINANCE_RELAY });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
@@ -1443,6 +1443,19 @@ async function route(req, env) {
         try { const l = await bnDepositList(env, probe); out.push('Deposit history: OK (' + l.length + ' record(s) in the last hour)'); } catch (e) { out.push('Deposit history: ' + String((e && e.message) || e)); }
         try { const l = await bnPayList(env, probe); out.push('Binance Pay history: OK (' + l.length + ' record(s) in the last hour)'); } catch (e) { out.push('Binance Pay history: ' + String((e && e.message) || e)); }
         return json(env, { ok: !out.some(x => !/OK/.test(x)), lines: out });
+      }
+      if (path === '/api/admin/state' && req.method === 'PUT') {          // a private copy of the dashboard, so any phone or computer can load it
+        const txt = await req.text();
+        if (txt.length < 20 || txt.length > 20 * 1024 * 1024) return fail(env, 'The dashboard copy is empty or bigger than 20 MB');
+        let st; try { st = JSON.parse(txt); if (!st || !Array.isArray(st.products)) throw 0; } catch (e) { return fail(env, 'That does not look like dashboard data'); }
+        const savedAt = Date.now();
+        await env.ORDERS.put('adminstate', J({ savedAt, state: st }));
+        return json(env, { ok: true, savedAt, bytes: txt.length });
+      }
+      if (path === '/api/admin/state' && req.method === 'GET') {
+        const txt = await env.ORDERS.get('adminstate', 'text');
+        if (!txt) return json(env, { ok: true, empty: true });
+        return new Response(txt.replace(/^\{/, '{"ok":true,'), { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
       }
       if (path === '/api/admin/purge-expired' && req.method === 'POST') return await purgeExpired(env);
       if (path === '/api/admin/markpaid' && req.method === 'POST') {

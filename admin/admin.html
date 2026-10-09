@@ -365,6 +365,17 @@
         <p class="help" id="srvStatus2" style="margin-top:10px"></p></div></div></div>
       <div class="panel"><div class="step"><div class="num">2</div><div><h3>Update the website</h3><p>Needed when you add or remove products, change names, descriptions, images or gift-card brands.</p>
         <p style="margin-top:12px"><button class="btn btn-p" id="dlData">⬇ Download data.js</button></p>
+      </div>
+      <div class="panel"><h2>📱 Phone-friendly publishing</h2>
+        <p class="help" style="margin-bottom:12px">Two buttons so you never need a computer: your dashboard is kept safe on <b>your server</b>, and the shop's <code>data.js</code> can be sent straight to GitHub, which updates your website by itself in about a minute.</p>
+        <h3 style="margin:6px 0">☁ Cloud copy of this dashboard</h3>
+        <p class="help" id="cloudMsg" style="margin-bottom:8px">Saved automatically about a minute after every change (turn off below). Open the dashboard on any phone or computer, enter your server address and token in Settings, then press “Load”.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button type="button" class="btn btn-p btn-s" id="cloudSave">☁ Save a copy now</button><button type="button" class="btn btn-g btn-s" id="cloudLoad">⬇ Load from my server</button><label class="chk"><input type="checkbox" id="cloudAuto"> Save automatically</label></div>
+        <h3 style="margin:18px 0 6px">🚀 Publish the website (GitHub → Netlify)</h3>
+        <p class="help" style="margin-bottom:8px">One-time setup is in START-HERE.md → “Publish from your phone”. Then the button below updates the live shop.</p>
+        <div class="form"><div><label for="ghRepo">GitHub repository (owner/name)</label><input id="ghRepo" placeholder="georgebojakjian/Geostore" autocomplete="off"></div><div><label for="ghBranch">Branch Netlify publishes</label><input id="ghBranch" placeholder="main" autocomplete="off"></div><div class="full"><label for="ghToken">GitHub token (stays only on this device)</label><input id="ghToken" type="password" placeholder="github_pat_…" autocomplete="off"></div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px"><button type="button" class="btn btn-g btn-s" id="ghSave">Save these</button><button type="button" class="btn btn-p btn-s" id="ghPublish">🚀 Publish website now</button></div>
+        <p class="help" id="ghMsg" style="margin-top:8px"></p>
         <p style="margin-top:12px">Put the file in your <code>site</code> folder (replace the old one), then upload the <b>whole site folder</b> to Netlify (Deploys → drag the folder).</p></div></div></div>
       <div class="panel"><div class="step"><div class="num">3</div><div><h3>Back up (important)</h3><p>Your products live in this browser. Download a backup now and then and keep it safe.</p>
         <p style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-g" id="dlBackup">⬇ Backup everything (.json)</button><label class="btn btn-g" style="margin:0;cursor:pointer">⬆ Restore backup<input type="file" id="restore" accept=".json" hidden></label><button class="btn btn-d" id="resetAll">Reset to original files</button></p></div></div></div>
@@ -450,7 +461,7 @@
   state = (state && state.products) ? migrate(state) : seed();
   // save(true) = a real change (marks the server and website as "needs update"); save() = bookkeeping only
   function save(changed){
-    if (changed){ state.dirtySync = true; state.dirtySite = true; }
+    if (changed){ state.dirtySync = true; state.dirtySite = true; if (typeof cloudSoon === 'function') cloudSoon(); }
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) { toast('Browser storage is blocked — use Backup on the Publish tab'); }
     paintStatus();
   }
@@ -1255,7 +1266,7 @@
     var tc = state.settings.sup.tcats || {};
     return {brands: Object.keys(by).map(function(k){ return by[k]; }), topups: Object.keys(tc).map(function(id){ return {id: id, name: tc[id].n, logo: tc[id].logo || ''}; })};
   }
-  function downloadData(){
+  function dataJsText(){
     var s = state.settings, pubSettings = {storeName:s.storeName, tagline:s.tagline, email:s.email, whatsapp:s.whatsapp || '', telegram:s.telegram || '', apiUrl:s.apiUrl || '', allAccess:s.allAccess, digitalSection:s.digitalSection, social:s.social || {}, featured:s.featured || '', wallets:s.wallets};
     var pub = {settings: pubSettings, gift: giftData(), products: state.products.map(function(p){
       var q = {id:p.id, title:p.title, category:p.category, price:p.price, stylePrice:p.stylePrice||0, group:p.group||'', guide:p.guide||'', tagline:p.tagline, type:p.type, published:p.published!==false, files:(p.files || []).map(function(f){ return {name:f.name, size:f.size || 0, link:!!f.url}; })};
@@ -1263,9 +1274,59 @@
       else q.variants = p.variants.map(function(v){ return {name:v.name, sample:v.sample}; });
       return q;
     })};
-    download('data.js', '/* Geostore public data — generated by the admin dashboard. Upload this file with your site. */\nwindow.GEOSTORE_DATA = ' + JSON.stringify(pub, null, 1) + ';\n', 'text/javascript');
+    return '/* Geostore public data — generated by the admin dashboard. Upload this file with your site. */\nwindow.GEOSTORE_DATA = ' + JSON.stringify(pub, null, 1) + ';\n';
+  }
+  function downloadData(){
+    download('data.js', dataJsText(), 'text/javascript');
     state.dirtySite = false; save(); toast('data.js downloaded — put it in your site folder and upload the folder');
   }
+  /* ---------- phone-friendly: cloud copy + GitHub publish ---------- */
+  var CLOUDKEY = 'geostore_cloud_auto', GHKEY = 'geostore_gh', cloudT = null;
+  function lget(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }
+  function lset(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
+  function cloudOn(){ var v = lget(CLOUDKEY); return v === null ? true : !!v; }
+  function cloudPush(manual){
+    clearTimeout(cloudT); cloudT = null;
+    if (!base() || !token()){ if (manual) toast('Connect your server in Settings first'); return Promise.resolve(); }
+    $('cloudMsg').textContent = 'Saving a copy to your server…';
+    return fetch(base() + '/api/admin/state', {method:'PUT', headers:{authorization:'Bearer ' + token(), 'content-type':'application/json'}, body: JSON.stringify(state)})
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if (!r.ok) throw new Error(j.error || 'Could not save'); return j; }); })
+      .then(function(j){ $('cloudMsg').textContent = '✅ Copy saved ' + new Date(j.savedAt).toLocaleString() + ' (' + Math.round(j.bytes / 1024) + ' KB).'; if (manual) toast('Copy saved on your server'); })
+      .catch(function(e){ $('cloudMsg').textContent = '⚠ ' + e.message; if (manual) toast(e.message); });
+  }
+  function cloudSoon(){ if (!cloudOn() || cloudT) return; cloudT = setTimeout(function(){ cloudPush(false); }, 60000); }
+  $('cloudAuto').checked = cloudOn();
+  $('cloudAuto').addEventListener('change', function(){ lset(CLOUDKEY, this.checked); });
+  $('cloudSave').addEventListener('click', function(){ cloudPush(true); });
+  $('cloudLoad').addEventListener('click', function(){
+    if (!base() || !token()){ toast('Enter your server address and token in Settings first (then come back)'); return; }
+    api('/api/admin/state').then(function(r){
+      if (r.empty || !r.state){ toast('No copy saved on your server yet'); return; }
+      var n = (r.state.products || []).length;
+      if (!confirm('Load the dashboard copy saved on ' + new Date(r.savedAt).toLocaleString() + ' (' + n + ' products)?\n\nThis REPLACES what is on this device. Your server address and token stay as they are.')) return;
+      var keep = state.settings.apiUrl;
+      state = migrate(r.state); if (!state.settings.apiUrl) state.settings.apiUrl = keep;
+      save(); toast('Loaded — reloading…'); setTimeout(function(){ location.reload(); }, 600);
+    }).catch(function(e){ toast(e.message); });
+  });
+  var gh0 = lget(GHKEY) || {}; $('ghRepo').value = gh0.repo || 'georgebojakjian/Geostore'; $('ghBranch').value = gh0.branch || 'main'; $('ghToken').value = gh0.token || '';
+  $('ghSave').addEventListener('click', function(){ lset(GHKEY, {repo: $('ghRepo').value.trim(), branch: $('ghBranch').value.trim() || 'main', token: $('ghToken').value.trim()}); toast('Saved on this device only'); });
+  function b64utf8(str){ var bytes = new TextEncoder().encode(str), bin = ''; for (var i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192)); return btoa(bin); }
+  $('ghPublish').addEventListener('click', function(){
+    var repo = $('ghRepo').value.trim(), br = $('ghBranch').value.trim() || 'main', tk = $('ghToken').value.trim(), msg = $('ghMsg'), btn = this;
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !tk){ msg.textContent = 'Fill in the repository and the GitHub token first.'; return; }
+    lset(GHKEY, {repo: repo, branch: br, token: tk});
+    var api2 = 'https://api.github.com/repos/' + repo + '/contents/site/data.js', hdr = {accept:'application/vnd.github+json', authorization:'Bearer ' + tk};
+    btn.disabled = true; msg.textContent = 'Preparing…';
+    fetch(api2 + '?ref=' + encodeURIComponent(br), {headers: hdr}).then(function(r){ return r.status === 404 ? {} : r.json().then(function(j){ if (!r.ok) throw new Error(j.message || ('GitHub said ' + r.status)); return j; }); })
+      .then(function(cur){
+        msg.textContent = 'Sending the new data.js…';
+        return fetch(api2, {method:'PUT', headers: Object.assign({'content-type':'application/json'}, hdr), body: JSON.stringify({message:'Update shop data from the dashboard', content: b64utf8(dataJsText()), branch: br, sha: cur.sha})});
+      })
+      .then(function(r){ return r.json().then(function(j){ if (!r.ok) throw new Error(j.message || ('GitHub said ' + r.status)); return j; }); })
+      .then(function(){ state.dirtySite = false; save(); btn.disabled = false; msg.textContent = '✅ Sent. Netlify updates your website automatically in about a minute.'; toast('Website update sent'); })
+      .catch(function(e){ btn.disabled = false; msg.textContent = '❌ ' + e.message + ' — check the repository name, branch and token (the token needs “Contents: read and write”).'; });
+  });
   $('dlData').addEventListener('click', downloadData);
   $('dlBackup').addEventListener('click', function(){ download('geostore-backup-' + new Date().toISOString().slice(0,10) + '.json', JSON.stringify(state), 'application/json'); });
   $('restore').addEventListener('change', function(){

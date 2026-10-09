@@ -18,7 +18,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 
 1. **Back up first.** Open your OLD dashboard → **Publish → Backup everything**. Keep that file.
 2. **Download the new project** (GitHub → branch `claude/geostore-website-template-bwou47` → Code → Download ZIP) and unzip it.
-3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":19`.
+3. **Server:** open `worker/worker.js` → copy everything → Cloudflare → your worker → **Edit code** → paste → **Deploy**. Open `https://YOUR-WORKER/api/health` → it must show `"version":20`.
 4. **Dashboard:** open the NEW `admin/admin.html` → **Publish → Restore backup** → choose your backup file. Then **Settings** → check your wallets and press **Save**.
 5. **Sync:** **Publish → Sync to server** (wait for ✅).
 6. **Website:** **Publish → Download data.js** → put it in the new `site` folder (replace the one inside) → upload the **whole `site` folder** to Netlify (Deploys → drag the folder). The folder now contains: `index.html`, `style.css`, `app.js`, `bg.js`, `qr.js`, `data.js`, `pack-1.js`, `pack-2.js`, `logo.png`, `logo-96.png`, `logo-512.png`, `favicon.png`, `_headers`, `shop.html`, `manifest.webmanifest`, `logo-64.webp`, `app.js.map`, `bg.js.map`. (`pack-1.js` and `pack-2.js` are still needed. They now load after the first screen so the page appears faster.)
@@ -32,7 +32,7 @@ The dashboard's **top bar always tells you what to do**: *“Server needs a Sync
 ### 1 — Server (Cloudflare)
 1. Cloudflare → Workers & Pages → create a Worker → paste `worker/worker.js` → Deploy.
 2. Settings → **Variables and Secrets**: add a **Secret** named `ADMIN_TOKEN` (a long password only you know). Settings → **Bindings** → add a **KV namespace** named `ORDERS`.
-3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":19`.
+3. Open `…/api/health` → you want `"ok":true`, `"kv":true`, `"version":20`.
 4. (Recommended safety net) add a **Cron Trigger** — see “Safety net: automatic checks every 5 minutes” below.
 
 ### 2 — Dashboard
@@ -233,6 +233,30 @@ Expired orders are hidden from the normal list and from customers; they only app
 
 ## Page speed (Google PageSpeed)
 The shop is built for speed: the style sheet is part of the page itself, the scripts are shrunk, big code packs load after the first screen, and placeholders hold the layout so nothing jumps. After a change from me, upload the **whole `site` folder** again (it already contains the finished files). Developers: the readable sources are in `site-src/`; `cd tools && npm install && node build-site.mjs` rebuilds `site/`.
+
+## Publish from your phone (no computer needed)
+**Why:** the dashboard is a web page, so it can open on a phone — but a phone cannot upload a folder to Netlify. These steps remove that need.
+
+**Part A — put the dashboard online (once, from a computer)**
+1. Netlify → **Add new site → Deploy manually** → drag the **`admin`** folder → you get an address like `something.netlify.app`.
+2. Site configuration → **Change site name** → pick a long, random name (nobody should guess it). The page holds no passwords and does nothing without your `ADMIN_TOKEN`, and it tells search engines not to list it.
+3. On your phone open `https://YOUR-NAME.netlify.app/admin.html` → Settings → type your **server address** and **ADMIN_TOKEN** → Save → **Publish → ⬇ Load from my server** (this brings in all your products and settings). Add the page to your home screen if you like.
+
+**Part B — one-tap website publishing (once)**
+1. GitHub → your `Geostore` repository → the open pull request → **Merge pull request** (this puts everything on the `main` branch).
+2. GitHub → **Settings (your profile) → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token** → name `shop`, expiry 1 year, **Only select repositories → Geostore**, permissions → **Contents: Read and write** → Generate → copy the token.
+3. Dashboard → **Publish → Phone-friendly publishing** → paste the token, press **Save these**, then **🚀 Publish website now**. (This puts *your* real `data.js` in the repository.)
+4. Only **after step 3 worked**: Netlify → your shop site → **Site configuration → Build & deploy → Continuous deployment → Link repository** → GitHub → `Geostore` → branch `main` → **Build command: leave empty**, **Publish directory: `site`** → Save. From now on every time you press **Publish website now** the shop updates itself in about a minute, and updates I make reach the shop when you merge them.
+
+**Every day on the phone:** change prices/products → **Sync to server** → (if you changed products, names, images or brands) **Publish website now**. Prices alone only need Sync.
+The **☁ Cloud copy** saves your whole dashboard on your server automatically, so a lost or broken computer or phone no longer means lost data.
+
+## Getting found on Google
+1. Open **search.google.com/search-console** → **Add property → Domain** → enter `geostorecodes.com`. Google shows a **TXT** record. In Netlify → Domains → your domain → **Add new record** → type TXT, name `@`, the value Google gave → Save → press **Verify** in Google.
+2. Search Console → **Sitemaps** → type `sitemap.xml` → Submit. Then **URL inspection** → paste `https://geostorecodes.com/` → **Request indexing**.
+3. Do the same at **bing.com/webmasters** (it can import from Google).
+4. Be patient: a new site usually takes days to appear and weeks to rank. What helps most: real pages for what people search (“buy iTunes gift card with USDT”), your social links, being mentioned on other sites, and happy customers.
+The shop already has: a title and description, a canonical address, social-share tags, structured data (company, website, FAQ), `robots.txt`, `sitemap.xml`, and Terms / Privacy / Refund / Contact pages.
 
 ## Dashboard
 The dashboard now has the dark glass look. **Home** shows revenue, paid orders, estimated profit and “needs you” for **Today / 7D / 30D / 1Y**, a performance chart, payment-method split and the latest orders. **Gift cards → Prices** shows what each amount **costs you** at FazerCards, what you sell it for and your profit. The sun/moon button switches to a light dashboard.
