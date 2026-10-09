@@ -478,3 +478,14 @@ html.shell .chat{bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--
 .wl-how{margin:0 0 6px;padding-left:18px;color:var(--muted);font-size:.86rem;line-height:1.6}.wl-how b{color:var(--text)}
 .wl-log>div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid rgba(128,128,128,.18);font-size:.88rem}
 .wl-log small{display:block;color:var(--muted);font-size:.74rem}.wl-log .up{color:var(--accent2)}.wl-log .dn{color:var(--muted)}
+
+/* real reviews + safety */
+.revs,.safe{padding:34px 0}.revs h2,.safe h2{margin:0 0 12px;font-size:clamp(1.3rem,3.4vw,1.8rem);letter-spacing:-.03em}
+.rv-sum{margin:0 0 14px;color:var(--muted)}.stars{color:#f5a623;letter-spacing:2px}
+.rv-list{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+.rcard{flex:0 0 min(300px,82%);scroll-snap-align:start;margin:0;padding:16px;border-radius:18px;border:1px solid var(--line,rgba(128,128,128,.22));background:var(--surface,transparent)}
+.rcard blockquote{margin:8px 0;font-size:.92rem;line-height:1.5}.rcard figcaption{font-size:.8rem;color:var(--muted)}.rcard .vb{display:block;color:var(--accent2);font-weight:700;margin-top:3px}
+.safe-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.safe-grid>div{padding:16px;border-radius:18px;border:1px solid var(--line,rgba(128,128,128,.22));background:var(--surface,transparent)}
+.safe-grid i{font-style:normal;font-size:1.5rem;display:block;margin-bottom:6px}.safe-grid b{display:block;margin-bottom:3px}.safe-grid span{color:var(--muted);font-size:.86rem;line-height:1.45}
+.brand-tile.oos{opacity:.75}.brand-tile.oos small{color:var(--accent2);font-weight:700}

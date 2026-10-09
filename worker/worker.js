@@ -522,6 +522,7 @@ async function fulfil(env, o, force) {
     if (f.state === 'wait' && f.tries >= 30) f.state = 'stuck';
     if (f.state === 'stuck' && !f.alerted) { f.alerted = true; notify(env, '⚠️ <b>Needs you</b> — supplier delivery stuck for order #' + o.id.slice(0, 8).toUpperCase() + '\n' + esc(f.error || '')); }
   }
+  if (changed && fulfilState(o) === 'ok') await dlRecord(env, o);
   return changed;
 }
 async function ensureFulfilled(env, o) {
@@ -671,7 +672,7 @@ async function createOrder(req, env, apiBase) {
 
   const now = Date.now();
   const fromBinance = !!b.fromBinance && !!(cat.binanceAddr && cat.binanceAddr[coin]);
-  const o = { id: hex(16), key: hex(16), base: apiBase, fromBinance, email, items: priced.lines, usd: priced.usd, coin, amount, amtKey, wallet, status: 'pending', createdAt: now, expiresAt: now + (fromBinance ? Math.max(C.minutes, 180) : C.minutes) * 60000, account: acct ? acct.email : null };
+  const o = { id: hex(16), key: hex(16), base: apiBase, fromBinance, email, items: priced.lines, usd: priced.usd, coin, amount, amtKey, wallet, status: 'pending', createdAt: now, expiresAt: now + (fromBinance ? Math.max(C.minutes, 180) : C.minutes) * 60000, account: acct ? acct.email : null, lang: b.lang === 'ar' ? 'ar' : 'en' };
   if (ptsUsed > 0) { o.ptsUsed = ptsUsed; o.ptsOff = ptsOff; o.usdFull = priced.full; }
   await saveOrder(env, o, 7 * 86400);
   // the "amt:" key both reserves the amount AND is the list of open orders the cron job checks
@@ -720,8 +721,9 @@ async function markPaid(env, o, txid) {
       if (take.length) { o.codeList = o.codeList || {}; o.codeList[l.id] = take; o.codes[l.id] = take.join('\n\n'); await env.ORDERS.put('used:' + l.id, String(used + take.length)); }
     }
   }
-  if (supplierLines(o).length) { try { await fulfil(env, o, false); lastFul.set(o.id, Date.now()); } catch (e) { /* the payment is recorded either way; retried later */ } }
+  if (supplierLines(o).length) { try { await fulfil(env, o, false); lastFul.set(o.id, Date.now()); } catch (e) { /* the payment is recorded either way; retried later */ } } else await dlRecord(env, o);
   const wantMail = mailOn(env) && !o.emailed && !!o.email; if (wantMail) o.emailed = true;
+  if (o.email) { try { if (await env.ORDERS.get('cart:' + o.email, 'text')) await env.ORDERS.delete('cart:' + o.email); } catch (e) { /* only a reminder */ } }   // paid: no reminder needed
   if (o.account && !o.ptsDone) {                           // points: earn once; a late payment on an order whose points were returned takes them again
     o.ptsDone = true;
     try {
@@ -994,7 +996,8 @@ async function deliveryData(env, o, cat) {
   (await Promise.all(jobs)).forEach(x => { if (x) parts.push(x); });
   const coin = orderCoin(o), inv = { no: 'INV-' + o.id.slice(0, 8).toUpperCase(), createdAt: o.createdAt, paidAt: o.paidAt || null, items: itemsOf(o).map(i => ({ title: i.title, price: i.price, qty: qtyOf(i), unit: i.unit || null })), total: o.usd, coin: COINS[coin].name, network: COINS[coin].network, amount: fmtAmount(coin, o.amount), txid: o.txid && o.txid !== 'manual' ? o.txid : '' };
   inv.txUrl = !inv.txid || /^(bp|bn):/.test(inv.txid) ? '' : coin === 'btc' ? 'https://mempool.space/tx/' + inv.txid : coin === 'usdt_bep20' ? 'https://bscscan.com/tx/' + inv.txid : 'https://tronscan.org/#/transaction/' + inv.txid;
-  return '{"order":' + J({ id: o.id.slice(0, 8), email: o.email, invoice: inv }) + ',"store":' + J(cat.storeName || '') + ',"logo":' + J(LOGO_DATA) + ',"sections":[' + parts.join(',') + ']}';
+  const rvd = (await featCfg(env)).reviews ? !!(await env.ORDERS.get('rev:' + o.id, 'text')) : true;
+  return '{"order":' + J({ id: o.id.slice(0, 8), email: o.email, invoice: inv, reviewed: rvd }) + ',"lang":' + J(o.lang === 'ar' ? 'ar' : 'en') + ',"store":' + J(cat.storeName || '') + ',"logo":' + J(LOGO_DATA) + ',"sections":[' + parts.join(',') + ']}';
 }
 const LOGO_DATA = 'data:image/png;base64,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';
 const SHELL_CORE = String.raw`
@@ -1004,7 +1007,9 @@ document.addEventListener("submit",function(e){if(!e.defaultPrevented){e.prevent
 window.open=function(u){note("Demo: this would open "+String(u||"a new page").slice(0,50)+" in your real site");return null}}
 function guard(html){html=String(html||"");var g="<script>("+guardFn.toString()+")()<\/script>",i=html.lastIndexOf("</body>");return i<0?html+g:html.slice(0,i)+g+html.slice(i)}
 function fsize(n){return n>1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB"}
-function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+var AR={"Light or dark mode": "الوضع الفاتح أو الداكن", "Almost there…": "اقتربنا…", "Order complete": "اكتمل الطلب", "Your payment is confirmed. We are preparing your code — this page updates by itself.": "تم تأكيد دفعتك. نجهّز رمزك الآن — تتحدّث هذه الصفحة تلقائياً.", "Thank you! Your items are below, with your invoice at the bottom.": "شكراً لك! مشترياتك أدناه، وفاتورتك في الأسفل.", "This is your saved copy": "هذه نسختك المحفوظة", "⬇ Save everything as one file": "⬇ احفظ كل شيء في ملف واحد", "🧾 Print / save invoice": "🧾 اطبع / احفظ الفاتورة", "Project files": "ملفات المشروع", "How to use & connect your data": "طريقة الاستخدام وربط بياناتك", "Full code": "الكود الكامل", "Copy code": "انسخ الكود", "Copied ✓": "تم النسخ ✓", "Invoice": "الفاتورة", "Total (USD)": "المجموع (دولار)", "Billed to": "فاتورة إلى", "Paid with": "طريقة الدفع", "Amount sent": "المبلغ المرسل", "Network": "الشبكة", "Transaction": "المعاملة", "Licence: use website code in your own and your clients' projects. Do not resell or share the code files themselves. Gift cards and codes are digital goods and cannot be returned once revealed.": "الترخيص: استخدم أكواد المواقع في مشاريعك ومشاريع عملائك. لا تعد بيع ملفات الأكواد ولا تشاركها. بطاقات الهدايا والأكواد سلع رقمية ولا يمكن إرجاعها بعد كشفها.", "YOUR CODE": "رمزك", "Reveal code": "اكشف الرمز", "✦ SCRATCH HERE TO REVEAL ✦": "✦ اخدش هنا للكشف ✦", "How was your order?": "كيف كان طلبك؟", "Your honest review helps other customers. Thank you!": "رأيك الصادق يساعد العملاء الآخرين. شكراً لك!", "Your name (optional)": "اسمك (اختياري)", "Tell us what you think (optional)": "أخبرنا برأيك (اختياري)", "Send review": "أرسل التقييم", "Please tap the stars first.": "اضغط على النجوم أولاً.", "Thank you! ❤️": "شكراً لك! ❤️", "Your review was sent. It appears on the shop after we check it.": "تم إرسال تقييمك. سيظهر في المتجر بعد مراجعته.", "You already reviewed this order. Thank you!": "لقد قيّمت هذا الطلب مسبقاً. شكراً لك!", "Open your order page online to download this file.": "افتح صفحة طلبك عبر الإنترنت لتنزيل هذا الملف."},LANG="en";
+function T(s){if(LANG!=="ar")return s;if(AR[s])return AR[s];var m;if(m=/^Code (\d+) of (\d+)$/.exec(s))return "الرمز "+m[1]+" من "+m[2];if(m=/^Preparing your code[\s\S]*contact us with (.+)\.$/.exec(s))return "نجهّز رمزك… يستغرق ذلك بضع ثوانٍ. إذا لم يظهر خلال بضع دقائق، تواصل معنا مع ذكر "+m[1]+".";return s}
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=T(x);return e}
 function money(n){n=Math.round(n*100)/100;return "$"+(n%1===0?String(n):n.toFixed(2))}
 function fdate(ms){return ms?new Date(ms).toLocaleString([],{dateStyle:"medium",timeStyle:"short"}):""}
 function cp(btn,text,label){btn.onclick=function(){function d(){btn.textContent="Copied ✓";setTimeout(function(){btn.textContent=label},1500)}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(d,d)}else{try{var a=document.createElement("textarea");a.value=text;document.body.appendChild(a);a.select();document.execCommand("copy");a.remove()}catch(e){}d()}}}
@@ -1043,13 +1048,28 @@ function scratchCard(title,code,key){
 }
 var ICONS={sun:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',moon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z"/></svg>'};
 function themeBtn(){
-  var b=el("button","tbtn");b.type="button";b.setAttribute("aria-label","Light or dark mode");
+  var b=el("button","tbtn");b.type="button";b.setAttribute("aria-label",T("Light or dark mode"));
   function paint(){b.innerHTML=document.documentElement.getAttribute("data-theme")==="dark"?ICONS.sun:ICONS.moon}
   b.onclick=function(){var n=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",n);try{localStorage.setItem("geo_theme",n)}catch(e){}paint()};
   paint();return b;
 }
+function reviewCard(){
+  var oid=(location.pathname.match(/\/api\/delivery\/([a-f0-9]{32})/)||[])[1];if(!oid)return null;
+  var k=new URLSearchParams(location.search).get("k")||"";
+  var c=el("section","card"),hd=el("div","ch");hd.appendChild(el("h2","","How was your order?"));hd.appendChild(el("p","d","Your honest review helps other customers. Thank you!"));c.appendChild(hd);
+  var rate=0,stars=el("div","stars"),bs=[];
+  for(var i=1;i<=5;i++)(function(i){var b=el("button","star","★");b.type="button";b.setAttribute("aria-label",i+" / 5");b.onclick=function(){rate=i;bs.forEach(function(x,j){x.className="star"+(j<i?" on":"")})};bs.push(b);stars.appendChild(b)})(i);
+  c.appendChild(stars);
+  var nm=el("input","rin");nm.placeholder=T("Your name (optional)");nm.maxLength=40;
+  var tx=el("textarea","rin");tx.placeholder=T("Tell us what you think (optional)");tx.maxLength=600;tx.rows=3;
+  var go=el("button","btn","Send review"),msg=el("p","d tiny","");
+  go.onclick=function(){if(!rate){msg.textContent=T("Please tap the stars first.");return}go.disabled=true;
+    fetch(location.origin+"/api/review",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:oid,k:k,rating:rate,text:tx.value,name:nm.value})}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||"Error");return j})}).then(function(){c.innerHTML="";c.appendChild(el("h2","","Thank you! ❤️"));c.appendChild(el("p","d","Your review was sent. It appears on the shop after we check it."))}).catch(function(e){go.disabled=false;msg.textContent=T(e.message)})};
+  c.appendChild(nm);c.appendChild(tx);c.appendChild(go);c.appendChild(msg);return c;
+}
 window.__render=function(d,app){
   app.innerHTML="";var inv=d.order.invoice||{};
+  LANG=d.lang==="ar"?"ar":"en";if(LANG==="ar"){document.documentElement.dir="rtl";document.documentElement.lang="ar"}
   var top=el("div","tb"),br=el("div","bn");
   if(d.logo){var im=document.createElement("img");im.src=d.logo;im.alt="";im.width=36;im.height=36;br.appendChild(im)}
   br.appendChild(el("span","",d.store||"Your order"));top.appendChild(br);top.appendChild(themeBtn());app.appendChild(top);
@@ -1076,7 +1096,7 @@ window.__render=function(d,app){
         s.files.forEach(function(f){var a=el("a","btn fbtn","⬇ "+f.name+(f.size?" ("+fsize(f.size)+")":""));
           if(f.url){a.href=f.url;a.target="_blank";a.rel="noopener noreferrer"}
           else if(oid&&!window.__standalone){a.href=location.origin+"/api/download/"+oid+"/"+encodeURIComponent(s.id)+"/"+f.id+location.search}
-          else{a.href="#";a.onclick=function(e){e.preventDefault();alert("Open your order page online to download this file.")}}
+          else{a.href="#";a.onclick=function(e){e.preventDefault();alert(T("Open your order page online to download this file."))}}
           fb.appendChild(a)});sec.appendChild(fb)}
       if(s.guide){var det=el("details","gd");det.open=true;det.appendChild(el("summary","","How to use & connect your data"));var gb=el("div","gb");gb.innerHTML=s.guide;det.appendChild(gb);sec.appendChild(det)}
       (s.variants||[]).forEach(function(v){
@@ -1097,6 +1117,7 @@ window.__render=function(d,app){
   kv("Billed to",d.order.email);kv("Paid with",inv.coin||"");kv("Amount sent",(inv.amount||"")+" "+((inv.coin||"").split(" ")[0]));kv("Network",inv.network||"");
   if(inv.txid)kv("Transaction",inv.txid.slice(0,14)+"…"+inv.txid.slice(-6),inv.txUrl||null);
   iv.appendChild(dtl);app.appendChild(iv);
+  if(!pending&&!d.order.reviewed&&!window.__standalone){var rc=reviewCard();if(rc)app.appendChild(rc)}
   app.appendChild(el("p","d tiny","Licence: use website code in your own and your clients' projects. Do not resell or share the code files themselves. Gift cards and codes are digital goods and cannot be returned once revealed."));
   if(pending&&!window.__standalone&&!window.__poll){var tries=0;window.__poll=setInterval(function(){if(++tries>24){clearInterval(window.__poll);return}fetch(location.pathname+"/data"+location.search).then(function(r){return r.json()}).then(function(nd){if(!nd.sections.some(function(s){return s.code===""})){clearInterval(window.__poll);window.__poll=null;window.__render(nd,app)}}).catch(function(){})},6000)}
 };
@@ -1132,6 +1153,8 @@ const SHELL_CSS = ':root{--bg:#f3f7ef;--surface:#fff;--s2:#f0f5ec;--bd:#dbe5d4;-
   '.it{width:100%;border-collapse:collapse;margin:8px 0 12px}.it td{padding:10px 4px;border-bottom:1px solid var(--bd)}.it .r{text-align:right;white-space:nowrap}.it .tot td{font-weight:800;font-size:1.05rem;border-bottom:0}' +
   '.pd{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0;font-size:.88rem}.pd dt{color:var(--mu)}.pd dd{margin:0;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem}.pd a{color:var(--ac2)}' +
   '.files{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 4px}.files b{width:100%;font-size:.95rem}.fbtn{text-decoration:none;word-break:break-all}' +
+  '.stars{display:flex;gap:6px;margin:12px 0}.star{background:none;border:0;font-size:2.1rem;color:var(--bd2);cursor:pointer;padding:0 2px;line-height:1}.star.on{color:#f5a623}.rin{display:block;width:100%;font:inherit;padding:10px 12px;border:1px solid var(--bd2);border-radius:12px;background:var(--s2);color:var(--tx);margin:8px 0}' +
+  '[dir=rtl] .sc-rev{right:auto;left:10px}[dir=rtl] .it .r{text-align:left}[dir=rtl] .pd dd,[dir=rtl] pre,[dir=rtl] .sc-code{direction:ltr;text-align:left}' +
   '@media print{body{background:#fff;color:#000}.tb,.hero2,.btn,.tbtn{display:none!important}body.pinv .card:not(.invoice){display:none}.card{box-shadow:none;border:0}}' +
   '@media(max-width:560px){.w{padding:12px 12px 60px}.hero2 h1{font-size:1.45rem}.card{padding:14px;border-radius:18px}.pd{grid-template-columns:1fr}.pd dd{margin-bottom:6px}}';
 function shellPage(storeName) {
@@ -1192,7 +1215,11 @@ async function adminProduct(req, env) {
   const id = String(p.id);
   const variants = (Array.isArray(p.variants) ? p.variants : []).map(v => ({ name: String(v.name || ''), full: String(v.full || '') })).filter(v => v.full);
   await env.ORDERS.put('prod:' + id, J({ guide: String(p.guide || '').slice(0, 30000), variants, fileIds: cleanFiles(p.files).map(f => ({ id: f.id })) }));
-  if (p.type === 'digital') await env.ORDERS.put('stock:' + id, J((Array.isArray(p.stock) ? p.stock : []).map(String).filter(Boolean)));
+  if (p.type === 'digital') {
+    const stock = (Array.isArray(p.stock) ? p.stock : []).map(String).filter(Boolean);
+    await env.ORDERS.put('stock:' + id, J(stock)); extraMem.v = null;
+    if (stock.length > (Number(await env.ORDERS.get('used:' + id)) || 0)) bg(env, restock(env, id));   // tell the people who were waiting
+  }
   return json(env, { ok: true, id });
 }
 function cleanSup(x) {
@@ -1256,6 +1283,7 @@ async function sweep(env) {
   const orders = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
   let n = 0;
   for (const o of orders) { if (o.status === 'pending' && n < 10) { n++; try { await checkOrder(env, o); } catch (e) { /* next time */ } } else if (o.status === 'paid' && n < 10) { try { const before = o.fulfil && Object.values(o.fulfil).some(f => f.state === 'wait'); if (before) { n++; await ensureFulfilled(env, o); } } catch (e) { /* next time */ } } }
+  await sweepCarts(env).catch(() => {});
   if (!binanceOn(env)) return;
   const probe = { createdAt: Date.now() - 2 * 3600000 }, found = [];
   try { for (const t of await bnPayList(env, probe)) { const a = Number(t.amount), cur = String(t.currency || ''); if (a > 0 && cur === 'USDT') found.push({ ref: 'bp:' + (t.transactionId || t.orderId || t.transactionTime), amt: a, kind: 'Binance Pay' }); } } catch (e) { /* diagnostics show it */ }
@@ -1339,6 +1367,166 @@ async function adminCustomerAct(req, env) {
   return json(env, { ok: true });
 }
 
+/* ---------------- shop extras: delivery-time stat, reviews, back-in-stock alerts, abandoned-cart email ---------------- */
+async function featCfg(env) {
+  const c = await env.ORDERS.get('feat:cfg', 'json').catch(() => null) || {};
+  return { cart: c.cart !== false, reviews: c.reviews !== false, notify: c.notify !== false };
+}
+// real delivery time: seconds between "payment confirmed" and "everything delivered", kept for the last 50 orders
+async function dlRecord(env, o) {
+  if (o.dlRec || !o.paidAt) return; o.dlRec = true;
+  const done = Object.values(o.fulfil || {}).reduce((m, f) => Math.max(m, f.doneAt || 0), 0);
+  const sec = Math.min(3600, Math.max(0, Math.round(((done || Date.now()) - o.paidAt) / 1000)));
+  try { const s = await env.ORDERS.get('stat:dl', 'json') || { r: [] }; s.r = (s.r || []).concat(sec).slice(-50); await env.ORDERS.put('stat:dl', J(s)); } catch (e) { /* a statistic: never block */ }
+}
+const extraMem = { t: 0, v: null };
+async function shopExtras(env, cat) {
+  if (extraMem.v && Date.now() - extraMem.t < 60000) return extraMem.v;
+  const out = {};
+  try {
+    const s = await env.ORDERS.get('stat:dl', 'json'), r = ((s && s.r) || []).slice().sort((a, b) => a - b);
+    if (r.length >= 5) out.dl = { sec: r[Math.floor(r.length / 2)], n: r.length };
+  } catch (e) { /* none yet */ }
+  const f = await featCfg(env);
+  if (f.reviews) { try { const p = await env.ORDERS.get('rev:pub', 'json'); if (p && p.count) out.rv = { avg: p.avg, count: p.count }; } catch (e) { /* none yet */ } }
+  if (f.notify) {
+    const oos = [];
+    for (const id of Object.keys((cat && cat.products) || {})) {
+      const p = cat.products[id]; if (p.type !== 'digital' || p.supplier || p.published === false) continue;
+      if ((p.stockN || 0) - (Number(await env.ORDERS.get('used:' + id)) || 0) <= 0) oos.push(id);
+      if (oos.length >= 60) break;
+    }
+    if (oos.length) out.oos = oos;
+  }
+  out.cart = f.cart && mailOn(env);
+  extraMem.t = Date.now(); extraMem.v = out;
+  return out;
+}
+
+/* e-mails written in the customer's language (English or Arabic) */
+const MT = {
+  en: { cartSub: 'You left something in your cart', cartH: 'Still thinking it over?', cartP: 'Your cart is saved. Complete your order in a minute:', cartBtn: 'Back to my cart', total: 'Total', stop: 'Do not want these reminders?', stopLink: 'Unsubscribe',
+    stockSub: 'Back in stock', stockH: 'It is back!', stockP: 'You asked us to tell you when this item is available again:', stockBtn: 'Get it now', foot: 'You are receiving this because you asked for it on our shop.' },
+  ar: { cartSub: 'لقد نسيت شيئاً في سلتك', cartH: 'هل ما زلت تفكر؟', cartP: 'سلتك محفوظة. أكمل طلبك خلال دقيقة:', cartBtn: 'العودة إلى سلتي', total: 'المجموع', stop: 'لا تريد هذه التذكيرات؟', stopLink: 'إلغاء الاشتراك',
+    stockSub: 'عاد إلى المخزون', stockH: 'لقد عاد!', stockP: 'طلبت أن نخبرك عندما يتوفر هذا المنتج من جديد:', stockBtn: 'احصل عليه الآن', foot: 'تصلك هذه الرسالة لأنك طلبتها في متجرنا.' }
+};
+const mt = (l, k) => (MT[l] || MT.en)[k];
+function mailShell(store, lang, head, body, btn, url, foot) {
+  const rtl = lang === 'ar';
+  return '<div dir="' + (rtl ? 'rtl' : 'ltr') + '" style="background:#f3f7ef;padding:24px 12px;font-family:Arial,Helvetica,sans-serif"><div style="max-width:560px;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;border:1px solid #dfe8da;text-align:' + (rtl ? 'right' : 'left') + '">' +
+    '<div style="background:#3d9a0e;color:#fff;padding:22px 26px"><div style="font-size:13px;opacity:.9">' + esc(store || 'Geostore') + '</div><div style="font-size:24px;font-weight:800;margin-top:4px">' + esc(head) + '</div></div>' +
+    '<div style="padding:22px 26px;color:#0e1a0b;font-size:15px">' + body + '<p style="margin:20px 0"><a href="' + esc(url) + '" style="display:inline-block;background:#3d9a0e;color:#fff;text-decoration:none;font-weight:700;padding:14px 26px;border-radius:999px">' + esc(btn) + '</a></p>' +
+    '<p style="margin:18px 0 0;font-size:12.5px;color:#6a7864">' + foot + '</p></div></div></div>';
+}
+const siteOk = s => /^https:\/\/[A-Za-z0-9.-]{3,100}(:\d{2,5})?$/.test(String(s || '')) ? String(s) : '';
+const langOf = l => l === 'ar' ? 'ar' : 'en';
+const mailSecret = env => String(env.SESSION_SECRET || env.ADMIN_TOKEN || '');
+
+/* reviews */
+async function rebuildReviews(env) {
+  const ids = ((await env.ORDERS.get('ridx', 'json')) || []).slice(-100).reverse();
+  const all = (await Promise.all(ids.map(id => env.ORDERS.get('rev:' + id, 'json')))).filter(r => r && r.st === 'ok');
+  const count = all.length, avg = count ? Math.round(all.reduce((a, r) => a + r.r, 0) / count * 10) / 10 : 0;
+  await env.ORDERS.put('rev:pub', J({ avg, count, list: all.slice(0, 30).map(r => ({ n: r.name, r: r.r, x: r.text, t: r.t, i: r.item })) }));
+  extraMem.v = null;
+}
+async function submitReview(req, env) {
+  if (tooMany(ipHits, 'rv|' + (req.headers.get('cf-connecting-ip') || 'x'), 6, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
+  const b = await req.json().catch(() => null) || {};
+  if (!(await featCfg(env)).reviews) return fail(env, 'Reviews are switched off', 403);
+  const id = String(b.id || ''); if (!/^[a-f0-9]{32}$/.test(id)) return fail(env, 'Order not found', 404);
+  const o = await env.ORDERS.get('order:' + id, 'json');
+  if (!o || !safeEqual(String(b.k || ''), o.key) || o.status !== 'paid') return fail(env, 'Order not found', 404);
+  const rating = Math.round(Number(b.rating)); if (!(rating >= 1 && rating <= 5)) return fail(env, 'Please choose 1 to 5 stars');
+  if (await env.ORDERS.get('rev:' + id, 'text')) return fail(env, 'You already reviewed this order. Thank you!', 409);
+  const rv = { id, r: rating, text: String(b.text || '').trim().slice(0, 600), name: String(b.name || '').trim().slice(0, 40) || 'Customer', t: Date.now(), st: 'new', item: orderTitle(o).slice(0, 80) };
+  await env.ORDERS.put('rev:' + id, J(rv)); await pushIndex(env, 'ridx', id, 500);
+  notify(env, '⭐ <b>New review</b> (' + '★'.repeat(rating) + ')\n' + esc(rv.name) + ': ' + esc(rv.text.slice(0, 200)) + '\nApprove it in the dashboard → Customers → Reviews.');
+  return json(env, { ok: true });
+}
+async function adminReviews(env) {
+  const ids = ((await env.ORDERS.get('ridx', 'json')) || []).slice(-100).reverse();
+  return json(env, { reviews: (await Promise.all(ids.map(id => env.ORDERS.get('rev:' + id, 'json')))).filter(Boolean) });
+}
+async function adminReviewAct(req, env) {
+  const b = await req.json().catch(() => ({})), id = String(b.id || ''), k = 'rev:' + id;
+  const rv = /^[a-f0-9]{32}$/.test(id) && await env.ORDERS.get(k, 'json'); if (!rv) return fail(env, 'Review not found', 404);
+  if (b.action === 'approve' || b.action === 'hide') { rv.st = b.action === 'approve' ? 'ok' : 'hidden'; await env.ORDERS.put(k, J(rv)); }
+  else if (b.action === 'delete') { await env.ORDERS.delete(k); await env.ORDERS.put('ridx', J(((await env.ORDERS.get('ridx', 'json')) || []).filter(x => x !== id))); }
+  else return fail(env, 'Unknown action');
+  await rebuildReviews(env);
+  return json(env, { ok: true });
+}
+
+/* "notify me" when a sold-out item is back */
+async function notifyMe(req, env) {
+  if (tooMany(ipHits, 'nm|' + (req.headers.get('cf-connecting-ip') || 'x'), 8, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
+  const b = await req.json().catch(() => null) || {}, pid = String(b.pid || ''), email = String(b.email || '').trim().toLowerCase();
+  if (!validEmail(email)) return fail(env, 'Please enter a valid email address');
+  const cat = await getCatalog(env), p = cat && cat.products && cat.products[pid];
+  if (!p || p.type !== 'digital' || p.supplier) return fail(env, 'This item cannot be watched', 400);
+  const k = 'nm:' + pid, list = await env.ORDERS.get(k, 'json') || [];
+  if (!list.some(x => x.e === email)) { list.push({ e: email, s: siteOk(b.site), l: langOf(b.lang) }); await env.ORDERS.put(k, J(list.slice(-300))); }
+  return json(env, { ok: true });
+}
+async function restock(env, pid) {
+  if (!mailOn(env) || !(await featCfg(env)).notify) return;
+  const k = 'nm:' + pid, list = await env.ORDERS.get(k, 'json'); if (!list || !list.length) return;
+  const cat = await getCatalog(env), p = cat && cat.products && cat.products[pid]; if (!p) return;
+  const now = list.slice(0, 40), rest = list.slice(40);
+  if (rest.length) await env.ORDERS.put(k, J(rest)); else await env.ORDERS.delete(k);
+  for (const w of now) {
+    if (!w.s) continue;
+    try { await sendMail(env, w.e, mt(w.l, 'stockSub') + ' — ' + p.title, mailShell(cat.storeName, w.l, mt(w.l, 'stockH'), '<p style="margin:0 0 10px">' + mt(w.l, 'stockP') + '</p><p style="font-weight:700;font-size:17px;margin:0">' + esc(p.title) + '</p>', mt(w.l, 'stockBtn'), w.s + '/', mt(w.l, 'foot'))); } catch (e) { /* one bad address must not stop the rest */ }
+  }
+}
+
+/* abandoned cart: one reminder per customer, only if they did not order, with a working unsubscribe link */
+async function saveCart(req, env) {
+  const ip = req.headers.get('cf-connecting-ip') || 'x';
+  if (tooMany(ipHits, 'cart|' + ip, 10, 10 * 60000)) return fail(env, 'Too many attempts', 429);
+  const b = await req.json().catch(() => null) || {}, email = String(b.email || '').trim().toLowerCase();
+  if (!validEmail(email) || !mailOn(env) || !(await featCfg(env)).cart) return json(env, { ok: true, saved: false });
+  const site = siteOk(b.site), cat = await getCatalog(env); if (!site || !cat) return json(env, { ok: true, saved: false });
+  const items = [];
+  for (const it of (Array.isArray(b.items) ? b.items : []).slice(0, 8)) {
+    const id = String((it && it.id) || ''), p = cat.products && cat.products[id];
+    if (p) items.push({ t: String(p.title).slice(0, 70), p: Number(p.price) || 0 });
+    else if (id === 'ALL' && cat.allAccess && cat.allAccess.enabled) items.push({ t: String(cat.allAccess.title).slice(0, 70), p: Number(cat.allAccess.price) || 0 });
+    else if (/^(g|t):/.test(id) || /gift|topup/.test(id)) items.push({ t: String(it.title || 'Gift card').replace(/[<>]/g, '').slice(0, 60), p: Math.min(Number(it.price) || 0, 1000) });
+  }
+  if (!items.length) return json(env, { ok: true, saved: false });
+  const k = 'cart:' + email, old = await env.ORDERS.get(k, 'json');
+  if (await env.ORDERS.get('nocart:' + email, 'text')) return json(env, { ok: true, saved: false });
+  const c = { t: Date.now(), items, usd: round2(items.reduce((a, i) => a + i.p, 0)), site, base: new URL(req.url).origin, l: langOf(b.lang), sent: old ? !!old.sent : false };
+  await env.ORDERS.put(k, J(c), { expirationTtl: 7 * 86400 });
+  if (!old) await pushIndex(env, 'kidx', email, 300);
+  return json(env, { ok: true, saved: true });
+}
+async function cartStop(env, url) {
+  const e = String(url.searchParams.get('e') || '').toLowerCase(), s = String(url.searchParams.get('s') || '');
+  if (!validEmail(e) || !mailSecret(env) || !safeEqual(s, (await hmacHex(mailSecret(env), 'cart|' + e)).slice(0, 24))) return new Response('Link not valid', { status: 400 });
+  await env.ORDERS.put('nocart:' + e, '1', { expirationTtl: 365 * 86400 }); await env.ORDERS.delete('cart:' + e);
+  return new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:Arial;text-align:center;padding:60px 20px"><h2>✓ Done / تم</h2><p>No more reminders. / لن تصلك تذكيرات بعد الآن.</p></body>', { headers: { 'content-type': 'text/html; charset=utf-8', 'x-robots-tag': 'noindex' } });
+}
+async function sweepCarts(env) {
+  if (!mailOn(env) || !mailSecret(env) || !(await featCfg(env)).cart) return;
+  const cat = await getCatalog(env), emails = ((await env.ORDERS.get('kidx', 'json')) || []).slice(-25);
+  let sent = 0;
+  for (const e of emails) {
+    if (sent >= 5) break;
+    const c = await env.ORDERS.get('cart:' + e, 'json'); if (!c || c.sent) continue;
+    const age = Date.now() - c.t; if (age < 3600000 || age > 48 * 3600000) continue;
+    c.sent = true; await env.ORDERS.put('cart:' + e, J(c), { expirationTtl: 7 * 86400 }); sent++;
+    const a = await env.ORDERS.get('acct:' + e, 'json');                     // ordered since? then stay quiet
+    if (a) { const last = (await Promise.all((a.orders || []).slice(-3).map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean); if (last.some(o => o.createdAt > c.t)) continue; }
+    const stop = (c.base || env.__base || '') + '/api/cart/stop?e=' + encodeURIComponent(e) + '&s=' + (await hmacHex(mailSecret(env), 'cart|' + e)).slice(0, 24);
+    const rows = c.items.map(i => '<tr><td style="padding:7px 0;border-bottom:1px solid #e6ece4">' + esc(i.t) + '</td><td style="padding:7px 0;border-bottom:1px solid #e6ece4;text-align:' + (c.l === 'ar' ? 'left' : 'right') + ';font-weight:600">$' + round2(i.p) + '</td></tr>').join('');
+    const body = '<p style="margin:0 0 12px">' + mt(c.l, 'cartP') + '</p><table style="width:100%;border-collapse:collapse;font-size:14px">' + rows + '<tr><td style="padding:9px 0;font-weight:800">' + mt(c.l, 'total') + '</td><td style="padding:9px 0;text-align:' + (c.l === 'ar' ? 'left' : 'right') + ';font-weight:800">$' + c.usd + '</td></tr></table>';
+    try { await sendMail(env, e, mt(c.l, 'cartSub'), mailShell(cat && cat.storeName, c.l, mt(c.l, 'cartH'), body, mt(c.l, 'cartBtn'), c.site + '/', mt(c.l, 'foot') + ' ' + mt(c.l, 'stop') + ' <a href="' + esc(stop) + '" style="color:#2f7d09">' + mt(c.l, 'stopLink') + '</a>')); } catch (er) { /* once is enough */ }
+  }
+}
+
 /* ---------------- router ---------------- */
 async function route(req, env) {
   const url = new URL(req.url);
@@ -1348,15 +1536,15 @@ async function route(req, env) {
     if (path === '/api/health') {
       let wallet = !!(env.WALLET || env.WALLET_BTC);
       if (env.ORDERS && !wallet) { try { const c = await getCatalog(env); wallet = !!(c && c.wallets && (c.wallets.usdt_trc20 || c.wallets.btc)); } catch (e) { /* ignore */ } }
-      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 21, mail: mailOn(env), binance: binanceOn(env), relay: !!env.BINANCE_RELAY });
+      return json(env, { ok: true, wallet, admin: !!env.ADMIN_TOKEN, kv: !!env.ORDERS, supplier: !!env.FAZER_KEY, telegram: !!env.TELEGRAM_BOT_TOKEN, version: 22, mail: mailOn(env), binance: binanceOn(env), relay: !!env.BINANCE_RELAY });
     }
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
     if (path === '/api/config' && req.method === 'GET') {
       const cat = await getCatalog(env);
       const prices = {}; if (cat && cat.products) Object.keys(cat.products).forEach(id => { const q = cat.products[id]; prices[id] = { price: q.price, stylePrice: q.stylePrice || 0 }; });
-      const pc = await ptsCfg(env);
-      return json(env, { pts: pc.on ? pc : { on: false }, storeName: cat ? cat.storeName : '', prices, allAccess: cat && cat.allAccess ? { price: cat.allAccess.price } : null, accounts: !!(env.ADMIN_TOKEN || env.SESSION_SECRET),
+      const pc = await ptsCfg(env), ex = await shopExtras(env, cat);
+      return json(env, { ex, pts: pc.on ? pc : { on: false }, storeName: cat ? cat.storeName : '', prices, allAccess: cat && cat.allAccess ? { price: cat.allAccess.price } : null, accounts: !!(env.ADMIN_TOKEN || env.SESSION_SECRET),
         coins: Object.keys(COINS).filter(c => walletFor(env, cat, c)).map(c => ({ id: c, name: COINS[c].name, network: COINS[c].network, kind: COINS[c].kind || (c === 'btc' ? 'btc' : 'tron'), minutes: COINS[c].minutes, binance: !!(cat && cat.binanceAddr && cat.binanceAddr[c]) })), binanceAuto: binanceOn(env), chat: !!(env.TELEGRAM_BOT_TOKEN && (await tgOwner(env))) });
     }
     let pm = path.match(/^\/api\/preview\/([A-Za-z0-9_-]{1,64})\/(\d{1,2})$/);
@@ -1368,6 +1556,11 @@ async function route(req, env) {
     if (path === '/api/chat/poll' && req.method === 'GET') return await chatPoll(req, env, url);
     let tm = path.match(/^\/api\/telegram\/([A-Za-z0-9]{16,64})$/);
     if (tm && req.method === 'POST') return await telegramHook(req, env, tm[1]);
+    if (path === '/api/reviews' && req.method === 'GET') { const p = await env.ORDERS.get('rev:pub', 'text'); return new Response(p || '{"avg":0,"count":0,"list":[]}', { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=60', 'access-control-allow-origin': '*' } }); }
+    if (path === '/api/review' && req.method === 'POST') return await submitReview(req, env);
+    if (path === '/api/notify-me' && req.method === 'POST') return await notifyMe(req, env);
+    if (path === '/api/cart' && req.method === 'POST') return await saveCart(req, env);
+    if (path === '/api/cart/stop' && req.method === 'GET') return await cartStop(env, url);
     if (path === '/api/order' && req.method === 'POST') return await createOrder(req, env, apiBase);
     let cm = path.match(/^\/api\/order\/([a-f0-9]{32})\/claim$/);
     if (cm && req.method === 'POST') {
@@ -1398,6 +1591,10 @@ async function route(req, env) {
       if (path === '/api/admin/index' && req.method === 'POST') return await adminIndex(req, env);
       if (path === '/api/admin/ping') return json(env, { ok: true });
       if (path === '/api/admin/orders' && req.method === 'GET') return await adminOrders(env);
+      if (path === '/api/admin/reviews' && req.method === 'GET') return await adminReviews(env);
+      if (path === '/api/admin/review' && req.method === 'POST') return await adminReviewAct(req, env);
+      if (path === '/api/admin/features' && req.method === 'GET') return json(env, await featCfg(env));
+      if (path === '/api/admin/features' && req.method === 'POST') { const b = await req.json().catch(() => ({})); await env.ORDERS.put('feat:cfg', J({ cart: b.cart !== false, reviews: b.reviews !== false, notify: b.notify !== false })); extraMem.v = null; return json(env, await featCfg(env)); }
       if (path === '/api/admin/points' && req.method === 'GET') return json(env, await ptsCfg(env));
       if (path === '/api/admin/points' && req.method === 'POST') {
         const b = await req.json().catch(() => ({})); await env.ORDERS.put('pts:cfg', J(Object.assign(await ptsCfg(env), b, { on: !!b.on })));

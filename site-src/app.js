@@ -281,6 +281,7 @@
     return '<button type="button" class="brand-tile" data-topup="' + esc(t.id) + '"><span class="logo-box">' + logoHTML(t.logo, t.name) + '</span><b>' + esc(t.name) + '</b><small>Game top-up</small></button>';
   }
   function digitalTile(p){
+    if (isOos(p.id)) return '<button type="button" class="brand-tile oos" data-nm="' + esc(p.id) + '"><span class="logo-box">' + (safeUrl(p.icon) ? logoHTML(p.icon, p.title) : '<span style="font-size:2rem">' + esc(p.icon || '🎁') + '</span>') + '</span><b>' + esc(p.title) + '</b><small>Sold out · 🔔 notify me</small></button>';
     return '<button type="button" class="brand-tile" data-dbuy="' + esc(p.id) + '"><span class="logo-box">' + (safeUrl(p.icon) ? logoHTML(p.icon, p.title) : '<span style="font-size:2rem">' + esc(p.icon || '🎁') + '</span>') + '</span><b>' + esc(p.title) + '</b><small>' + money(p.price) + ' · tap to add</small></button>';
   }
   function renderGift(){
@@ -305,7 +306,19 @@
     var b = e.target.closest('[data-brand-id]'), d = e.target.closest('[data-dbuy]');
     if (b){ var br = BRANDS.filter(function(x){ return String(x.id || x.name) === b.dataset.brandId; })[0]; if (br) openGift(br, b); }
     if (d){ addToCart(d.dataset.dbuy, 'all'); openCart(d); }
+    var nm = e.target.closest('[data-nm]'); if (nm) openNotify(nm.dataset.nm, nm);
   }
+  function isOos(id){ return !!(CFG.ex && CFG.ex.oos && CFG.ex.oos.indexOf(id) > -1); }
+  function openNotify(id, from){
+    var p = byId(id); if (!p) return;
+    $('nmItem').textContent = p.title; $('nmForm').dataset.pid = id; $('nmMsg').textContent = ''; $('nmEmail').value = me ? me.email : '';
+    openModal($('nmM'), from);
+  }
+  $('nmForm').addEventListener('submit', function(e){
+    e.preventDefault(); var m = $('nmMsg'); m.classList.remove('err');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test($('nmEmail').value.trim())){ m.classList.add('err'); m.textContent = 'Please enter a valid email address.'; return; }
+    apiCall('/api/notify-me', {pid:this.dataset.pid, email:$('nmEmail').value.trim(), site:location.origin, lang:LANGNOW()}).then(function(){ closeModal($('nmM')); toast('Done — we will email you when it is back'); }).catch(function(er){ m.classList.add('err'); m.textContent = er.message; });
+  });
   $('brands').addEventListener('click', clickTiles); $('dgrid').addEventListener('click', clickTiles);
 
   /* ---------------- full catalogue: search + filters ---------------- */
@@ -639,7 +652,26 @@
   };
   if (API){
     coins = [{id:'usdt_trc20', name:'USDT (TRC20)', network:'TRON (TRC20)', kind:'tron'}];
-    fetch(API + '/api/config').then(function(r){ return r.json(); }).then(function(c){ CFG = c || {}; if (typeof chatInit === 'function') chatInit(); if (c && c.coins && c.coins.length){ coins = c.coins; if (!coins.some(function(x){ return x.id === coinSel; })) coinSel = null; if (view === 'method') renderMethods(); } livePrices(c); }).catch(function(){});
+    fetch(API + '/api/config').then(function(r){ return r.json(); }).then(function(c){ CFG = c || {}; try { exInit(); } catch(x) {} if (typeof chatInit === 'function') chatInit(); if (c && c.coins && c.coins.length){ coins = c.coins; if (!coins.some(function(x){ return x.id === coinSel; })) coinSel = null; if (view === 'method') renderMethods(); } livePrices(c); }).catch(function(){});
+  }
+  /* trust extras: real delivery time, real reviews (only shown when they exist) */
+  function LANGNOW(){ return document.documentElement.lang === 'ar' ? 'ar' : 'en'; }
+  function stars(n){ var r = Math.round(n), s = ''; for (var i = 1; i <= 5; i++) s += i <= r ? '★' : '☆'; return s; }
+  function exInit(){
+    var ex = CFG.ex || {};
+    if (ex.dl && ex.dl.n >= 5){
+      var s = ex.dl.sec, t = s < 60 ? 'Delivered in under a minute' : 'Delivered in about ' + Math.max(1, Math.round(s / 60)) + ' min';
+      var d = $('dlStat'); if (d) d.lastChild.textContent = t + ' (average)';
+    }
+    if (ex.oos && ex.oos.length && typeof renderGift === 'function'){ try { renderGift(); } catch(x) {} }
+    if (ex.rv && ex.rv.count){
+      fetch(API + '/api/reviews').then(function(r){ return r.json(); }).then(function(j){
+        if (!j || !j.count) return;
+        $('rvSum').innerHTML = '<b class="stars">' + stars(j.avg) + '</b> <b>' + j.avg.toFixed(1) + '</b> / 5 · ' + j.count + (j.count === 1 ? ' review' : ' reviews') + ' from verified buyers';
+        $('rvList').innerHTML = j.list.map(function(r){ return '<figure class="rcard"><div class="stars">' + stars(r.r) + '</div>' + (r.x ? '<blockquote>' + esc(r.x) + '</blockquote>' : '') + '<figcaption><b>' + esc(r.n) + '</b> · ' + esc(r.i || '') + '<span class="vb">✓ Verified purchase</span></figcaption></figure>'; }).join('');
+        $('revSec').hidden = false;
+      }).catch(function(){});
+    }
   }
   function stopTimers(){ clearInterval(poll); clearInterval(tick); poll = tick = null; }
   onClose.cartM = stopTimers;
@@ -652,6 +684,7 @@
     if (!L.length){ b.innerHTML = '<div class="empty" style="padding:30px 0">Your cart is empty.<br>Pick a gift card, a website or a code to get started.</div>'; saveCart(); return; }
     b.innerHTML = L.map(function(l){ return '<div class="cl"><span>' + esc(l.title) + '</span>' + (l.qty && !l.noqty ? '<span class="qty"><button type="button" data-cqd="' + esc(l.id) + '" aria-label="Fewer">−</button><b>' + l.qty + '</b><button type="button" data-cqu="' + esc(l.id) + '" aria-label="More">+</button></span>' : '<span></span>') + '<b>' + money(l.price) + '</b><button type="button" class="rm" data-rm="' + esc(l.id) + '" aria-label="Remove">×</button></div>'; }).join('') +
       '<div class="total"><span>Total</span><span>' + money(total) + '</span></div>' + ptsHint(total) +
+      (CFG.ex && CFG.ex.cart ? '<p class="note" style="margin:0 0 8px">We will send you one reminder email if you leave without paying.</p>' : '') +
       (me ? '<p class="note" style="margin:0 0 12px">Signed in as <b>' + esc(me.email) + '</b> — this order is saved to your account.</p>' : '<div class="field"><label for="coEmail">Your email (your order is saved to it)</label><input id="coEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"></div>') +
       '<button type="button" class="btn btn-primary btn-block" id="coNext">' + (API ? 'Continue to payment' : "I've paid — confirm order") + '</button><p class="msg" id="coMsg"></p>' +
       (me ? '' : '<p class="note">Have an account? <a href="#" class="link" id="cartSignin">Sign in</a> to keep your orders together.</p>');
@@ -680,7 +713,7 @@
       }).join('') + '</div>' +
       '<div id="ptsWrap">' + ptsBox(total) + '</div><div id="mInfo"></div><div id="fromBox"></div>' +
       '<button type="button" class="btn-pay" id="coPay"><span class="bp-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Pay ' + money(total) + '</span><span class="bp-r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>' +
-      '<p class="trust-line">🔒 Secure crypto payment · Your code is delivered automatically</p><p class="msg" id="coMsg"></p><button type="button" class="back" style="margin-top:6px" data-tocart>← Back to cart</button>';
+      '<p class="trust-line">🔒 Crypto only · we never see card details · private order link</p><p class="msg" id="coMsg"></p><button type="button" class="back" style="margin-top:6px" data-tocart>← Back to cart</button>';
     view = 'method'; drawInfo(); drawFrom(); ptsRefresh();
     if (ptsCfg() && me && !renderMethods.fresh){ renderMethods.fresh = 1; apiCall('/api/account/me').then(function(r){ me = r.profile; store('geostore_me', me); if (r.pts) CFG.pts = r.pts; if (view === 'method') renderMethods(); }).catch(function(){}); }
   }
@@ -739,6 +772,7 @@
     var email = me ? me.email : (($('coEmail') || {}).value || '').trim(), msg = $('coMsg');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ msg.classList.add('err'); msg.textContent = 'Please enter a valid email address.'; return; }
     pendingEmail = email; msg.classList.remove('err');
+    if (API && CFG.ex && CFG.ex.cart) apiCall('/api/cart', {email:email, site:location.origin, lang:LANGNOW(), items:L.map(function(l){ return {id:l.id, title:l.title, price:l.price}; })}).catch(function(){});
     if (!API){
       var body = 'New order\r\n' + L.map(function(l){ return '- ' + l.title + ': ' + money(l.price); }).join('\r\n') + '\r\nTotal: ' + money(totalOf(L)) + '\r\nCustomer email: ' + email;
       window.location.href = 'mailto:' + (S.email || '') + '?subject=' + encodeURIComponent('Order: ' + L[0].title + (L.length > 1 ? ' +' + (L.length - 1) : '')) + '&body=' + encodeURIComponent(body);
@@ -750,7 +784,7 @@
   }
   function createOrder(){
     var msg = $('coMsg'), btn = $('coPay'); if (btn){ btn.disabled = true; btn.classList.add('busy'); } msg.classList.remove('err'); msg.textContent = 'Creating your order…';
-    apiCall('/api/order', {email: pendingEmail, usePoints: usePts ? ptsUsable(totalOf(lines())) : 0, coin: coinSel || 'usdt_trc20', fromBinance: !!(fromBinance && selCoin().binance), items: cart.map(function(i){ return i.f ? {id:i.id, v:i.v, q:1, f:i.f} : {id:i.id, v:i.v, q:i.q || 1}; })})
+    apiCall('/api/order', {email: pendingEmail, lang: LANGNOW(), usePoints: usePts ? ptsUsable(totalOf(lines())) : 0, coin: coinSel || 'usdt_trc20', fromBinance: !!(fromBinance && selCoin().binance), items: cart.map(function(i){ return i.f ? {id:i.id, v:i.v, q:1, f:i.f} : {id:i.id, v:i.v, q:i.q || 1}; })})
       .then(function(o){ rememberOrder(o.id); cart = []; saveCart(); usePts = false; renderMethods.fresh = 0; if (me && o.ptsUsed) { me.points = Math.max(0, (+me.points || 0) - o.ptsUsed); store('geostore_me', me); } showPay(o); })
       .catch(function(er){ if (btn){ btn.disabled = false; btn.classList.remove('busy'); } var m2 = $('coMsg'); if (m2){ m2.classList.add('err'); m2.textContent = er.message || 'Could not create the order. Please try again.'; } });
   }

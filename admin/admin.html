@@ -292,6 +292,9 @@
       <div class="panel tw"><table><thead><tr><th>Joined</th><th>Name</th><th>Email</th><th>Phone</th><th>Country</th><th>Orders</th><th>Points</th><th>Status</th><th></th></tr></thead><tbody id="cBody"></tbody></table>
         <p class="help" id="cMsg">Press Refresh to load your customers.</p><p><button class="btn btn-g btn-s" id="cMore" hidden>Load more</button></p></div>
       <div class="panel" id="cDetail" hidden></div>
+      <div class="panel" id="rvPanel"><div class="bar"><h2 style="margin:0">⭐ Customer reviews</h2><button class="btn btn-g btn-s" id="rvRefresh">↻ Refresh</button></div>
+        <p class="help">Customers can review an order after it is delivered. Nothing appears on your shop until you press Approve — so only real, checked reviews are shown.</p>
+        <div class="tw"><table><thead><tr><th>Date</th><th>Stars</th><th>Customer</th><th>Review</th><th>Status</th><th></th></tr></thead><tbody id="rvBody"></tbody></table></div><p class="help" id="rvMsg">Press Refresh to load reviews.</p></div>
     </section>
 
     <!-- SETTINGS -->
@@ -352,6 +355,12 @@
           <div><label for="ptPct">Most of an order points can pay (%)</label><input id="ptPct" type="number" min="0" max="100" step="1"></div>
           <div><label for="ptRed">Smallest number of points a customer can spend</label><input id="ptRed" type="number" min="0" step="1"></div>
           <div class="full"><button type="button" class="btn btn-p btn-s" id="ptSave">Save points settings</button> <span class="help" id="ptMsg" style="margin-left:8px"></span><p class="help" id="ptEx"></p></div></div></div>
+
+        <div class="panel" id="featPanel"><h2>🛍️ Shop extras</h2><p class="help">Switch each helper on or off. They only work when your server is connected (and, for emails, when email receipts are set up).</p><div class="form">
+          <div class="full"><label class="chk"><input type="checkbox" id="ftRev"> Customer reviews (shown after you approve them)</label></div>
+          <div class="full"><label class="chk"><input type="checkbox" id="ftNot"> “Notify me” emails when a sold-out item is back in stock</label></div>
+          <div class="full"><label class="chk"><input type="checkbox" id="ftCart"> One reminder email to customers who leave their cart without paying</label></div>
+          <div class="full"><button type="button" class="btn btn-p btn-s" id="ftSave">Save</button> <span class="help" id="ftMsg" style="margin-left:8px"></span></div></div></div>
 
         <div class="panel"><h2>All-Access pass</h2><div class="form">
           <div class="full"><label class="chk"><input type="checkbox" id="aaOn"> Sell an All-Access pass (one payment → every code and website)</label></div>
@@ -844,8 +853,16 @@
     $('ptMsg').textContent = 'Saving…';
     api('/api/admin/points', {method:'POST', body: JSON.stringify(b)}).then(function(){ $('ptMsg').textContent = '✅ Saved — live on your shop now'; loadPts(true); }).catch(function(e){ $('ptMsg').textContent = '❌ ' + e.message; });
   });
+  function loadFeat(){
+    if (!(base() && token())) return;
+    api('/api/admin/features').then(function(c){ $('ftRev').checked = c.reviews; $('ftNot').checked = c.notify; $('ftCart').checked = c.cart; }).catch(function(){});
+  }
+  $('ftSave').addEventListener('click', function(){
+    $('ftMsg').textContent = 'Saving…';
+    api('/api/admin/features', {method:'POST', body: JSON.stringify({reviews:$('ftRev').checked, notify:$('ftNot').checked, cart:$('ftCart').checked})}).then(function(){ $('ftMsg').textContent = '✅ Saved'; }).catch(function(e){ $('ftMsg').textContent = '❌ ' + e.message; });
+  });
   function renderSettings(){
-    if (base() && token()) { tgState(); loadPts(); }
+    if (base() && token()) { tgState(); loadPts(); loadFeat(); }
     var s = state.settings, aa = s.allAccess, w = s.autoWallets || {};
     $('sWalU').value = w.usdt_trc20||''; $('sWalE').value = w.usdt_bep20||''; var ba = s.binanceAddr || {}; $('sBinU').checked = !!ba.usdt_trc20; $('sBinE').checked = !!ba.usdt_bep20; $('sWa').value = s.whatsapp || ''; var so = s.social || {}; $$('[data-soc]').forEach(function(i){ i.value = so[i.dataset.soc] || ''; }); $('sFeat').value = s.featured || ''; $('sTgU').value = s.telegram || ''; $('sWalB').value = w.btc||''; $('sWalP').value = w.binancepay||'';
     $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
@@ -1017,7 +1034,24 @@
     $('cMsg').textContent = custs.length + ' of ' + custTotal + ' customer(s) loaded' + (q ? ' · ' + list.length + ' match your search' : '');
     $('cMore').hidden = custNext == null;
   }
-  $('cRefresh').addEventListener('click', function(){ $('cDetail').hidden = true; loadCustomers(false); });
+  function loadReviews(){
+    $('rvMsg').textContent = 'Loading…';
+    api('/api/admin/reviews').then(function(r){
+      var L = r.reviews || [];
+      $('rvBody').innerHTML = L.map(function(v){
+        var st = v.st === 'ok' ? '<span class="pill paid">Shown</span>' : v.st === 'hidden' ? '<span class="pill off">Hidden</span>' : '<span class="pill pending">New</span>';
+        return '<tr><td>'+esc(dstr(v.t))+'</td><td>'+'★'.repeat(v.r)+'☆'.repeat(5-v.r)+'</td><td>'+esc(v.name)+'<div class="help">'+esc(v.item)+'</div></td><td>'+esc(v.text)+'</td><td>'+st+'</td><td style="white-space:nowrap">'+(v.st==='ok'?'':'<button class="btn btn-p btn-s" data-rv="approve" data-id="'+esc(v.id)+'">Approve</button> ')+(v.st==='hidden'?'':'<button class="btn btn-g btn-s" data-rv="hide" data-id="'+esc(v.id)+'">Hide</button> ')+'<button class="btn btn-d btn-s" data-rv="delete" data-id="'+esc(v.id)+'">Delete</button></td></tr>';
+      }).join('') || '<tr><td colspan="6" class="empty">No reviews yet.</td></tr>';
+      $('rvMsg').textContent = L.length + ' review(s)';
+    }).catch(function(e){ $('rvMsg').textContent = '❌ ' + e.message; });
+  }
+  $('rvRefresh').addEventListener('click', loadReviews);
+  $('rvBody').addEventListener('click', function(e){
+    var b = e.target.closest('[data-rv]'); if (!b) return;
+    if (b.dataset.rv === 'delete' && !confirm('Delete this review for good?')) return;
+    api('/api/admin/review', {method:'POST', body: JSON.stringify({id:b.dataset.id, action:b.dataset.rv})}).then(function(){ toast('Done'); loadReviews(); }).catch(function(er){ toast(er.message); });
+  });
+  $('cRefresh').addEventListener('click', function(){ $('cDetail').hidden = true; loadCustomers(false); loadReviews(); });
   $('cMore').addEventListener('click', function(){ loadCustomers(true); });
   $('cSearch').addEventListener('input', renderCustomers);
   $('cCsv').addEventListener('click', function(){

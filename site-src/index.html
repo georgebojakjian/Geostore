@@ -64,7 +64,7 @@
         <h1>Gift cards, game credit &amp; <em>website code.</em></h1>
         <p>Pay with crypto. Get your code in seconds.</p>
         <label class="searchbar" for="q"><svg><use href="#i-search"/></svg><input id="q" type="search" autocomplete="off" placeholder="Search gift cards, websites, code…" aria-label="Search"></label>
-        <div class="trust"><span><svg><use href="#i-bolt"/></svg>Instant delivery</span><span><svg><use href="#i-lock"/></svg>Safe crypto payment</span><span><svg><use href="#i-globe"/></svg>Works worldwide</span></div>
+        <div class="trust"><span id="dlStat"><svg><use href="#i-bolt"/></svg><span>Instant delivery</span></span><span><svg><use href="#i-lock"/></svg>Safe crypto payment</span><span><svg><use href="#i-globe"/></svg>Works worldwide</span></div>
       </div>
     </section>
 
@@ -111,6 +111,26 @@
           <div class="step rv"><i>2</i><b>Pay</b><span>Send the exact crypto amount shown.</span></div>
           <div class="step rv"><i>3</i><b>Confirmed</b><span>We detect your payment automatically.</span></div>
           <div class="step rv"><i>4</i><b>Receive</b><span>Your code appears on a private page and in your account.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="revs" id="revSec" hidden>
+      <div class="wrap">
+        <h2>What customers say</h2>
+        <p class="rv-sum" id="rvSum"></p>
+        <div class="rv-list" id="rvList"></div>
+      </div>
+    </section>
+
+    <section class="safe" id="safe">
+      <div class="wrap">
+        <h2>Safe &amp; private</h2>
+        <div class="safe-grid">
+          <div class="rv"><i>🔒</i><b>Crypto payments only</b><span>We never ask for, see or store card details.</span></div>
+          <div class="rv"><i>🔗</i><b>Private order links</b><span>Your codes open only from your own private link or account.</span></div>
+          <div class="rv"><i>🧾</i><b>An invoice with every order</b><span>Saved on your order page, with the blockchain transaction.</span></div>
+          <div class="rv"><i>🌐</i><b>Secure connection</b><span>The whole shop is served over HTTPS.</span></div>
         </div>
       </div>
     </section>
@@ -219,6 +239,16 @@
       <button class="x" type="button" data-close aria-label="Close">&times;</button>
       <h3 id="acctTitle">Account</h3>
       <div id="acctBody"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="nmM" role="dialog" aria-modal="true" aria-labelledby="nmTitle" aria-hidden="true">
+    <div class="sheet md">
+      <button class="x" type="button" data-close aria-label="Close">&times;</button>
+      <h3 id="nmTitle">Notify me</h3>
+      <p class="note" id="nmItem"></p>
+      <form id="nmForm" novalidate><div class="field"><label for="nmEmail">Your email</label><input id="nmEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"></div>
+      <button class="btn btn-primary btn-block" type="submit">Email me when it is back</button><p class="msg" id="nmMsg"></p></form>
     </div>
   </div>
 
