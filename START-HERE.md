@@ -258,6 +258,30 @@ The **☁ Cloud copy** saves your whole dashboard on your server automatically, 
 4. Be patient: a new site usually takes days to appear and weeks to rank. What helps most: real pages for what people search (“buy iTunes gift card with USDT”), your social links, being mentioned on other sites, and happy customers.
 The shop already has: a title and description, a canonical address, social-share tags, structured data (company, website, FAQ), `robots.txt`, `sitemap.xml`, and Terms / Privacy / Refund / Contact pages.
 
+## Points wallet, reviews, Arabic and the other growth features (new)
+
+**Deploy these (3 steps, same as always):** (1) paste the new `worker/worker.js` into Cloudflare → **Deploy**; (2) open the new `admin/admin.html`; (3) upload the whole `site` folder to Netlify. Open `…/api/health` — it should show `"version":22`.
+
+### ⭐ Points wallet (Dashboard → Settings → “Points wallet”)
+Customers who are signed in earn points on every **paid** order and spend them as a discount at checkout. You control everything, and it saves instantly (no Sync):
+- **Points earned for each $1** — e.g. 10.
+- **Value of 1 point** — e.g. 0.01 means 100 points = $1.
+- **Minimum order to earn** and **maximum order amount that earns** (e.g. min $1, max $500: a $900 order earns on $500 only). 0 = no limit.
+- **Most of an order points can pay** (default 50%, so an order is never free) and **smallest number of points to spend**.
+- **Customers tab → open a customer → “Points”**: see the balance and history, set an exact balance, or add/remove points (with a reason the customer sees).
+Points are added only after the payment is confirmed. If an order that used points expires unpaid, the points are returned automatically. Guests (no account) cannot earn or use points.
+
+### Reviews, delivery time, safety, notify-me, cart reminder
+- **Real reviews:** after an order is delivered, the order page asks for 1–5 stars and a comment. Nothing appears on the shop until you press **Approve** (Customers tab → Customer reviews). Only buyers of a paid order can review, once per order.
+- **“Delivered in X minutes”** is calculated from your real orders (payment confirmed → delivered). It shows only after 5 orders, so it is always true.
+- **Safe & private** section: four statements that are true for your shop (crypto only, no card data, private links, HTTPS).
+- **“Notify me”:** a sold-out manual product shows “🔔 notify me”. When you add stock and Sync, waiting customers get one email (needs email receipts to be set up).
+- **Cart reminder:** one email, one hour after a customer enters their email at checkout and does not pay (never twice, with an unsubscribe link, and not sent if they paid). Needs the 5-minute Cron Trigger.
+- Switch any of these on/off in **Settings → Shop extras**.
+
+### 🌐 Arabic (right-to-left)
+A small **العربية / English** button sits in the header (and on the terms/privacy pages). Arabic is **not** the default; the choice is remembered. In Arabic the whole shop, checkout, account, wallet, the order/delivery page, the receipt and reminder emails and the legal pages are translated and mirrored. Product names you typed in English stay English unless you add an Arabic name: **Settings → Arabic names** (one per line: `English name | الاسم بالعربية`), then publish. To change any Arabic sentence, edit the list in `site-src/i18n-ar.js` and run the build.
+
 ## Dashboard
 The dashboard now has the dark glass look. **Home** shows revenue, paid orders, estimated profit and “needs you” for **Today / 7D / 30D / 1Y**, a performance chart, payment-method split and the latest orders. **Gift cards → Prices** shows what each amount **costs you** at FazerCards, what you sell it for and your profit. The sun/moon button switches to a light dashboard.
 

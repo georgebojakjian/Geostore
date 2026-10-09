@@ -21,3 +21,5 @@
   Cache-Control: public, max-age=86400
 /data.js
   Cache-Control: no-cache
+/i18n-ar.js
+  Cache-Control: public, max-age=3600

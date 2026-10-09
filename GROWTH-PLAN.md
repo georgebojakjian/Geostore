@@ -33,3 +33,7 @@
 - Two-step login on Netlify, Cloudflare, GitHub, Binance, Resend, your email.
 - Read-only Binance key only; rotate keys if a phone or computer is lost.
 - Keep the 5-minute Cron Trigger on.
+
+
+## Done so far (October 2026)
+Real reviews · real "delivered in X minutes" · true safety badges · notify-me for sold-out items · abandoned-cart reminder · Arabic with right-to-left · points wallet with full dashboard control. See START-HERE.md → "Points wallet, reviews, Arabic…".

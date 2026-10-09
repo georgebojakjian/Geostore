@@ -655,6 +655,12 @@
     fetch(API + '/api/config').then(function(r){ return r.json(); }).then(function(c){ CFG = c || {}; try { exInit(); } catch(x) {} if (typeof chatInit === 'function') chatInit(); if (c && c.coins && c.coins.length){ coins = c.coins; if (!coins.some(function(x){ return x.id === coinSel; })) coinSel = null; if (view === 'method') renderMethods(); } livePrices(c); }).catch(function(){});
   }
   /* trust extras: real delivery time, real reviews (only shown when they exist) */
+  (function(){
+    var b = $('langBtn'); if (!b) return;
+    var ar = document.documentElement.lang === 'ar';
+    b.textContent = ar ? 'English' : 'العربية';
+    b.addEventListener('click', function(){ try { localStorage.setItem('geostore_lang', ar ? 'en' : 'ar'); } catch(e) {} location.reload(); });
+  })();
   function LANGNOW(){ return document.documentElement.lang === 'ar' ? 'ar' : 'en'; }
   function stars(n){ var r = Math.round(n), s = ''; for (var i = 1; i <= 5; i++) s += i <= r ? '★' : '☆'; return s; }
   function exInit(){

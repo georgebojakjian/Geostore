@@ -489,3 +489,24 @@ html.shell .chat{bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--
 .safe-grid>div{padding:16px;border-radius:18px;border:1px solid var(--line,rgba(128,128,128,.22));background:var(--surface,transparent)}
 .safe-grid i{font-style:normal;font-size:1.5rem;display:block;margin-bottom:6px}.safe-grid b{display:block;margin-bottom:3px}.safe-grid span{color:var(--muted);font-size:.86rem;line-height:1.45}
 .brand-tile.oos{opacity:.75}.brand-tile.oos small{color:var(--accent2);font-weight:700}
+
+/* language button + right-to-left layout (only used when the visitor picks Arabic) */
+.lang{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--border2);background:var(--surface);color:var(--text);font:inherit;font-weight:700;font-size:.82rem;cursor:pointer;flex:none}
+.lang:hover{border-color:var(--accent)}
+.theme,.tabbar,.qty,.pamt,.paddr,.mono,.timer,.timer i,.steps-h{direction:ltr}
+[dir=rtl] body{font-family:"Segoe UI",Tahoma,"Noto Sans Arabic","Noto Naskh Arabic",system-ui,-apple-system,Arial,sans-serif;letter-spacing:0}
+[dir=rtl] h1,[dir=rtl] h2,[dir=rtl] h3{letter-spacing:0}
+[dir=rtl] .x{right:auto;left:14px}
+[dir=rtl] .tag{left:auto;right:10px}[dir=rtl] .tag.r{right:auto;left:10px}
+[dir=rtl] .wallet::after{right:auto;left:-40px}[dir=rtl] .wl-top em{margin-left:0;margin-right:auto}
+[dir=rtl] .wl-how{padding-left:0;padding-right:18px}
+[dir=rtl] .pstatus .spin,[dir=rtl] .wait .spin{margin-left:10px;margin-right:0}
+[dir=rtl] .pcard .prow,[dir=rtl] .crow{direction:rtl}
+[dir=rtl] .ptsbox input{right:auto;left:0}
+[dir=rtl] .sumrows>div,[dir=rtl] .cl{direction:rtl}
+[dir=rtl] .fq button .pl{margin-left:0;margin-right:auto}
+[dir=rtl] .steps .step i{margin-left:auto}
+[dir=rtl] .nav-links a,[dir=rtl] .ibtn,[dir=rtl] .lang{white-space:nowrap}
+[dir=rtl] .brand span{direction:ltr;unicode-bidi:plaintext}
+[dir=rtl] .nav-links{gap:4px}
+[dir=rtl] .brand{flex:none}
