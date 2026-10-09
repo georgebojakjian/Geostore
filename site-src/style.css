@@ -456,3 +456,5 @@ html.shell .chat{bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--
 .sk-tile .logo-box{background:var(--surface2)}.sk-tile b,.sk-tile small{background:linear-gradient(var(--surface2),var(--surface2)) center/70% 12px no-repeat;color:transparent}
 .sk-tile::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,color-mix(in srgb,var(--accent) 10%,transparent) 50%,transparent 70%);transform:translateX(-100%);animation:skl 1.4s infinite}
 @media(max-width:820px){.sk-tile:nth-child(n+5){display:none}}
+
+.vh2{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
