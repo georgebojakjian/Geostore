@@ -1,0 +1,1 @@
+{ "name": "geostore-tools", "private": true, "description": "Build helper: minifies the shop sources in site-src/ into site/", "devDependencies": { "terser": "^5.31.0", "clean-css": "^5.3.3" } }

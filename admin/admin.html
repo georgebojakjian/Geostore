@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geostore Admin</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/png" href="../site/favicon.png">
+  <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("geostore_admin_theme")==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+  <style>
+    :root{--bg:#0a0b0d;--glass:rgba(255,255,255,.045);--glass2:rgba(255,255,255,.075);--panel:var(--glass);--surface:rgba(255,255,255,.05);--surface2:rgba(255,255,255,.06);--border:rgba(255,255,255,.09);--border2:rgba(255,255,255,.17);--text:#f2f3f5;--muted:#9aa1ab;--accent:#ff5a36;--accent2:#ff7a59;--accent-soft:rgba(255,90,54,.14);--on:#fff;--soft:rgba(255,90,54,.14);--ring:rgba(255,90,54,.35);--danger:#ff6b6b;--warn:#f5b84b;--ok:#38d98a;--blue:#4cb3ff;--violet:#9b8cff;--ease:cubic-bezier(.22,.61,.36,1);--shadow:0 20px 50px -24px rgba(0,0,0,.8);--field:rgba(0,0,0,.28);--stage:url(shards.svg) center/cover fixed #0a0b0d;color-scheme:dark}
+    [data-theme=light]{--bg:#f3f8f2;--glass:rgba(255,255,255,.58);--glass2:rgba(255,255,255,.86);--surface:rgba(255,255,255,.72);--surface2:rgba(30,70,30,.05);--border:rgba(255,255,255,.75);--border2:rgba(30,70,30,.16);--text:#0f1a12;--muted:#566557;--accent:#3d9a0e;--accent2:#2f7d09;--accent-soft:rgba(61,154,14,.12);--soft:rgba(61,154,14,.12);--ring:rgba(61,154,14,.28);--on:#fff;--danger:#c0392b;--warn:#a96c0b;--ok:#1f8a3b;--blue:#1f78d1;--violet:#6c5ce7;--shadow:0 14px 34px -22px rgba(30,70,30,.45);--field:rgba(255,255,255,.9);--stage:radial-gradient(900px 520px at 6% -6%,rgba(61,154,14,.20),transparent 62%),radial-gradient(800px 520px at 102% 2%,rgba(76,179,255,.20),transparent 60%),radial-gradient(700px 500px at 50% 112%,rgba(155,140,255,.14),transparent 60%),linear-gradient(160deg,#f8fbf6,#e9f1ee) fixed;color-scheme:light}
+    [data-theme=light] .glass,[data-theme=light] .panel,[data-theme=light] aside,[data-theme=light] .stat,[data-theme=light] .kpi{border-color:rgba(255,255,255,.85);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,var(--shadow)}
+    [data-theme=light] .navb.on{box-shadow:0 8px 18px -12px rgba(47,125,9,.55);background:rgba(255,255,255,.95);color:var(--accent2)}
+    [data-theme=light] th,[data-theme=light] td{border-bottom-color:rgba(30,70,30,.08)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    [hidden]{display:none!important}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;background:var(--stage);color:var(--text);line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased}
+    button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer;border:0;background:none}
+    :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+    .app{display:grid;grid-template-columns:272px 1fr;gap:18px;padding:18px;min-height:100vh}
+    .glass,.panel,aside,.stat,.kpi{background:linear-gradient(160deg,var(--glass2),var(--glass));border:1px solid var(--border);border-radius:22px;backdrop-filter:blur(14px) saturate(1.15);-webkit-backdrop-filter:blur(14px) saturate(1.15);box-shadow:var(--shadow)}
+    aside{position:sticky;top:18px;height:calc(100vh - 36px);padding:18px 14px;display:flex;flex-direction:column;gap:3px;overflow-y:auto}
+    .brand{display:flex;gap:12px;align-items:center;padding:4px 8px 16px}
+    .brand .mark{width:44px;height:44px;border-radius:14px;background:linear-gradient(145deg,var(--accent2),var(--accent));display:grid;place-items:center;box-shadow:0 10px 24px -8px var(--accent);flex:none}.brand .mark svg{width:24px;height:24px;color:#fff}
+    .brand b{display:block;font-size:1.02rem;line-height:1.2}.brand small{display:block;font-size:.62rem;letter-spacing:.16em;color:var(--muted);font-weight:700}
+    .grp{font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);padding:14px 12px 6px}
+    .navb{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:14px;color:var(--muted);text-align:left;width:100%;font-weight:650;font-size:.93rem;transition:background .2s,color .2s,border-color .2s;position:relative;border:1px solid transparent}
+    .navb .ico{width:22px;text-align:center;font-size:1.05rem;filter:grayscale(.4)}
+    .navb:hover{background:var(--surface2);color:var(--text)}
+    .navb.on{background:var(--glass2);color:var(--text);border-color:var(--border2);box-shadow:0 6px 16px -10px rgba(0,0,0,.7)}.navb.on .ico{filter:none}
+    .navb .bdg{margin-left:auto;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent2);border:1px solid rgba(255,90,54,.4);font-size:.7rem;font-weight:800;display:grid;place-items:center}
+    .side-foot{margin-top:auto;display:grid;gap:10px;padding-top:14px}
+    .lock{font-size:.74rem;color:var(--muted);padding:12px;border:1px dashed var(--border2);border-radius:14px}
+    .themebtn{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface);font-weight:650;font-size:.88rem}
+    main{min-width:0;display:flex;flex-direction:column;gap:18px;padding-bottom:70px}
+    .topbar{display:flex;gap:12px;align-items:center;padding:12px 14px;flex-wrap:wrap;position:sticky;top:18px;z-index:40}
+    .sbox{flex:1;min-width:200px;display:flex;align-items:center;gap:10px;height:44px;padding:0 16px;border-radius:14px;background:var(--field);border:1px solid var(--border)}
+    .sbox input{flex:1;min-width:0;border:0;background:none;outline:0;padding:0;box-shadow:none}.sbox svg{width:18px;height:18px;color:var(--muted)}
+    .sbox:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
+    .periods{display:flex;gap:2px;padding:4px;border-radius:12px;background:var(--field);border:1px solid var(--border)}
+    .periods button{height:34px;padding:0 13px;border-radius:9px;font-size:.78rem;font-weight:750;color:var(--muted)}.periods button.on{background:var(--glass2);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+    .bell{position:relative;width:44px;height:44px;border-radius:14px;border:1px solid var(--border);background:var(--surface);display:grid;place-items:center;font-size:1.1rem}
+    .bell i{position:absolute;top:9px;right:10px;width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--bg)}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:.8rem;font-weight:700;border:1px solid var(--border2);background:var(--surface)}
+    .chip i{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}.chip.warn{border-color:rgba(245,184,75,.55);color:var(--warn)}.chip.warn i{background:var(--warn);box-shadow:0 0 10px var(--warn)}.chip.bad i{background:var(--danger);box-shadow:0 0 10px var(--danger)}
+    .chip button{font-weight:800;color:var(--accent2);text-decoration:underline;margin-left:4px}
+    h1{font-size:1.65rem;letter-spacing:-.03em;margin:4px 0 2px}.lead{color:var(--muted);margin-bottom:6px;max-width:70ch}
+    h2{font-size:1.05rem;letter-spacing:-.01em;margin-bottom:12px}h3{font-size:1rem}
+    .view{display:none;flex-direction:column;gap:18px}.view.on{display:flex;animation:in .12s ease-out}@keyframes in{from{opacity:0;transform:translateY(6px)}}
+    .kpis,.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .kpi,.stat{padding:18px 18px 16px;border-radius:20px}
+    .kh{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:.84rem;font-weight:650}
+    .kic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:1rem}
+    .c1{background:rgba(76,179,255,.16);color:var(--blue)}.c2{background:rgba(155,140,255,.16);color:var(--violet)}.c3{background:rgba(56,217,138,.16);color:var(--ok)}.c4{background:rgba(245,184,75,.16);color:var(--warn)}
+    .kpi>b,.stat b{display:block;font-size:1.85rem;letter-spacing:-.03em;margin:8px 0 8px}.stat small{color:var(--muted);font-weight:650}
+    .kf{display:flex;gap:8px;align-items:center;font-size:.76rem;color:var(--muted)}
+    .delta{font-style:normal;font-weight:800;padding:2px 9px;border-radius:999px;background:rgba(56,217,138,.14);color:var(--ok);border:1px solid rgba(56,217,138,.3)}.delta.neg{background:rgba(255,107,107,.12);color:var(--danger);border-color:rgba(255,107,107,.3)}.delta.flat{background:var(--surface2);color:var(--muted);border-color:var(--border)}
+    .grid2{display:grid;grid-template-columns:1.9fr 1fr;gap:14px}
+    .panel{padding:22px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 18px;border-radius:12px;font-weight:700;font-size:.88rem;border:1px solid transparent;transition:transform .2s var(--ease),background .2s,border-color .2s,box-shadow .2s;white-space:nowrap}
+    .btn:hover{transform:translateY(-1px)}.btn:active{transform:scale(.97)}
+    .btn-p{background:linear-gradient(180deg,var(--accent2),var(--accent));color:var(--on);box-shadow:0 10px 22px -10px var(--accent)}
+    .btn-g{border-color:var(--border2);background:var(--surface)}.btn-g:hover{border-color:var(--accent)}
+    .btn-d{border-color:rgba(255,107,107,.45);color:var(--danger);background:var(--surface)}
+    .btn-s{min-height:32px;padding:0 12px;font-size:.78rem;border-radius:10px}.btn[disabled]{opacity:.55;pointer-events:none}
+    .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+    table{width:100%;border-collapse:collapse;font-size:.9rem}th{color:var(--muted);font-weight:700;text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.09em}
+    th,td{padding:12px 10px;border-bottom:1px solid var(--border);vertical-align:middle}tr:last-child td{border-bottom:0}
+    .tw{overflow-x:auto}.acts{display:flex;gap:6px;flex-wrap:wrap}
+    .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.72rem;font-weight:700;border:1px solid var(--border2);color:var(--muted);background:var(--surface2)}
+    .pill.pending{color:var(--warn);border-color:rgba(245,184,75,.5)}.pill.paid,.pill.ok{color:var(--ok);border-color:rgba(56,217,138,.45);background:rgba(56,217,138,.1)}.pill.bad{color:var(--danger);border-color:rgba(255,107,107,.5)}.pill.off{color:var(--muted)}
+    .av{width:34px;height:34px;border-radius:50%;display:inline-grid;place-items:center;font-weight:800;font-size:.8rem;color:#fff;flex:none}
+    .form{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form .full{grid-column:1/-1}
+    label{display:block;font-size:.8rem;font-weight:650;color:var(--muted);margin-bottom:6px}
+    input,select,textarea{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border2);background:var(--field);outline:0;transition:border-color .2s,box-shadow .2s}
+    select option{background:#1a1c20;color:#f2f3f5}[data-theme=light] select option{background:#fff;color:#12161b}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
+    textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.78rem;min-height:210px;resize:vertical;white-space:pre;tab-size:2}
+    input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--accent)}
+    .chk{display:flex;gap:10px;align-items:center;color:var(--text);font-size:.9rem;margin:0;font-weight:600}
+    iframe.pv{width:100%;height:380px;border:1px solid var(--border);border-radius:14px;background:#fff}
+    .help{color:var(--muted);font-size:.84rem}.help code,.tip code{background:var(--soft);padding:1px 7px;border-radius:6px;font-size:.8rem}
+    .tip{border:1px solid var(--border);background:var(--surface2);border-radius:14px;padding:12px 16px;font-size:.86rem;color:var(--muted);margin:10px 0}.tip b{color:var(--text)}
+    .warn{border:1px solid rgba(245,184,75,.5);background:rgba(245,184,75,.08);color:var(--text);padding:14px 16px;border-radius:14px;font-size:.9rem}
+    .toast{position:fixed;bottom:22px;right:22px;z-index:99;background:var(--glass2);backdrop-filter:blur(18px);border:1px solid var(--border2);padding:12px 20px;border-radius:14px;font-weight:650;box-shadow:0 14px 40px rgba(0,0,0,.5);opacity:0;transform:translateY(12px);pointer-events:none;transition:all .3s;max-width:90vw}
+    .toast.show{opacity:1;transform:none}
+    .empty{text-align:center;color:var(--muted);padding:30px 0}
+    .seg{display:flex;gap:4px;flex-wrap:wrap;padding:4px;border-radius:12px;background:var(--field);border:1px solid var(--border);width:max-content;max-width:100%}.seg button{height:32px;padding:0 13px;border-radius:9px;font-weight:750;font-size:.78rem;color:var(--muted)}.seg button.on{background:var(--glass2);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+    .search{max-width:340px}
+    .check{display:grid;gap:10px}
+    .ck{display:grid;grid-template-columns:34px 1fr auto;gap:14px;align-items:center;padding:14px 16px;border:1px solid var(--border);border-radius:16px;background:var(--surface2)}
+    .ck .dot{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:var(--border2);color:var(--text)}
+    .ck.done .dot{background:var(--ok);color:#06210f}.ck b{display:block}.ck span{font-size:.84rem;color:var(--muted)}
+    .qa{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+    .qa button{display:flex;gap:12px;align-items:center;padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--surface2);text-align:left;font-weight:700;transition:transform .2s,border-color .2s}.qa button:hover{transform:translateY(-2px);border-color:var(--accent)}.qa .ico{font-size:1.6rem}.qa small{display:block;color:var(--muted);font-weight:500}
+    .pcard{display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:flex-start;padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--surface2);margin-bottom:12px}
+    .pcard .ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:1.2rem}
+    .ic.usdt{background:#26a17b}.ic.bnb{background:#f0b90b;color:#1b1400}.ic.btc{background:#f7931a}.ic.bpay{background:#1e2329;color:#f0b90b;border:1px solid var(--border2)}.ic.tg{background:#2aabee}.ic.wa{background:#25d366;color:#07300f}
+    .step{display:grid;grid-template-columns:38px 1fr;gap:14px;margin-bottom:6px}.num{width:38px;height:38px;border-radius:50%;background:var(--soft);color:var(--accent2);display:grid;place-items:center;font-weight:800}.step p{color:var(--muted);font-size:.9rem}
+    .logo-s{width:30px;height:30px;border-radius:8px;background:#fff;border:1px solid var(--border);object-fit:contain;flex:none}
+    .sticky-save{position:sticky;bottom:0;padding:14px 0;display:flex;gap:10px}
+    #chart svg{width:100%;height:230px;display:block}.donutwrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.donutwrap svg{width:170px;height:170px;flex:none}
+    .legend{display:grid;gap:8px;font-size:.84rem;flex:1;min-width:150px}.legend div{display:flex;align-items:center;gap:8px}.legend i{width:10px;height:10px;border-radius:3px;flex:none}.legend b{margin-left:auto}
+    .pricetable td,.pricetable th{padding:8px 10px;font-size:.84rem}
+    .livegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+    .lv{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--border2);border-radius:16px;background:var(--surface);transition:transform .15s,border-color .15s}.lv:hover{transform:translateY(-2px);border-color:var(--accent)}
+    .lv .logo-s{width:44px;height:44px;border-radius:12px}.lv b{display:block;line-height:1.25}.lv small{color:var(--muted);font-weight:650;font-size:.72rem}
+    .regs{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.rc{display:inline-flex;align-items:center;border:1px solid var(--border2);border-radius:999px;background:var(--surface2);font-size:.72rem;font-weight:750;overflow:hidden}
+    .rc button{padding:3px 8px;font-size:.72rem;font-weight:750}.rc button:hover{background:var(--accent-soft);color:var(--accent2)}.rc .x{color:var(--muted);border-left:1px solid var(--border2)}.rc .x:hover{color:var(--danger)}
+    .subtabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:6px 0 18px}
+    .subtab{text-align:left;padding:12px 14px;border-radius:16px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:border-color .2s,background .2s}
+    .subtab b{display:block;font-size:.95rem}.subtab small{display:block;color:var(--muted);font-size:.76rem;margin-top:3px;line-height:1.35}
+    .subtab.on{border-color:var(--accent);background:var(--accent-soft)}
+    .sgp[hidden]{display:none!important}
+    .inbox{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:14px;align-items:start}
+    .clist{display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow:auto}
+    .citem{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface);cursor:pointer}
+    .citem.on{border-color:var(--accent);background:var(--accent-soft)}.citem .t{display:flex;justify-content:space-between;gap:8px;font-weight:750;font-size:.9rem}
+    .citem small{display:block;color:var(--muted);font-size:.76rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .citem .u{min-width:20px;height:20px;border-radius:999px;background:var(--accent);color:var(--on-accent,#fff);font-size:.7rem;display:inline-grid;place-items:center;padding:0 6px}
+    .tag2{display:inline-block;font-size:.68rem;font-weight:750;padding:2px 8px;border-radius:999px;background:var(--surface2,var(--field));border:1px solid var(--border);margin-right:4px}
+    .thread{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto;padding:6px 2px}
+    .bub{max-width:82%;padding:9px 12px;border-radius:16px;font-size:.92rem;white-space:pre-wrap;word-break:break-word}
+    .bub.c{align-self:flex-start;background:var(--field);border:1px solid var(--border)}.bub.o{align-self:flex-end;background:var(--accent);color:var(--on-accent,#fff)}
+    .bub small{display:block;opacity:.7;font-size:.68rem;margin-top:3px}
+    .quick{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.quick button{padding:5px 11px;border-radius:999px;border:1px solid var(--border2);background:var(--surface);font-size:.78rem;font-weight:650;cursor:pointer;color:var(--text)}
+    #chText{min-height:0;height:70px;resize:vertical}
+    .pubbig{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.pubbig .btn{font-size:1.05rem;padding:14px 26px}
+    .plist{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}.plist li{display:flex;gap:8px;align-items:center;font-size:.9rem}.plist li i{font-style:normal;width:22px;text-align:center}
+    @media(max-width:900px){.inbox{grid-template-columns:1fr}}
+    @media(max-width:1100px){.kpis,.stats{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+    @media(max-width:900px){.app{grid-template-columns:1fr;padding:10px;gap:10px}aside{position:static;height:auto;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:8px;gap:6px;align-items:center;border-radius:18px}.brand{padding:0 6px 0 2px}.brand div,.grp,.lock{display:none}.navb{width:auto;white-space:nowrap;padding:9px 12px}.side-foot{margin:0 0 0 auto;padding:0}.themebtn span{display:none}.form{grid-template-columns:1fr}.topbar{position:static}}
+    @media(max-width:560px){.kpis,.stats{grid-template-columns:1fr}h1{font-size:1.4rem}.periods{width:100%;justify-content:space-between}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><span class="mark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg></span><div><b>Geostore</b><small>ADMIN CENTER</small></div></div>
+    <div class="grp">Menu</div>
+    <button class="navb on" data-v="dash"><span class="ico">🏠</span>Home</button>
+    <div class="grp">Sell</div>
+    <button class="navb" data-v="products"><span class="ico">🛍️</span>Products</button>
+    <button class="navb" data-v="supplier"><span class="ico">🎁</span>Gift cards</button>
+    <div class="grp">Customers &amp; support</div>
+    <button class="navb" data-v="orders"><span class="ico">🧾</span>Orders<span class="bdg" id="ordBadge" hidden>0</span></button>
+    <button class="navb" data-v="messages"><span class="ico">💬</span>Messages<span class="bdg" id="msgBadge" hidden>0</span></button>
+    <button class="navb" data-v="customers"><span class="ico">👥</span>Customers</button>
+    <div class="grp">Setup</div>
+    <button class="navb" data-v="settings"><span class="ico">⚙️</span>Settings</button>
+    <button class="navb" data-v="publish"><span class="ico">🚀</span>Publish<span class="bdg" id="pubBadge" hidden>!</span></button>
+    <div class="side-foot">
+      <button class="themebtn" id="themeBtn" type="button"><span>Dark mode</span><b id="themeIco">🌙</b></button>
+      <div class="lock">🔒 Private. Keep this <b>admin</b> folder on your computer — never upload it.</div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="glass topbar">
+      <label class="sbox" for="gSearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="gSearch" type="search" placeholder="Search products, orders, customers…  (press Enter)" autocomplete="off"></label>
+      <div class="periods" id="periods"><button type="button" data-p="1">Today</button><button type="button" data-p="7">7D</button><button type="button" data-p="30" class="on">30D</button><button type="button" data-p="365">1Y</button></div>
+      <button type="button" class="bell" id="bell" aria-label="Needs your attention">🔔<i id="bellDot" hidden></i></button>
+      <button type="button" class="btn btn-p" id="topNew">+ New product</button>
+    </div>
+    <div class="chips" id="statusBar">
+      <span class="chip" id="chipSrv"><i></i><span>Server</span></span>
+      <span class="chip" id="chipSite"><i></i><span>Website</span></span>
+    </div>
+
+    <!-- HOME -->
+    <section class="view on" id="v-dash">
+      <div><h1>Overview</h1><p class="lead" id="homeLead">Your shop at a glance.</p></div>
+      <div class="kpis">
+        <div class="kpi"><div class="kh"><span>Revenue</span><i class="kic c1">$</i></div><b id="kRev">–</b><div class="kf"><em class="delta flat" id="kRevD">–</em><span>vs previous period</span></div></div>
+        <div class="kpi"><div class="kh"><span>Paid orders</span><i class="kic c2">🧾</i></div><b id="kOrd">–</b><div class="kf"><em class="delta flat" id="kOrdD">–</em><span>vs previous period</span></div></div>
+        <div class="kpi"><div class="kh"><span>Estimated profit</span><i class="kic c3">↗</i></div><b id="kPro">–</b><div class="kf"><em class="delta flat" id="kProD">–</em><span id="kProC">after supplier costs</span></div></div>
+        <div class="kpi"><div class="kh"><span>Needs you</span><i class="kic c4">!</i></div><b id="kNeed">–</b><div class="kf"><span id="kNeedC">orders waiting for you</span></div></div>
+      </div>
+      <div class="grid2">
+        <div class="panel"><div class="bar"><h2 style="margin:0">Performance</h2><div class="seg" id="chSeg"><button type="button" data-m="rev" class="on">Revenue</button><button type="button" data-m="ord">Orders</button><button type="button" data-m="pro">Profit</button></div></div><div id="chart"><p class="empty">Connect your server to see live numbers.</p></div></div>
+        <div class="panel"><h2>Payment methods</h2><div class="donutwrap" id="donut"><p class="empty">No paid orders yet.</p></div></div>
+      </div>
+      <div class="panel"><div class="bar"><h2 style="margin:0">Recent orders</h2><button type="button" class="btn btn-g btn-s" data-go="orders">View all</button></div><div class="tw"><table><thead><tr><th>Customer</th><th>Items</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="homeOrders"><tr><td colspan="5" class="empty">Connect your server to see orders.</td></tr></tbody></table></div></div>
+      <div class="panel" id="attnBox" hidden><h2>⚠ Needs your attention</h2><div id="attn" class="check"></div></div>
+      <div class="grid2">
+        <div class="panel"><h2>Setup checklist</h2><div class="check" id="checklist"></div></div>
+        <div class="panel"><h2>Quick actions</h2><div class="qa" style="grid-template-columns:1fr 1fr">
+          <button type="button" data-go="products" data-new="1"><span class="ico">➕</span><span>New product<small>Code or website</small></span></button>
+          <button type="button" data-go="supplier"><span class="ico">🎁</span><span>Gift cards<small>Import &amp; prices</small></span></button>
+          <button type="button" id="qaPub"><span class="ico">🚀</span><span>Publish<small>Everything, one tap</small></span></button>
+          <button type="button" data-go="messages"><span class="ico">💬</span><span>Messages<small>Customer chats</small></span></button>
+        </div></div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section class="view" id="v-products">
+      <h1>Products</h1><p class="lead">Website code and your own digital items. Customers see a view-only preview; the full code is only delivered after payment. Gift cards from FazerCards are in the <b>Gift cards</b> tab.</p>
+      <div id="plist">
+        <div class="bar"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="pSearch" type="search" placeholder="Search products…"><div class="seg" id="pFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="code">Code</button><button type="button" data-f="web">Websites</button><button type="button" data-f="digital">Digital</button><button type="button" data-f="hidden">Hidden</button></div></div><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-g" id="newDig">+ New digital item (my own codes)</button><button class="btn btn-p" id="newP">+ New product</button></span></div>
+        <div class="panel tw" style="padding:6px 14px"><table><thead><tr><th>Product</th><th>Category</th><th style="width:120px">Price ($)</th><th>Live</th><th></th></tr></thead><tbody id="ptbody"></tbody></table>
+        <p class="help" id="pcount" style="padding:10px 4px"></p><p style="text-align:center;padding-bottom:10px"><button class="btn btn-g btn-s" id="pMore" hidden>Show more</button></p></div>
+        <p class="help">Tip: change a price right in the table, then press <b>Sync to server</b> — the shop picks up new prices by itself.</p>
+      </div>
+      <div id="pedit" hidden>
+        <div class="bar"><h2 id="peTitle" style="font-size:1.25rem;margin:0">Edit product</h2><button class="btn btn-g" id="peBack">← Back to products</button></div>
+        <form class="panel form" id="pf" autocomplete="off">
+          <div class="full"><h3>Basics</h3></div>
+          <div><label for="fTitle">Title</label><input id="fTitle" required></div>
+          <div><label for="fCat">Category <span class="help">(groups products in the shop)</span></label><input id="fCat" list="cats" placeholder="Navigation, Hero, Shop…"><datalist id="cats"></datalist></div>
+          <div class="full"><label for="fTag">One-line description</label><input id="fTag"></div>
+          <div><label for="fPrice">Price (USD)</label><input id="fPrice" type="number" min="0" step="0.5" required></div>
+          <div><label class="chk" style="margin-top:30px"><input type="checkbox" id="fPub"> Show on the website</label><label class="chk" style="margin-top:8px"><input type="checkbox" id="fWm"> Watermark the live preview <span class="help">(recommended for websites)</span></label></div>
+          <div class="full" id="filesBox">
+            <h3 style="margin-bottom:6px">Project files <span class="pill">optional</span></h3>
+            <p class="help" style="margin-bottom:10px">Selling a whole project (website + dashboard, an Android project…)? Zip each part and upload it here. Customers get download buttons on their order page after payment. Files are stored privately on your server (up to <b>20 MB</b> each). For bigger files use a private download link instead (Google Drive, Mega, Dropbox).</p>
+            <div id="fileList" style="display:grid;gap:8px;margin-bottom:10px"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><label class="btn btn-p btn-s" style="margin:0;cursor:pointer">⬆ Upload a file (ZIP…)<input type="file" id="fileUp" multiple hidden></label><span class="help" id="fileMsg"></span></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><input id="lnkName" placeholder="Name, e.g. Android project" style="max-width:220px"><input id="lnkUrl" placeholder="https://… private download link" style="flex:1;min-width:220px"><button type="button" class="btn btn-g btn-s" id="lnkAdd">Add link</button></div>
+          </div>
+          <div class="full" id="codeFields">
+            <h3 style="margin-bottom:6px">Styles &amp; code</h3>
+            <p class="help" style="margin-bottom:10px">Each style has a <b>public sample</b> (shown in the product card) and the <b>full code</b> (private — customers see it as a view-only preview and receive it after payment).</p>
+            <div class="bar" style="margin:0 0 12px"><div id="vRow" style="display:flex;gap:8px;flex-wrap:wrap"></div><span style="display:flex;gap:8px"><button type="button" class="btn btn-g btn-s" id="vAdd">+ Add style</button><button type="button" class="btn btn-d btn-s" id="vDel">Remove this style</button></span></div>
+            <label for="vName">Style name</label><input id="vName" style="margin-bottom:12px">
+            <label for="fSample">Public sample code (a basic complete HTML page)</label><textarea id="fSample" spellcheck="false"></textarea>
+            <label for="fFull" style="margin-top:12px">FULL code (private — delivered after payment)</label><textarea id="fFull" spellcheck="false"></textarea>
+            <div class="bar" style="margin:14px 0 0"><span class="help">Preview what you typed:</span><span style="display:flex;gap:8px"><button type="button" class="btn btn-g btn-s" id="pvS">Preview public sample</button><button type="button" class="btn btn-g btn-s" id="pvF">Preview full code</button></span></div>
+            <iframe class="pv" id="pvFrame" sandbox="allow-scripts allow-forms" title="Preview" style="margin-top:12px"></iframe>
+            <label for="fGuide" style="margin-top:14px">How-to-use guide for the customer (HTML allowed) — shown on the product page and on their order page</label>
+            <textarea id="fGuide" spellcheck="false" style="min-height:130px;white-space:pre-wrap"></textarea>
+          </div>
+          <div class="full" id="digFields" hidden>
+            <p class="tip" id="supNote" hidden></p>
+            <div class="form"><div><label for="fIcon">Card icon (one emoji)</label><input id="fIcon" placeholder="🎁"></div><div><label>In stock</label><div class="help" id="stockCount" style="padding-top:10px"></div></div></div>
+            <div id="stockBox"><label for="fStock" style="margin-top:12px">Stock — one code per line (private; each paid order gets the next unused code)</label>
+            <textarea id="fStock" spellcheck="false" style="min-height:170px"></textarea>
+            <p class="tip">Only add codes you obtained legitimately and may resell. After editing stock press <b>Sync to server</b>. <b>Always add new codes at the END and never delete or reorder lines that were already sold.</b></p></div>
+          </div>
+          <div class="full"><details><summary style="cursor:pointer;font-weight:700">More options</summary>
+            <div class="form" style="margin-top:12px">
+              <div><label for="fStyleP">Price for ONE style only <span class="help">(empty = half the product price)</span></label><input id="fStyleP" type="number" min="0" step="0.5" placeholder="e.g. 9"></div>
+              <div><label for="fGroup">Shown in</label><select id="fGroup"><option value="">Code snippets</option><option value="website">Complete websites</option></select></div>
+              <div><label for="fType">Type</label><select id="fType"><option value="code">Code product (HTML / CSS / JS)</option><option value="digital">Digital item (your own codes)</option></select></div>
+            </div></details></div>
+          <div class="full sticky-save"><button class="btn btn-p" type="submit">Save product</button><button type="button" class="btn btn-d" id="delP">Delete</button></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- GIFT CARDS (FazerCards) -->
+    <section class="view" id="v-supplier">
+      <h1>Gift cards</h1><p class="lead">Sell gift cards and game credit without holding stock. Choose what to sell, set your profit once, and the shop shows live prices. When a customer pays, the server buys the code from FazerCards and delivers it.</p>
+      <div class="panel" id="livePanel"><div class="bar"><h2 style="margin:0">✅ Live on your shop <span class="pill" id="liveCount"></span></h2>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="liveQ" type="search" placeholder="Find a brand or game…"><div class="seg" id="liveG"></div></div></div>
+        <p class="help" id="liveHint" style="margin-bottom:10px">Everything you saved below appears here. Press a country to see its prices, ✕ to remove it. After changes press Sync to server.</p>
+        <div class="livegrid" id="liveGrid"></div></div>
+      <div class="panel"><div class="bar"><h2 style="margin:0">1 · Connection</h2><button class="btn btn-g btn-s" id="supCheck">Check connection &amp; balance</button></div>
+        <p class="help" id="supStatus">Add your FazerCards API key in Cloudflare first (steps in START-HERE.md → “Selling gift cards”), then press the button.</p>
+        <p class="tip">Every sale is paid from your FazerCards balance — keep it topped up. If it runs low the shop automatically hides those items.</p></div>
+      <div class="panel"><h2>2 · Your profit</h2>
+        <div class="form"><div><label>Profit type</label><div class="seg" id="ruleMode"><button type="button" data-m="percent" class="on">Percent (%)</button><button type="button" data-m="fixed">Fixed ($)</button></div></div>
+        <div><label for="ruleVal" id="ruleLbl">Add this % on top of the supplier price</label><input id="ruleVal" type="number" min="0" step="0.5"></div></div>
+        <p class="tip" id="ruleEx"></p></div>
+      <div class="panel"><div class="bar"><h2 style="margin:0">3 · Choose what to sell</h2><button class="btn btn-p btn-s" id="supLoad">Load catalog</button></div>
+        <p class="help" id="supCatMsg">Press “Load catalog” (one request). The brand, country and group are detected automatically — you can fix any of them.</p>
+        <div id="supTools" hidden>
+          <div class="bar" style="margin:12px 0"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="supSearch" type="search" placeholder="Search: steam, itunes, roblox…"><div class="seg" id="supFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="sel">Selected</button><button type="button" data-f="unsel">Not selected</button></div></div>
+            <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-g btn-s" id="supAll">Select all shown</button><button class="btn btn-g btn-s" id="supNone">Clear shown</button></span></div>
+          <div class="tw"><table><thead><tr><th style="width:36px"></th><th>Name</th><th>Brand</th><th style="width:112px">Country</th><th style="width:150px">Group</th><th style="width:86px"></th></tr></thead><tbody id="supCats"></tbody></table></div>
+          <p style="margin:10px 0"><button class="btn btn-g btn-s" id="supShowMore" hidden>Show more rows</button></p>
+        </div>
+        <div class="bar" style="margin:14px 0 0"><span class="help" id="supSum"></span><button class="btn btn-p" id="supSave">Save selection</button></div>
+        <p class="help">After saving, press <b>Publish → Sync to server</b>, then <b>Download data.js</b> and upload your site folder (the brand list lives in data.js; prices are always live).</p></div>
+      <div class="panel"><div class="bar"><h2 style="margin:0">4 · Game top-ups (PUBG, Free Fire, Mobile Legends…)</h2><button class="btn btn-p btn-s" id="tpLoad">Load game list</button></div>
+        <p class="help" id="tpMsg">The customer types their Player ID at checkout, you are paid first, then FazerCards charges the game account. Uses the same profit setting as gift cards (step 2).</p>
+        <div id="tpTools" hidden><div class="bar" style="margin:10px 0"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="tpSearch" type="search" placeholder="Search a game…"><div class="seg" id="tpFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="sel">Selected</button><button type="button" data-f="unsel">Not selected</button></div></div><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-g btn-s" id="tpAll">Select all shown</button><button class="btn btn-g btn-s" id="tpNone">Clear shown</button></span></div>
+          <div class="tw"><table><thead><tr><th style="width:36px"></th><th>Game</th><th style="width:96px"></th></tr></thead><tbody id="tpRows"></tbody></table></div></div>
+        <div class="bar" style="margin:14px 0 0"><span class="help" id="tpSum"></span><button class="btn btn-p" id="tpSave">Save games</button></div>
+        <p class="help">After saving: <b>Publish → Sync to server</b>, then <b>Download data.js</b> and upload the site folder.</p></div>
+      <div class="panel" id="supPrices" hidden></div>
+      <div class="panel" id="supMineBox" hidden><div class="bar"><h2 style="margin:0">Single-amount products (older way)</h2></div><div class="tw"><table><thead><tr><th>Product</th><th>Cost</th><th>My price</th><th></th></tr></thead><tbody id="supMine"></tbody></table></div></div>
+    </section>
+
+    <!-- ORDERS -->
+    <section class="view" id="v-orders">
+      <h1>Orders</h1><p class="lead">Every order from your shop. Paid orders are delivered automatically — you only act on the ones marked <b>needs you</b>.</p>
+      <div class="bar"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input class="search" id="oSearch" type="search" placeholder="Search email, item or order number…"><div class="seg" id="oFilter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="need">Needs you</button><button type="button" data-f="paid">Paid</button><button type="button" data-f="pending">Waiting</button><button type="button" data-f="expired">Expired</button></div></div><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-g btn-s" id="srvPurge">🗑 Delete expired orders</button><button class="btn btn-g btn-s" id="srvRefresh">↻ Refresh</button></span></div>
+      <div class="panel tw"><table><thead><tr><th>Date</th><th>Customer</th><th>Items</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="srvBody"></tbody></table>
+        <p class="help" id="srvMsg">Press Refresh to load orders from your server.</p></div>
+      <details class="panel"><summary style="cursor:pointer;font-weight:700">Old manual orders (only if you do not use the server)</summary>
+        <form class="form" id="of" style="margin-top:14px">
+          <div><label for="oEmail">Customer email</label><input id="oEmail" type="email" required></div>
+          <div><label for="oItem">Item</label><select id="oItem"></select></div>
+          <div><label for="oCoin">Coin</label><input id="oCoin" placeholder="USDT"></div>
+          <div><label for="oAmt">Amount received (USD)</label><input id="oAmt" type="number" min="0" step="0.5"></div>
+          <div class="full"><button class="btn btn-p btn-s" type="submit">+ Add order</button></div>
+        </form>
+        <div class="tw" style="margin-top:14px"><table><thead><tr><th>Date</th><th>Customer</th><th>Item</th><th>USD</th><th>Status</th><th></th></tr></thead><tbody id="otbody"></tbody></table></div>
+      </details>
+    </section>
+
+    <!-- CUSTOMERS -->
+    <section class="view" id="v-customers">
+      <h1>Customers</h1><p class="lead">Everyone who created an account. Search, open a customer to see orders, edit details, disable or delete the account, or set a temporary password.</p>
+      <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat"><small>Customers</small><b id="cTotal">–</b></div>
+        <div class="stat"><small>With orders (loaded)</small><b id="cOrd">–</b></div>
+        <div class="stat"><small>Disabled (loaded)</small><b id="cDis">–</b></div>
+      </div>
+      <div class="bar"><input class="search" id="cSearch" type="search" placeholder="Search name, email, phone, country…"><span style="display:flex;gap:8px"><button class="btn btn-g btn-s" id="cRefresh">↻ Refresh</button><button class="btn btn-g btn-s" id="cCsv">⬇ Export CSV</button></span></div>
+      <div class="panel tw"><table><thead><tr><th>Joined</th><th>Name</th><th>Email</th><th>Phone</th><th>Country</th><th>Orders</th><th>Points</th><th>Status</th><th></th></tr></thead><tbody id="cBody"></tbody></table>
+        <p class="help" id="cMsg">Press Refresh to load your customers.</p><p><button class="btn btn-g btn-s" id="cMore" hidden>Load more</button></p></div>
+      <div class="panel" id="cDetail" hidden></div>
+      <div class="panel" id="rvPanel"><div class="bar"><h2 style="margin:0">⭐ Customer reviews</h2><button class="btn btn-g btn-s" id="rvRefresh">↻ Refresh</button></div>
+        <p class="help">Customers can review an order after it is delivered. Nothing appears on your shop until you press Approve — so only real, checked reviews are shown.</p>
+        <div class="tw"><table><thead><tr><th>Date</th><th>Stars</th><th>Customer</th><th>Review</th><th>Status</th><th></th></tr></thead><tbody id="rvBody"></tbody></table></div><p class="help" id="rvMsg">Press Refresh to load reviews.</p></div>
+    </section>
+
+    <!-- MESSAGES -->
+    <section class="view" id="v-messages">
+      <h1>Messages</h1><p class="lead">Live chat with your customers. Every visitor is one <b>ticket</b> (like <b>#A3F2</b>) with its own thread, topic and unread counter — so even 10 people writing at once stay separate. You can answer here or from Telegram.</p>
+      <div class="inbox">
+        <div class="panel"><div class="bar"><h2 style="margin:0">Conversations</h2><button class="btn btn-g btn-s" id="chRefresh">↻</button></div>
+          <div class="seg" id="chFilter" style="margin:8px 0"><button type="button" data-f="open" class="on">Open</button><button type="button" data-f="done">Solved</button><button type="button" data-f="all">All</button></div>
+          <div class="clist" id="chList"><p class="empty">Press ↻ to load.</p></div><p class="help" id="chMsg"></p></div>
+        <div class="panel" id="chThreadBox"><p class="empty">Pick a conversation on the left.</p></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="v-settings">
+      <h1>Settings</h1><p class="lead">Pick a section. Each one has its own topic, so you always know where to look. Press <b>Save settings</b> (bottom) after changing fields in the Store, Payments, Contact or Connection sections.</p>
+      <div class="subtabs" id="subtabs">
+        <button type="button" class="subtab on" data-sg="store"><b>🏪 Store</b><small>Name, email, tagline and the All-Access pass</small></button>
+        <button type="button" class="subtab" data-sg="pay"><b>💳 Payments</b><small>Your wallets (USDT, Bitcoin) and Binance auto-detect</small></button>
+        <button type="button" class="subtab" data-sg="contact"><b>📣 Contact &amp; alerts</b><small>WhatsApp, Telegram alerts, email receipts, social links, best sellers</small></button>
+        <button type="button" class="subtab" data-sg="growth"><b>⭐ Growth</b><small>Points wallet, reviews, notify-me, cart reminders, Arabic names</small></button>
+        <button type="button" class="subtab" data-sg="conn"><b>🔌 Connection</b><small>Server address, shop address, admin token, advanced</small></button>
+      </div>
+      <form id="sf">
+        <div class="panel sgp" data-sg="store"><h2>Store</h2><div class="form">
+          <div><label for="sName">Store name</label><input id="sName"></div>
+          <div><label for="sEmail">Your email (shown to customers for support)</label><input id="sEmail" type="email"></div>
+          <div class="full"><label for="sTag">Tagline</label><input id="sTag"></div></div></div>
+
+        <div class="panel sgp" data-sg="pay"><h2>Where customers pay you</h2>
+          <p class="help" style="margin-bottom:14px">Fill the ones you want to accept — each one appears as a payment box at checkout. Leave the others empty.</p>
+          <div class="pcard"><span class="ic usdt">₮</span><div><label for="sWalU">USDT on TRON (TRC20) — address starts with <b>T</b></label><input id="sWalU" placeholder="T…" autocomplete="off"><label class="chk" style="margin-top:8px"><input type="checkbox" id="sBinU"> This is a <b>Binance</b> deposit address</label></div></div>
+          <div class="pcard"><span class="ic bnb">₮</span><div><label for="sWalE">USDT on BNB Smart Chain (BEP20) — address starts with <b>0x</b></label><input id="sWalE" placeholder="0x…" autocomplete="off"><label class="chk" style="margin-top:8px"><input type="checkbox" id="sBinE"> This is a <b>Binance</b> deposit address</label></div></div>
+          <div class="pcard"><span class="ic btc">₿</span><div><label for="sWalB">Bitcoin address — starts with bc1, 1 or 3</label><input id="sWalB" placeholder="bc1…" autocomplete="off"></div></div>
+          <div class="pcard"><span class="ic bpay">B</span><div><label for="sWalP">Binance Pay ID (digits) — customers pay inside Binance, you confirm by hand</label><input id="sWalP" placeholder="e.g. 123456789" autocomplete="off" inputmode="numeric"></div></div>
+          <div class="tip"><b>Important about Binance deposit addresses:</b> when a customer pays from Binance to <i>another Binance address</i>, Binance often moves the money <b>inside its own system</b> — it never appears on the blockchain, so the shop cannot see it and you would have to press “Mark paid” yourself. For fully automatic payments use a wallet address you control (TronLink, Trust Wallet…) for TRC20/BEP20. The Binance Pay box above is the right choice for customers who pay inside Binance.</div>
+        </div>
+
+        <div class="panel sgp" data-sg="contact"><h2>Contact &amp; alerts</h2>
+          <p class="help" style="margin-bottom:14px">Customers can reach you by chat, WhatsApp or Telegram, and you get an alert on your phone for every order.</p>
+          <div class="pcard"><span class="ic wa">W</span><div><label for="sWa">WhatsApp number (with country code, digits only — e.g. 963912345678)</label><input id="sWa" inputmode="tel" placeholder="963912345678" autocomplete="off"></div></div>
+          <div class="pcard"><span class="ic tg">✈</span><div><label for="sTgU">Telegram username customers can message (optional, without @)</label><input id="sTgU" placeholder="your_username" autocomplete="off"></div></div>
+          <h3 style="margin:16px 0 6px">Live chat + order alerts on your Telegram</h3>
+          <p class="help">Free. Create a bot in Telegram with <b>@BotFather</b> (send <code>/newbot</code>), copy its token into Cloudflare as a Secret named <code>TELEGRAM_BOT_TOKEN</code> and Deploy. Then press <b>Connect Telegram</b> below.</p>
+          <div class="tip" id="tgStatus">Open this page with your server connected to check Telegram.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-p btn-s" id="tgConnect">Connect Telegram</button><button type="button" class="btn btn-g btn-s" id="tgTest">Send test alert</button><button type="button" class="btn btn-g btn-s" id="tgRefresh">↻ Refresh status</button><button type="button" class="btn btn-d btn-s" id="tgOff">Disconnect</button></div>
+        </div>
+
+        <div class="panel sgp" data-sg="pay"><h2>Binance auto-detect (Binance Pay and Binance-to-Binance transfers)</h2>
+          <p class="help" style="margin-bottom:10px">Connect a <b>read-only</b> Binance key and the shop confirms Binance Pay payments and Binance-to-Binance transfers (TRC20 / BEP20 deposit address) <b>by itself</b>. Steps are in START-HERE.md → “Binance auto-detect”. After adding the two secrets in Cloudflare and pressing Deploy, press the button.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button type="button" class="btn btn-p btn-s" id="bnTest">Check Binance connection</button></div>
+          <p class="help" id="bnMsg" style="margin-top:8px"></p></div>
+
+        <div class="panel sgp" data-sg="contact"><h2>Email receipts</h2>
+          <p class="help" style="margin-bottom:10px">After every paid order your customer gets an email with the invoice and a button to their private order page. Free setup with resend.com (steps in START-HERE.md → “Email receipts”). Press the button to send yourself a test.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input id="mailTo" type="email" placeholder="your email" style="max-width:280px"><button type="button" class="btn btn-p btn-s" id="mailTest">Send a test email</button></div>
+          <p class="help" id="mailMsg" style="margin-top:8px"></p></div>
+
+        <div class="panel sgp" data-sg="contact"><h2>Social media &amp; best sellers</h2>
+          <p class="help" style="margin-bottom:14px">Paste the full link (starting with https://). Only the ones you fill in appear as icons at the bottom of your shop. Leave empty to hide.</p>
+          <div class="form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px"><div><label for="soc_facebook">Facebook</label><input id="soc_facebook" data-soc="facebook" placeholder="https://…" autocomplete="off"></div><div><label for="soc_instagram">Instagram</label><input id="soc_instagram" data-soc="instagram" placeholder="https://…" autocomplete="off"></div><div><label for="soc_x">X (Twitter)</label><input id="soc_x" data-soc="x" placeholder="https://…" autocomplete="off"></div><div><label for="soc_youtube">YouTube</label><input id="soc_youtube" data-soc="youtube" placeholder="https://…" autocomplete="off"></div><div><label for="soc_tiktok">TikTok</label><input id="soc_tiktok" data-soc="tiktok" placeholder="https://…" autocomplete="off"></div><div><label for="soc_telegram">Telegram channel</label><input id="soc_telegram" data-soc="telegram" placeholder="https://…" autocomplete="off"></div><div><label for="soc_whatsapp">WhatsApp channel</label><input id="soc_whatsapp" data-soc="whatsapp" placeholder="https://…" autocomplete="off"></div><div><label for="soc_snapchat">Snapchat</label><input id="soc_snapchat" data-soc="snapchat" placeholder="https://…" autocomplete="off"></div><div><label for="soc_linkedin">LinkedIn</label><input id="soc_linkedin" data-soc="linkedin" placeholder="https://…" autocomplete="off"></div><div><label for="soc_discord">Discord</label><input id="soc_discord" data-soc="discord" placeholder="https://…" autocomplete="off"></div></div>
+          <div class="form" style="margin-top:14px"><label for="sFeat">Best sellers — brand names shown first, separated by commas (example: itunes, pubg, roblox, google play)</label><input id="sFeat" placeholder="itunes, pubg, roblox, steam" autocomplete="off"><p class="help">Leave empty to use the built-in list (iTunes, Apple, PUBG, Roblox, Google Play, Steam, PlayStation, Xbox, Free Fire, Netflix…).</p></div>
+        </div>
+
+        <div class="panel sgp" data-sg="conn"><h2>Server connection</h2><div class="form">
+          <div class="full"><label for="sApi">Payment server URL (from Cloudflare, e.g. https://geostore-api.yourname.workers.dev). Leave empty for manual mode.</label><input id="sApi" placeholder="https://geostore-api.yourname.workers.dev"></div>
+          <div class="full"><label for="sTok">Admin token (private — saved only in this browser, never published)</label><input id="sTok" type="password" autocomplete="off" placeholder="the ADMIN_TOKEN you chose in Cloudflare"></div>
+          <div class="full"><label for="sSite">Your shop address (the website customers visit, e.g. https://geostorecodes.com). <b>Fixes slow or failing checkout on phones</b>: the shop then talks to your server through its own address.</label><input id="sSite" placeholder="https://geostorecodes.com" autocomplete="off"></div>
+          <div class="full"><button type="button" class="btn btn-g btn-s" id="srvTest">Test connection</button> <span class="help" id="srvStatus" style="margin-left:8px"></span></div></div></div>
+
+        <div class="panel sgp" data-sg="growth" id="ptsPanel"><h2>⭐ Points wallet</h2><p class="help">Customers earn points on every paid order and spend them as a discount at checkout. Saved straight to your server (no Sync needed). You can see and edit each customer\'s points in the Customers tab.</p><div class="form">
+          <div class="full"><label class="chk"><input type="checkbox" id="ptOn"> Turn the points wallet on</label></div>
+          <div><label for="ptPer">Points earned for each $1 paid</label><input id="ptPer" type="number" min="0" step="any"></div>
+          <div><label for="ptVal">Value of 1 point (USD) — e.g. 0.01 means 100 points = $1</label><input id="ptVal" type="number" min="0" step="any"></div>
+          <div><label for="ptMin">Minimum order to earn points (USD, 0 = any)</label><input id="ptMin" type="number" min="0" step="any"></div>
+          <div><label for="ptMax">Maximum order amount that earns points (USD, 0 = no limit)</label><input id="ptMax" type="number" min="0" step="any"></div>
+          <div><label for="ptPct">Most of an order points can pay (%)</label><input id="ptPct" type="number" min="0" max="100" step="1"></div>
+          <div><label for="ptRed">Smallest number of points a customer can spend</label><input id="ptRed" type="number" min="0" step="1"></div>
+          <div class="full"><button type="button" class="btn btn-p btn-s" id="ptSave">Save points settings</button> <span class="help" id="ptMsg" style="margin-left:8px"></span><p class="help" id="ptEx"></p></div></div></div>
+
+        <div class="panel sgp" data-sg="growth"><h2>🌐 Arabic names (optional)</h2><p class="help">The whole shop already switches to Arabic when a visitor taps “العربية”. Product names that you typed in English stay in English unless you add an Arabic name here. One per line: <b>English name | الاسم بالعربية</b>. Press “Save settings” at the bottom, then publish your website.</p>
+          <textarea id="sArN" rows="5" placeholder="Steam Key | مفتاح ستيم&#10;Restaurant Website with Reservations | موقع مطعم مع الحجوزات" style="width:100%"></textarea></div>
+
+        <div class="panel sgp" data-sg="growth" id="featPanel"><h2>🛍️ Shop extras</h2><p class="help">Switch each helper on or off. They only work when your server is connected (and, for emails, when email receipts are set up).</p><div class="form">
+          <div class="full"><label class="chk"><input type="checkbox" id="ftRev"> Customer reviews (shown after you approve them)</label></div>
+          <div class="full"><label class="chk"><input type="checkbox" id="ftNot"> “Notify me” emails when a sold-out item is back in stock</label></div>
+          <div class="full"><label class="chk"><input type="checkbox" id="ftCart"> One reminder email to customers who leave their cart without paying</label></div>
+          <div class="full"><button type="button" class="btn btn-p btn-s" id="ftSave">Save</button> <span class="help" id="ftMsg" style="margin-left:8px"></span></div></div></div>
+
+        <div class="panel sgp" data-sg="store"><h2>All-Access pass</h2><div class="form">
+          <div class="full"><label class="chk"><input type="checkbox" id="aaOn"> Sell an All-Access pass (one payment → every code and website)</label></div>
+          <div><label for="aaTitle">Pass name</label><input id="aaTitle"></div>
+          <div><label for="aaPrice">Pass price (USD)</label><input id="aaPrice" type="number" min="0" step="1"></div>
+          <div class="full"><label for="aaDesc">Pass description</label><input id="aaDesc"></div></div></div>
+
+        <div class="panel sgp" data-sg="conn"><details><summary style="cursor:pointer;font-weight:700">Advanced</summary><div class="form" style="margin-top:14px">
+          <div class="full"><label class="chk"><input type="checkbox" id="sDig"> Show the “Digital items” tiles in the Gift cards tab</label></div>
+          <div class="full"><label for="sWal">Other coins (manual mode only — used when no server is connected) — one per line: <code>Coin name | address</code></label><textarea id="sWal" style="min-height:90px;white-space:pre-wrap" placeholder="USDT (TRC20 network) | TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></textarea></div></div></details></div>
+        <div class="sticky-save"><button class="btn btn-p" type="submit">Save settings</button></div>
+      </form>
+    </section>
+
+    <!-- PUBLISH -->
+    <section class="view" id="v-publish">
+      <h1>Publish</h1><p class="lead">One button puts every change live. Use it after you change products, prices, gift cards, settings or Arabic names.</p>
+      <div class="panel"><div class="pubbig"><button class="btn btn-p" id="paAll">🚀 Publish everything</button><span class="help" id="paState">Checking…</span></div>
+        <ul class="plist" id="paList"><li><i>1</i>Sends prices, codes, wallets and gift-card choices to your <b>server</b></li><li><i>2</i>Updates your <b>website</b> (names, images, products, language, connection file) — sent automatically if GitHub is set up in “Phone-friendly publishing” below, otherwise the two files are downloaded for you to upload to Netlify</li></ul>
+        <p class="help" id="paMsg" style="margin-top:10px"></p></div>
+      <details class="panel"><summary style="cursor:pointer;font-weight:700">Individual steps (advanced — you normally do not need these)</summary><div style="margin-top:14px">
+      <div class="warn">⚠️ Never upload this <b>admin</b> folder or any <code>private*.js</code> file to the internet — they contain your paid code.</div>
+      <div class="panel"><div class="step"><div class="num">1</div><div><h3>Sync to server</h3><p>Sends prices, private codes, wallets and your gift-card choices to your server. <b>Price changes only need this step.</b></p>
+        <p style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" id="srvSync">⬆ Sync to server</button><button class="btn btn-g" id="srvSyncAll" title="Only if something looks out of date on the server">Re-upload everything</button></p>
+        <p class="help" id="srvStatus2" style="margin-top:10px"></p></div></div></div>
+      <div class="panel"><div class="step"><div class="num">2</div><div><h3>Update the website</h3><p>Needed when you add or remove products, change names, descriptions, images or gift-card brands.</p>
+        <p style="margin-top:12px"><button class="btn btn-p" id="dlData">⬇ Download data.js</button></p>
+      </div></div></div>
+      </div></details>
+      <div class="panel"><h2>📱 Phone-friendly publishing</h2>
+        <p class="help" style="margin-bottom:12px">Two buttons so you never need a computer: your dashboard is kept safe on <b>your server</b>, and the shop's <code>data.js</code> can be sent straight to GitHub, which updates your website by itself in about a minute.</p>
+        <h3 style="margin:6px 0">☁ Cloud copy of this dashboard</h3>
+        <p class="help" id="cloudMsg" style="margin-bottom:8px">Saved automatically about a minute after every change (turn off below). Open the dashboard on any phone or computer, enter your server address and token in Settings, then press “Load”.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button type="button" class="btn btn-p btn-s" id="cloudSave">☁ Save a copy now</button><button type="button" class="btn btn-g btn-s" id="cloudLoad">⬇ Load from my server</button><label class="chk"><input type="checkbox" id="cloudAuto"> Save automatically</label></div>
+        <h3 style="margin:18px 0 6px">🚀 Publish the website (GitHub → Netlify)</h3>
+        <p class="help" style="margin-bottom:8px">One-time setup is in START-HERE.md → “Publish from your phone”. Then the button below updates the live shop.</p>
+        <div class="form"><div><label for="ghRepo">GitHub repository (owner/name)</label><input id="ghRepo" placeholder="georgebojakjian/Geostore" autocomplete="off"></div><div><label for="ghBranch">Branch Netlify publishes</label><input id="ghBranch" placeholder="main" autocomplete="off"></div><div class="full"><label for="ghToken">GitHub token (stays only on this device)</label><input id="ghToken" type="password" placeholder="github_pat_…" autocomplete="off"></div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px"><button type="button" class="btn btn-g btn-s" id="ghSave">Save these</button><button type="button" class="btn btn-p btn-s" id="ghPublish">🚀 Publish website now</button></div>
+        <p class="help" id="ghMsg" style="margin-top:8px"></p>
+        <p style="margin-top:12px">Put the file in your <code>site</code> folder (replace the old one), then upload the <b>whole site folder</b> to Netlify (Deploys → drag the folder).</p></div>
+      <div class="panel"><div class="step"><div class="num">3</div><div><h3>Back up (important)</h3><p>Your products live in this browser. Download a backup now and then and keep it safe.</p>
+        <p style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-g" id="dlBackup">⬇ Backup everything (.json)</button><label class="btn btn-g" style="margin:0;cursor:pointer">⬆ Restore backup<input type="file" id="restore" accept=".json" hidden></label><button class="btn btn-d" id="resetAll">Reset to original files</button></p></div></div></div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="../site/data.js"></script>
+<script src="private.js"></script>
+<script src="../site/pack-1.js"></script>
+<script src="private-pack-1.js"></script>
+<script src="../site/pack-2.js"></script>
+<script src="private-pack-2.js"></script>
+<script>
+(function(){
+  'use strict';
+  var KEY = 'geostore_admin_v1';
+  var $ = function(id){ return document.getElementById(id); };
+  var $$ = function(sel, root){ return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function money(n){ n = Math.round((+n||0)*100)/100; return '$' + (n % 1 === 0 ? n : n.toFixed(2)); }
+  function uid(){ return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(function(){t.classList.remove('show');},2800); }
+  function safeUrl(u){ u = String(u || ''); return /^https:\/\/[^\s"'<>]+$/.test(u) ? u : ''; }
+  function slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0, 60) || 'x'; }
+
+  /* ---------- theme ---------- */
+  (function(){
+    var root = document.documentElement;
+    function paint(){ $('themeIco').textContent = root.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'; $('themeBtn').firstChild.textContent = root.getAttribute('data-theme') === 'dark' ? 'Light mode' : 'Dark mode'; }
+    $('themeBtn').addEventListener('click', function(){ var n = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; root.setAttribute('data-theme', n); try { localStorage.setItem('geostore_admin_theme', n); } catch(e) {} paint(); });
+    paint();
+  })();
+
+  /* ---------- state ---------- */
+  function clone(x){ return JSON.parse(JSON.stringify(x)); }
+  var WAL = {usdt_trc20:/^T[1-9A-HJ-NP-Za-km-z]{33}$/, usdt_bep20:/^0x[a-fA-F0-9]{40}$/, btc:/^(bc1[a-z0-9]{25,87}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})$/, binancepay:/^[0-9]{5,20}$/};
+  // add products from the shipped packs that this state does not have (never re-adds ones you deleted)
+  function addPacks(d){
+    var have = {}; d.products.forEach(function(p){ have[p.id] = 1; });
+    (d.removed || []).forEach(function(id){ have[id] = 1; });
+    var pv2 = window.GEOSTORE_PRIVATE_V2 || {};
+    (window.GEOSTORE_PACKS || []).forEach(function(pk){ (pk.products || []).forEach(function(src){
+      if (have[src.id]) return; have[src.id] = 1;
+      var p = clone(src), f = pv2[p.id] || [];
+      p.variants.forEach(function(v, i){ v.full = (f[i] && f[i].full) || ''; });
+      d.products.push(p);
+    }); });
+  }
+  function migrate(d){
+    d.removed = d.removed || []; d.orders = d.orders || [];
+    d.settings = d.settings || {}; d.settings.wallets = d.settings.wallets || {};
+    d.settings.allAccess = d.settings.allAccess || {enabled:false,title:'All-Access Pass',price:49,description:''};
+    if (d.settings.digitalSection === undefined) d.settings.digitalSection = true;
+    if (!d.settings.autoWallets){                       // pick up addresses typed into the old wallet list
+      d.settings.autoWallets = {usdt_trc20:'', btc:''};
+      Object.keys(d.settings.wallets).forEach(function(k){ var v = String(d.settings.wallets[k] || '').trim();
+        if (WAL.usdt_trc20.test(v)) d.settings.autoWallets.usdt_trc20 = v; else if (WAL.btc.test(v)) d.settings.autoWallets.btc = v; });
+    }
+    d.settings.autoWallets.usdt_bep20 = d.settings.autoWallets.usdt_bep20 || ''; d.settings.autoWallets.binancepay = d.settings.autoWallets.binancepay || '';
+    d.settings.sup = d.settings.sup || {rule:{mode:'percent', value:15}, cats:{}};
+    d.settings.sup.rule = d.settings.sup.rule || {mode:'percent', value:15}; d.settings.sup.cats = d.settings.sup.cats || {}; d.settings.sup.over = d.settings.sup.over || {}; d.settings.sup.tcats = d.settings.sup.tcats || {};
+    addPacks(d);
+    d.products.forEach(function(p){
+      if (!p.variants || !p.variants.length) p.variants = [{name:'Standard', sample:p.sample || '', full:p.full || ''}];
+      delete p.sample; delete p.full;
+      p.type = p.type === 'digital' ? 'digital' : 'code';
+      p.stock = p.stock || []; p.used = p.used || 0;
+    });
+    if (d.dirtySync === undefined) d.dirtySync = true;
+    if (d.dirtySite === undefined) d.dirtySite = true;
+    return d;
+  }
+  function seed(){
+    var d = clone(window.GEOSTORE_DATA || {settings:{},products:[]});
+    var pv = window.GEOSTORE_PRIVATE || {};
+    d.products.forEach(function(p){ if (!p.variants) p.full = pv[p.id] || ''; });
+    return migrate(d);
+  }
+  var state;
+  try { state = JSON.parse(localStorage.getItem(KEY)); } catch(e) { state = null; }
+  state = (state && state.products) ? migrate(state) : seed();
+  // save(true) = a real change (marks the server and website as "needs update"); save() = bookkeeping only
+  function save(changed){
+    if (changed){ state.dirtySync = true; state.dirtySite = true; if (typeof cloudSoon === 'function') cloudSoon(); }
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) { toast('Browser storage is blocked — use Backup on the Publish tab'); }
+    paintStatus();
+  }
+  function supCount(){ return Object.keys(state.settings.sup.cats).length; }
+  function brandCount(){ var b = {}; Object.keys(state.settings.sup.cats).forEach(function(k){ var c = state.settings.sup.cats[k]; b[(c.brand || c.n || '').toLowerCase()] = 1; }); return Object.keys(b).length; }
+
+  function paintStatus(){
+    var s = $('chipSrv'), w = $('chipSite');
+    var hasSrv = !!(state.settings.apiUrl);
+    s.className = 'chip' + (!hasSrv ? ' bad' : state.dirtySync ? ' warn' : '');
+    s.innerHTML = '<i></i><span>' + (!hasSrv ? 'Server not connected' : state.dirtySync ? 'Server needs a Sync' : 'Server up to date') + '</span>' + (hasSrv && state.dirtySync ? '<button type="button" data-act="pub">Publish</button>' : (!hasSrv ? '<button type="button" data-go="settings">Connect</button>' : ''));
+    w.className = 'chip' + (state.dirtySite ? ' warn' : '');
+    w.innerHTML = '<i></i><span>' + (state.dirtySite ? 'Website needs updating' : 'Website up to date') + '</span>' + (state.dirtySite ? '<button type="button" data-act="pub">Publish</button>' : '');
+    var pb = $('pubBadge'); if (pb) pb.hidden = !(hasSrv && (state.dirtySync || state.dirtySite));
+  }
+  $('statusBar').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.act === 'pub'){ show('publish'); publishAll(); }
+    if (b.dataset.go) show(b.dataset.go);
+  });
+
+  /* ---------- navigation ---------- */
+  function show(v){
+    $$('.view').forEach(function(s){ s.classList.toggle('on', s.id==='v-'+v); });
+    $$('.navb').forEach(function(b){ b.classList.toggle('on', b.dataset.v===v); });
+    if (v==='dash') renderHome(); if (v==='products') { backToList(); } if (v==='orders') { renderOrders(); if (base()) loadServerOrders(); } if (v==='settings') renderSettings(); if (v==='supplier') renderSupplier(); if (v==='customers' && base() && !custs.length) loadCustomers(false); if (v==='messages') { loadChats(); } if (v==='publish') paintPub();
+    window.scrollTo(0,0);
+  }
+  $$('.navb').forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.v); }); });
+  document.addEventListener('click', function(e){
+    var g = e.target.closest('[data-go]'); if (!g || g.closest('#statusBar')) return;
+    show(g.dataset.go); if (g.dataset.new) $('newP').click();
+  });
+
+  /* ---------- home ---------- */
+  var lastOrders = [], expiredOrders = [];
+  function setOrders(r){ lastOrders = (r.orders || []).filter(function(x){ return x.status !== 'expired'; }); expiredOrders = (r.orders || []).filter(function(x){ return x.status === 'expired'; }); }
+  function checklist(){
+    var s = state.settings, w = s.autoWallets || {}, anyW = !!(w.usdt_trc20 || w.usdt_bep20 || w.btc || w.binancepay);
+    var items = [
+      {ok: !!s.apiUrl && !!token(), t:'Connect your server', d:'Settings → Server connection (URL + admin token), then Test connection.', go:'settings', b:'Open Settings'},
+      {ok: anyW, t:'Add where customers pay you', d:'Settings → at least one wallet address (a wallet you control is best).', go:'settings', b:'Add wallet'},
+      {ok: !state.dirtySync && !!s.apiUrl, t:'Sync your products to the server', d:'Publish → Sync to server (prices, private codes, wallets).', go:'publish', b:'Sync now'},
+      {ok: !state.dirtySite, t:'Publish the website', d:'Publish → Download data.js, then upload your site folder to Netlify.', go:'publish', b:'Update website'},
+      {ok: brandCount() > 0 || true, t:'Optional: sell gift cards', d: brandCount() ? brandCount() + ' brand(s) selected.' : 'Gift cards tab → connect FazerCards and choose brands.', go:'supplier', b:'Gift cards', opt:true}
+    ];
+    $('checklist').innerHTML = items.map(function(i, n){
+      return '<div class="ck ' + (i.ok && !i.opt ? 'done' : '') + '"><span class="dot">' + (i.ok && !i.opt ? '✓' : n + 1) + '</span><div><b>' + esc(i.t) + (i.opt ? ' <span class="pill">optional</span>' : '') + '</b><span>' + esc(i.d) + '</span></div>' + (i.ok && !i.opt ? '<span class="pill ok">done</span>' : '<button class="btn btn-g btn-s" data-go="' + i.go + '">' + esc(i.b) + '</button>') + '</div>';
+    }).join('');
+  }
+  var period = 30, chartMode = 'rev';
+  function renderHome(){
+    checklist(); paintStatus();
+    $('homeLead').textContent = (state.settings.storeName || 'Your shop') + ' · ' + state.products.length + ' products' + (brandCount() ? ' · ' + brandCount() + ' gift-card brands' : '');
+    if (base() && token()) api('/api/admin/orders').then(function(r){ setOrders(r); homeOrders(); }).catch(function(e){ $('kRev').textContent = '–'; $('chart').innerHTML = '<p class="empty">' + esc(e.message) + '</p>'; });
+    else homeOrders();
+  }
+  // an order "needs you" when a Binance Pay claim is waiting, a supplier delivery is stuck, or a Binance→Binance order has waited over 1 hour
+  function needsYou(o){ return (o.status === 'pending' && o.claimed) || o.fulfil === 'stuck' || (o.fulfil === 'wait' && o.status === 'paid' && Date.now() - o.paidAt > 10*60000) || (o.status === 'pending' && o.fromBinance && Date.now() - o.createdAt > 60*60000); }
+  function profitOf(o){ return (+o.usd || 0) - (+o.cost || 0); }
+  var COL = ['#ff5a36','#4cb3ff','#9b8cff','#38d98a','#f5b84b','#ff7ab8'];
+  function colorFor(str){ var h = 0; for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0; return COL[h % COL.length]; }
+  function initials(e){ var n = String(e || '?').split('@')[0].replace(/[^A-Za-z0-9]+/g, ' ').trim().split(' '); return ((n[0] || '?').charAt(0) + (n[1] ? n[1].charAt(0) : (n[0] || '').charAt(1) || '')).toUpperCase(); }
+  function inRange(o, from, to){ var t = o.paidAt || o.createdAt; return o.status === 'paid' && t >= from && t < to; }
+  function delta(el, cur, prev){
+    var d = el; if (!prev && !cur){ d.className = 'delta flat'; d.textContent = '—'; return; }
+    if (!prev){ d.className = 'delta'; d.textContent = 'new'; return; }
+    var pct = Math.round((cur - prev) / prev * 100); d.className = 'delta' + (pct < 0 ? ' neg' : pct === 0 ? ' flat' : ''); d.textContent = (pct > 0 ? '+' : '') + pct + '%';
+  }
+  function homeOrders(){
+    var now = Date.now(), span = period * 86400000, from = now - span, pfrom = from - span;
+    var cur = lastOrders.filter(function(o){ return inRange(o, from, now + 1); }), prev = lastOrders.filter(function(o){ return inRange(o, pfrom, from); });
+    var sum = function(a, f){ return a.reduce(function(x, o){ return x + f(o); }, 0); };
+    var rev = sum(cur, function(o){ return +o.usd || 0; }), rev0 = sum(prev, function(o){ return +o.usd || 0; }), pro = sum(cur, profitOf), pro0 = sum(prev, profitOf);
+    $('kRev').textContent = money(rev); delta($('kRevD'), rev, rev0);
+    $('kOrd').textContent = cur.length; delta($('kOrdD'), cur.length, prev.length);
+    $('kPro').textContent = money(pro); delta($('kProD'), pro, pro0);
+    var need = lastOrders.filter(needsYou), bd = $('ordBadge'); bd.hidden = !need.length; bd.textContent = need.length;
+    $('kNeed').textContent = need.length; $('bellDot').hidden = !need.length; $('attnBox').hidden = !need.length;
+    $('attn').innerHTML = need.map(function(o){ var why = o.claimed ? 'Customer says they paid with Binance Pay' + (o.claimed.ref ? ' (ref ' + esc(o.claimed.ref) + ')' : '') + '. Check Binance, then Mark paid.' : (o.status === 'pending' && o.fromBinance) ? 'Paying from Binance — waiting over 1 hour. Check your Binance deposits, then Mark paid.' : esc(o.fulfilErr || 'Supplier delivery needs a retry'); return '<div class="ck"><span class="dot" style="background:var(--warn);color:#201400">!</span><div><b>' + esc(o.title) + ' — ' + esc(o.email) + ' <span class="mono help">#' + esc(o.id.slice(0, 8).toUpperCase()) + '</span></b><span>' + why + '</span></div><button class="btn btn-p btn-s" data-go="orders">Open orders</button></div>'; }).join('');
+    drawChart(cur, from, now); drawDonut(cur);
+    $('homeOrders').innerHTML = lastOrders.slice(0, 6).map(function(o){
+      return '<tr><td><div style="display:flex;gap:10px;align-items:center"><span class="av" style="background:' + colorFor(o.email) + '">' + esc(initials(o.email)) + '</span><span><b>' + esc(o.email) + '</b><div class="help">' + esc(dstr2(o.createdAt)) + '</div></span></div></td><td>' + esc(o.title) + '</td><td>' + (o.usd ? '$' + esc(o.usd) : '') + '<div class="help">' + esc(o.coin || '') + '</div></td><td><span class="pill ' + (o.status === 'paid' ? 'paid' : o.status === 'pending' ? 'pending' : 'off') + '">' + esc(o.status) + '</span>' + (needsYou(o) ? ' <span class="pill bad">needs you</span>' : '') + '</td><td><button class="btn btn-g btn-s" data-go="orders">Open</button></td></tr>';
+    }).join('') || '<tr><td colspan="5" class="empty">' + (base() ? 'No orders yet.' : 'Connect your server to see orders.') + '</td></tr>';
+  }
+  function drawChart(cur, from, to){
+    var n = period === 1 ? 24 : period === 7 ? 7 : period === 30 ? 30 : 12, step = (to - from) / n, vals = [], i;
+    for (i = 0; i < n; i++) vals.push(0);
+    cur.forEach(function(o){ var t = o.paidAt || o.createdAt, k = Math.min(n - 1, Math.max(0, Math.floor((t - from) / step))); vals[k] += chartMode === 'ord' ? 1 : chartMode === 'pro' ? profitOf(o) : (+o.usd || 0); });
+    var W = 640, H = 230, pl = 8, pr = 8, pt = 18, pb = 26, mx = Math.max.apply(null, vals.concat([1])), pts = vals.map(function(v, k){ return [pl + (W - pl - pr) * (n === 1 ? .5 : k / (n - 1)), pt + (H - pt - pb) * (1 - v / mx)]; });
+    function smooth(a){ var d = 'M' + a[0][0] + ',' + a[0][1]; for (var k = 0; k < a.length - 1; k++){ var p0 = a[k - 1] || a[k], p1 = a[k], p2 = a[k + 1], p3 = a[k + 2] || p2; var cl = function(y){ return Math.max(pt, Math.min(H - pb, y)); }; d += ' C' + (p1[0] + (p2[0] - p0[0]) / 6) + ',' + cl(p1[1] + (p2[1] - p0[1]) / 6) + ' ' + (p2[0] - (p3[0] - p1[0]) / 6) + ',' + cl(p2[1] - (p3[1] - p1[1]) / 6) + ' ' + p2[0] + ',' + p2[1]; } return d; }
+    var line = smooth(pts), area = line + ' L' + pts[pts.length - 1][0] + ',' + (H - pb) + ' L' + pts[0][0] + ',' + (H - pb) + ' Z';
+    var lbl = function(t){ var d = new Date(t); return period === 1 ? d.getHours() + ':00' : period === 365 ? d.toLocaleString([], {month:'short'}) : d.toLocaleDateString([], {month:'short', day:'numeric'}); };
+    var xs = [0, Math.floor(n / 3), Math.floor(2 * n / 3), n - 1].filter(function(v, k, a){ return a.indexOf(v) === k; });
+    var total = vals.reduce(function(a, b){ return a + b; }, 0);
+    $('chart').innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="Chart"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".45"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>' +
+      [0, .25, .5, .75, 1].map(function(f){ var y = pt + (H - pt - pb) * f; return '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y + '" y2="' + y + '" stroke="var(--border)" stroke-dasharray="3 5"/>'; }).join('') +
+      '<path d="' + area + '" fill="url(#cg)"/><path d="' + line + '" fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round" vector-effect="non-scaling-stroke"/>' +
+      pts.map(function(p, k){ return vals[k] ? '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.4" fill="var(--accent)"><title>' + esc(lbl(from + step * (k + .5))) + ': ' + (chartMode === 'ord' ? vals[k] : money(vals[k])) + '</title></circle>' : ''; }).join('') +
+      xs.map(function(k){ return '<text x="' + pts[k][0] + '" y="' + (H - 6) + '" fill="var(--muted)" font-size="11" text-anchor="' + (k === 0 ? 'start' : k === n - 1 ? 'end' : 'middle') + '">' + esc(lbl(from + step * (k + .5))) + '</text>'; }).join('') + '</svg>' +
+      (total ? '' : '<p class="help" style="text-align:center;margin-top:-10px">No paid orders in this period.</p>');
+  }
+  function drawDonut(cur){
+    var by = {}; cur.forEach(function(o){ by[o.coinName || o.coin || 'USDT'] = (by[o.coinName || o.coin || 'USDT'] || 0) + 1; });
+    var keys = Object.keys(by), tot = keys.reduce(function(a, k){ return a + by[k]; }, 0);
+    if (!tot){ $('donut').innerHTML = '<p class="empty">No paid orders in this period.</p>'; return; }
+    var R = 64, C = 2 * Math.PI * R, off = 0, arcs = keys.map(function(k, i){ var len = by[k] / tot * C, a = '<circle cx="85" cy="85" r="' + R + '" fill="none" stroke="' + COL[i % COL.length] + '" stroke-width="18" stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 85 85)"/>'; off += len; return a; }).join('');
+    $('donut').innerHTML = '<svg viewBox="0 0 170 170" role="img" aria-label="Payment methods"><circle cx="85" cy="85" r="' + R + '" fill="none" stroke="var(--border)" stroke-width="18"/>' + arcs + '<text x="85" y="86" text-anchor="middle" font-size="26" font-weight="800" fill="var(--text)">' + tot + '</text><text x="85" y="106" text-anchor="middle" font-size="11" fill="var(--muted)">paid orders</text></svg><div class="legend">' + keys.map(function(k, i){ return '<div><i style="background:' + COL[i % COL.length] + '"></i>' + esc(k) + '<b>' + Math.round(by[k] / tot * 100) + '%</b></div>'; }).join('') + '</div>';
+  }
+  $('periods').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; period = +b.dataset.p; $$('#periods button').forEach(function(x){ x.classList.toggle('on', x === b); }); homeOrders(); });
+  $('chSeg').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; chartMode = b.dataset.m; $$('#chSeg button').forEach(function(x){ x.classList.toggle('on', x === b); }); homeOrders(); });
+  $('bell').addEventListener('click', function(){ show('orders'); $('oFilter').querySelector('[data-f=need]').click(); });
+  $('topNew').addEventListener('click', function(){ show('products'); $('newP').click(); });
+  $('gSearch').addEventListener('keydown', function(e){
+    if (e.key !== 'Enter') return; var q = this.value.trim(); if (!q) return;
+    if (q.indexOf('@') > -1){ show('customers'); $('cSearch').value = q; renderCustomers(); }
+    else if (/^[A-Za-z0-9]{8}$/.test(q) && !state.products.some(function(p){ return p.title.toLowerCase().indexOf(q.toLowerCase()) > -1; })){ show('orders'); $('oSearch').value = q; drawOrders(); }
+    else { show('products'); $('pSearch').value = q; renderProducts(); }
+    this.value = '';
+  });
+  $('qaPub').addEventListener('click', function(){ show('publish'); publishAll(); });
+
+  /* ---------- products ---------- */
+  var editing = null, pf = 'all', pshown = 40;
+  function ptype(p){ return p.type === 'digital' ? 'digital' : (p.group === 'website' ? 'web' : 'code'); }
+  function renderProducts(){
+    var q = $('pSearch').value.trim().toLowerCase();
+    var list = state.products.filter(function(p){
+      if (pf === 'hidden' ? p.published !== false : (pf !== 'all' && ptype(p) !== pf)) return false;
+      return !q || (p.title + ' ' + (p.category || '') + ' ' + (p.tagline || '')).toLowerCase().indexOf(q) > -1;
+    });
+    $('pcount').textContent = list.length + ' of ' + state.products.length + ' product(s)';
+    $('pMore').hidden = list.length <= pshown; $('pMore').textContent = 'Show more (' + (list.length - pshown) + ')';
+    $('ptbody').innerHTML = list.length ? list.slice(0, pshown).map(function(p){
+      var extra = p.supplier ? ' <span class="pill">supplier</span>' : p.type==='digital' ? ' <span class="pill">digital · '+(p.stock.length-p.used)+' left</span>' : (p.group==='website' ? ' <span class="pill">website</span>' : '') + (p.variants.length>1 ? ' <span class="pill">'+p.variants.length+' styles</span>' : '');
+      return '<tr><td><b>'+esc(p.title)+'</b>'+extra+'<div class="help">'+esc(p.tagline||'')+'</div></td><td>'+esc(p.category||'')+'</td>' +
+        '<td><input type="number" min="0" step="0.5" value="'+esc(p.price)+'" data-price="'+esc(p.id)+'" aria-label="Price" style="padding:7px 10px"></td>' +
+        '<td><label class="chk" style="margin:0"><input type="checkbox" data-live="'+esc(p.id)+'"'+(p.published!==false?' checked':'')+'><span class="help">'+(p.published!==false?'Live':'Hidden')+'</span></label></td>' +
+        '<td><div class="acts"><button class="btn btn-g btn-s" data-edit="'+esc(p.id)+'">Edit</button><button class="btn btn-g btn-s" data-dup="'+esc(p.id)+'">Duplicate</button></div></td></tr>';
+    }).join('') : '<tr><td colspan="5" class="empty">No products match. Click “New product”.</td></tr>';
+    var cats = {}; state.products.forEach(function(p){ if (p.category) cats[p.category]=1; });
+    $('cats').innerHTML = Object.keys(cats).map(function(c){ return '<option value="'+esc(c)+'">'; }).join('');
+  }
+  function backToList(){ editing=null; $('pedit').hidden=true; $('plist').hidden=false; renderProducts(); }
+  $('pSearch').addEventListener('input', function(){ pshown = 40; renderProducts(); });
+  $('pFilter').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; pf = b.dataset.f; pshown = 40; $$('#pFilter button').forEach(function(x){ x.classList.toggle('on', x === b); }); renderProducts(); });
+  $('pMore').addEventListener('click', function(){ pshown += 40; renderProducts(); });
+  var draft = null, vi = 0;
+  var TPL = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>New code</title>\n<style>\n body{font-family:system-ui,sans-serif;background:#0b0f1a;color:#fff;margin:0}\n</style>\n</head>\n<body>\n<!-- your code here -->\n</body>\n</html>\n';
+
+  /* ---- demo guard: links/forms inside a live preview must never leave the preview ---- */
+  function guardFn(){
+    var t;
+    function note(m){var n=document.getElementById('__dm');if(!n){n=document.createElement('div');n.id='__dm';n.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;background:#111;color:#fff;border:1px solid #8cf04d;padding:10px 16px;border-radius:99px;font:600 13px system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:92vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none';document.body.appendChild(n)}n.textContent=m;n.style.opacity=1;clearTimeout(t);t=setTimeout(function(){n.style.opacity=0},2800)}
+    document.addEventListener('click',function(e){
+      var a=e.target.closest&&e.target.closest('a[href]');if(!a)return;
+      var h=a.getAttribute('href')||'';
+      if(h.length>1&&h.charAt(0)==='#'){e.preventDefault();var el=document.getElementById(h.slice(1));if(el)el.scrollIntoView({behavior:'smooth'});else note('Demo: this link has no page in the preview');return}
+      e.preventDefault();
+      note(h==='#'||h===''?'Demo link — in your real site this goes to your own page':'Demo: this link goes to another page ('+h.slice(0,40)+') that you add in your real site');
+    },true);
+    document.addEventListener('submit',function(e){if(!e.defaultPrevented){e.preventDefault();note('Demo form — connect it to your email or server in your real site')}});
+    window.open=function(u){note('Demo: this would open '+String(u||'a new page').slice(0,50)+' in your real site');return null};
+  }
+  function guard(html){
+    html = String(html || '');
+    var g = '<script>(' + guardFn.toString() + ')()<\/script>', i = html.lastIndexOf('</body>');
+    return i < 0 ? html + g : html.slice(0, i) + g + html.slice(i);
+  }
+
+  function saveVariantFields(){
+    if (!draft || draft.type !== 'code') return;
+    var v = draft.variants[vi]; v.name = $('vName').value.trim() || ('Style ' + (vi + 1)); v.sample = $('fSample').value; v.full = $('fFull').value;
+  }
+  function renderVariants(){
+    $('vRow').innerHTML = draft.variants.map(function(v, i){ return '<button type="button" class="btn btn-s ' + (i===vi ? 'btn-p' : 'btn-g') + '" data-vi="' + i + '">' + esc(v.name || ('Style ' + (i+1))) + '</button>'; }).join('');
+    var v = draft.variants[vi]; $('vName').value = v.name || ''; $('fSample').value = v.sample || ''; $('fFull').value = v.full || '';
+    $('pvFrame').srcdoc = guard(v.sample || ''); $('vDel').hidden = draft.variants.length < 2;
+  }
+  function stockCount(){ var n = $('fStock').value.split('\n').filter(function(x){ return x.trim(); }).length; $('stockCount').textContent = n + ' code(s) listed' + (draft && draft.used ? ' · ' + draft.used + ' already used (manual delivery)' : ''); }
+  function toggleType(){
+    var dg = draft.type === 'digital';
+    $('codeFields').hidden = dg; $('filesBox').hidden = dg; $('digFields').hidden = !dg; $('fType').value = draft.type;
+    $('fStyleP').parentNode.hidden = dg; $('fGroup').parentNode.hidden = dg;
+    if (dg){ $('fIcon').value = draft.icon || ''; $('fStock').value = (draft.stock || []).join('\n'); stockCount(); }
+    var sup = !!draft.supplier; $('supNote').hidden = !sup; $('stockBox').hidden = sup; $('fType').disabled = sup;
+    if (sup) $('supNote').innerHTML = '🎁 <b>Supplied automatically by FazerCards.</b> Cost when added: <b>$' + (Math.round(draft.supplier.cost*100)/100) + '</b>. Change the price above; there is no stock to manage — the code is bought the moment a customer pays.';
+    if (!dg) renderVariants();
+  }
+  function openEditor(p){
+    editing = p; draft = clone(p); vi = 0; $('plist').hidden = true; $('pedit').hidden = false;
+    $('peTitle').textContent = p._new ? 'New product' : 'Edit: ' + p.title;
+    $('fTitle').value = p.title||''; $('fCat').value = p.category||''; $('fPrice').value = p.price==null?'':p.price;
+    $('fPub').checked = p.published!==false; $('fWm').checked = p.wm !== false; $('fTag').value = p.tagline||'';
+    $('fStyleP').value = p.stylePrice||''; $('fGroup').value = p.group||''; $('fGuide').value = p.guide||'';
+    $('delP').style.display = p._new ? 'none' : '';
+    draft.files = draft.files || []; draft._delFiles = []; drawFiles();
+    toggleType();
+    window.scrollTo(0,0);
+  }
+  $('vRow').addEventListener('click', function(e){ var b = e.target.closest('[data-vi]'); if (!b) return; saveVariantFields(); vi = +b.dataset.vi; renderVariants(); });
+  $('vAdd').addEventListener('click', function(){ saveVariantFields(); draft.variants.push({name:'Style ' + (draft.variants.length + 1), sample:TPL, full:TPL}); vi = draft.variants.length - 1; renderVariants(); });
+  $('vDel').addEventListener('click', function(){ if (draft.variants.length < 2 || !confirm('Remove this style?')) return; draft.variants.splice(vi, 1); vi = Math.min(vi, draft.variants.length - 1); renderVariants(); });
+  /* ---------- project files ---------- */
+  function fsize(n){ return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+  function rid(){ var a = new Uint8Array(8); crypto.getRandomValues(a); return Array.prototype.map.call(a, function(b){ return ('0' + b.toString(16)).slice(-2); }).join(''); }
+  function drawFiles(){
+    var f = (draft && draft.files) || [];
+    $('fileList').innerHTML = f.map(function(x, i){ return '<div class="pcard" style="margin:0;grid-template-columns:36px 1fr auto;padding:10px 12px;align-items:center"><span style="font-size:1.4rem">' + (x.url ? '🔗' : '📦') + '</span><div><b>' + esc(x.name) + '</b><div class="help">' + (x.url ? esc(x.url.slice(0, 60)) + '…' : fsize(x.size || 0)) + '</div></div><button type="button" class="btn btn-d btn-s" data-fdel="' + i + '">Remove</button></div>'; }).join('');
+  }
+  $('fileList').addEventListener('click', function(e){
+    var b = e.target.closest('[data-fdel]'); if (!b) return;
+    var x = draft.files.splice(+b.dataset.fdel, 1)[0]; if (x && !x.url) draft._delFiles.push(x.id); drawFiles();
+  });
+  $('lnkAdd').addEventListener('click', function(){
+    var n = $('lnkName').value.trim() || 'Download', u = $('lnkUrl').value.trim();
+    if (!/^https:\/\/[^\s"'<>]{4,600}$/.test(u)){ toast('The link must start with https://'); return; }
+    if (draft.files.length >= 8){ toast('Maximum 8 files per product'); return; }
+    draft.files.push({id: rid(), name: n, size: 0, url: u}); $('lnkName').value = ''; $('lnkUrl').value = ''; drawFiles();
+  });
+  $('fileUp').addEventListener('change', function(){
+    var inp = this, list = Array.prototype.slice.call(inp.files || []); inp.value = '';
+    if (!base()){ toast('Connect your server in Settings first'); return; }
+    (function next(){
+      var f = list.shift(); if (!f){ $('fileMsg').textContent = ''; return; }
+      if (draft.files.length >= 8){ toast('Maximum 8 files per product'); return; }
+      if (f.size > 20 * 1024 * 1024){ toast(f.name + ' is bigger than 20 MB — use a download link for big files'); return next(); }
+      var id = rid(); $('fileMsg').textContent = 'Uploading ' + f.name + '…';
+      fetch(base() + '/api/admin/file?pid=' + encodeURIComponent(draft.id) + '&fid=' + id, {method:'PUT', headers:{authorization:'Bearer ' + token(), 'content-type':'application/octet-stream'}, body: f})
+        .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if (!r.ok) throw new Error(j.error || 'Upload failed'); }); })
+        .then(function(){ draft.files.push({id: id, name: f.name, size: f.size}); drawFiles(); toast(f.name + ' uploaded — save the product, then Sync'); next(); })
+        .catch(function(er){ $('fileMsg').textContent = '❌ ' + er.message; });
+    })();
+  });
+  $('fType').addEventListener('change', function(){ saveVariantFields(); draft.type = this.value; toggleType(); });
+  $('fStock').addEventListener('input', stockCount);
+  $('newP').addEventListener('click', function(){
+    openEditor({_new:true, id:uid(), title:'', category:'', price:9, tagline:'', type:'code', variants:[{name:'Standard', sample:TPL, full:TPL}], stock:[], used:0, published:true});
+  });
+  $('newDig').addEventListener('click', function(){
+    openEditor({_new:true, id:uid(), title:'', category:'', price:5, tagline:'', type:'digital', icon:'🎁', variants:[{name:'Standard', sample:'', full:''}], stock:[], used:0, published:true});
+  });
+  $('ptbody').addEventListener('click', function(e){
+    var ed = e.target.closest('[data-edit]'), du = e.target.closest('[data-dup]');
+    if (ed) openEditor(state.products.filter(function(p){return p.id===ed.dataset.edit;})[0]);
+    if (du){ var src = state.products.filter(function(p){return p.id===du.dataset.dup;})[0]; var c = clone(src); c.id = uid(); c.title += ' (copy)'; c.used = 0; state.products.push(c); save(true); renderProducts(); toast('Duplicated'); }
+  });
+  $('ptbody').addEventListener('change', function(e){
+    var pr = e.target.closest('[data-price]'), lv = e.target.closest('[data-live]');
+    if (pr){ var p = state.products.filter(function(x){ return x.id === pr.dataset.price; })[0]; var v = +pr.value; if (p && v >= 0){ p.price = v; save(true); toast('Price saved — press Sync to update the shop'); } }
+    if (lv){ var p2 = state.products.filter(function(x){ return x.id === lv.dataset.live; })[0]; if (p2){ p2.published = lv.checked; save(true); lv.nextElementSibling.textContent = lv.checked ? 'Live' : 'Hidden'; } }
+  });
+  $('peBack').addEventListener('click', backToList);
+  $('pvS').addEventListener('click', function(){ $('pvFrame').srcdoc = guard($('fSample').value); });
+  $('pvF').addEventListener('click', function(){ $('pvFrame').srcdoc = guard($('fFull').value); });
+  $('pf').addEventListener('submit', function(e){
+    e.preventDefault();
+    var p = editing; if (!p) return;
+    saveVariantFields();
+    var title = $('fTitle').value.trim(); if (!title){ toast('Please enter a title'); return; }
+    draft.title = title; draft.category = $('fCat').value.trim(); draft.price = +$('fPrice').value || 0;
+    draft.published = $('fPub').checked; draft.wm = $('fWm').checked; draft.tagline = $('fTag').value.trim();
+    draft.stylePrice = +$('fStyleP').value || 0; draft.group = $('fGroup').value; draft.guide = $('fGuide').value;
+    if (draft.type === 'digital'){
+      draft.icon = $('fIcon').value.trim();
+      if (!draft.supplier) draft.stock = $('fStock').value.split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
+      if (draft.used > draft.stock.length) draft.used = draft.stock.length;
+    }
+    var isNew = p._new; delete draft._new;
+    if (isNew) state.products.push(draft);
+    else { var i = state.products.indexOf(p); state.products[i] = draft; }
+    var dels = draft._delFiles || []; delete draft._delFiles;
+    save(true); toast('Product saved'); backToList();
+    dels.forEach(function(fid){ if (base()) fetch(base() + '/api/admin/file?pid=' + encodeURIComponent(p.id) + '&fid=' + fid, {method:'DELETE', headers:{authorization:'Bearer ' + token()}}).catch(function(){}); });
+  });
+  $('delP').addEventListener('click', function(){
+    if (!editing || editing._new) return;
+    if (!confirm('Delete "' + editing.title + '"? This cannot be undone (make a backup first).')) return;
+    state.removed.push(editing.id);
+    state.products = state.products.filter(function(p){ return p.id !== editing.id; });
+    save(true); toast('Deleted'); backToList();
+  });
+
+  /* ---------- old manual orders ---------- */
+  function itemName(id){ if (id==='ALL') return (state.settings.allAccess.title||'All-Access'); var p=state.products.filter(function(x){return x.id===id;})[0]; return p?p.title:'(deleted)'; }
+  function fillItems(){
+    var o = state.products.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.title)+' — '+money(p.price)+'</option>'; });
+    var aa = state.settings.allAccess; if (aa && aa.enabled) o.unshift('<option value="ALL">'+esc(aa.title)+' — '+money(aa.price)+'</option>');
+    $('oItem').innerHTML = o.join('');
+  }
+  $('oItem').addEventListener('change', function(){ $('oAmt').value = priceOf(this.value); });
+  function priceOf(id){ if (id==='ALL') return state.settings.allAccess.price; var p=state.products.filter(function(x){return x.id===id;})[0]; return p?p.price:''; }
+  function renderManual(){
+    fillItems(); $('oAmt').value = priceOf($('oItem').value);
+    $('otbody').innerHTML = state.orders.length ? state.orders.slice().reverse().map(function(o){
+      return '<tr><td>'+esc(o.date)+'</td><td>'+esc(o.email)+'<div class="help">'+esc(o.coin||'')+'</div></td><td>'+esc(itemName(o.item))+'</td><td>'+money(o.amount)+'</td>' +
+        '<td><select data-st="'+o.id+'"><option value="pending"'+(o.status==='pending'?' selected':'')+'>Waiting</option><option value="paid"'+(o.status==='paid'?' selected':'')+'>Paid</option><option value="delivered"'+(o.status==='delivered'?' selected':'')+'>Delivered</option></select></td>' +
+        '<td><div class="acts"><button class="btn btn-p btn-s" data-del="'+o.id+'">⬇ Deliver</button><button class="btn btn-g btn-s" data-mail="'+o.id+'">✉ Email</button><button class="btn btn-d btn-s" data-rm="'+o.id+'">✕</button></div></td></tr>';
+    }).join('') : '<tr><td colspan="6" class="empty">No manual orders.</td></tr>';
+  }
+  $('of').addEventListener('submit', function(e){
+    e.preventDefault();
+    state.orders.push({id:uid(), date:new Date().toISOString().slice(0,10), email:$('oEmail').value.trim(), item:$('oItem').value, coin:$('oCoin').value.trim(), amount:+$('oAmt').value||0, status:'pending'});
+    save(); $('oEmail').value=''; renderManual(); toast('Order added');
+  });
+  function order(id){ return state.orders.filter(function(o){return o.id===id;})[0]; }
+  $('otbody').addEventListener('change', function(e){ var s = e.target.closest('[data-st]'); if (!s) return; order(s.dataset.st).status = s.value; save(); });
+  $('otbody').addEventListener('click', function(e){
+    var d=e.target.closest('[data-del]'), m=e.target.closest('[data-mail]'), r=e.target.closest('[data-rm]');
+    if (d){
+      var o = order(d.dataset.del), list = o.item==='ALL' ? state.products.filter(function(p){ return p.type==='code'; }) : state.products.filter(function(p){return p.id===o.item;});
+      if (!list.length){ toast('That product no longer exists'); return; }
+      var missing = list.filter(function(p){ return p.type==='code' && p.variants.some(function(v){ return !v.full; }); }); if (missing.length && !confirm('Some styles have no FULL code yet. Deliver anyway?')) return;
+      var codes = {};
+      for (var k = 0; k < list.length; k++){ var pp = list[k]; if (pp.type==='digital'){ var c = pp.stock[pp.used || 0]; if (!c){ toast('"' + pp.title + '" is out of stock — add more codes in Products'); return; } codes[pp.id] = c; pp.used = (pp.used || 0) + 1; } }
+      download(safeName(o.email) + '-codes.html', bundle(list, o, codes)); o.status = 'delivered'; save(true); renderManual();
+      toast('Downloaded — now attach this file to an email to the customer');
+    }
+    if (m){
+      var o2 = order(m.dataset.mail);
+      var body = 'Hi,\n\nThank you for your purchase of "' + itemName(o2.item) + '"!\n\nYour code file is attached. Open it in your browser: every code has a live preview and a Copy button.\n\nIf you need any help, just reply to this email.\n\n' + (state.settings.storeName||'');
+      location.href = 'mailto:' + o2.email + '?subject=' + encodeURIComponent('Your ' + (state.settings.storeName||'') + ' order') + '&body=' + encodeURIComponent(body);
+    }
+    if (r && confirm('Remove this order record?')){ state.orders = state.orders.filter(function(x){return x.id!==r.dataset.rm;}); save(); renderManual(); }
+  });
+  function safeName(s){ return String(s).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'customer'; }
+  function download(name, text, type){
+    var a = document.createElement('a'), u = URL.createObjectURL(new Blob([text], {type:type||'text/html'}));
+    a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 1500);
+  }
+  /* The delivery file for manual orders: one page, live preview + copy button for each code */
+  function bundle(list, o, codes){
+    var n = 0; codes = codes || {};
+    var items = list.map(function(p){
+      if (p.type === 'digital'){
+        var i = n++;
+        return '<section><h2>'+esc(p.title)+'</h2><p class="d">'+esc(p.tagline||'')+'</p><div class="bar"><b>Your code</b><button onclick="cp('+i+',this)">Copy</button></div><pre id="c'+i+'" style="font-size:1.05rem">'+esc(codes[p.id]||'')+'</pre></section>';
+      }
+      return '<section><h2>'+esc(p.title)+'</h2><p class="d">'+esc(p.tagline||'')+'</p>' + p.variants.map(function(v){
+        var i = n++;
+        return '<h3 style="margin:22px 0 4px;font-size:1.05rem">'+esc(v.name)+'</h3><iframe sandbox="allow-scripts" srcdoc="'+esc(v.full)+'" title="Preview"></iframe><div class="bar"><b>Full code</b><button onclick="cp('+i+',this)">Copy code</button></div><pre id="c'+i+'">'+esc(v.full)+'</pre>';
+      }).join('') + '</section>';
+    }).join('');
+    return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your codes — '+esc(state.settings.storeName||'')+'</title><style>' +
+      'body{margin:0;font-family:system-ui,sans-serif;background:#f3f7ef;color:#0e1a0b;line-height:1.6}.w{max-width:900px;margin:auto;padding:30px 18px 80px}h1{margin-bottom:4px}.d{color:#586651}' +
+      'section{margin-top:30px;padding:22px;border:1px solid #dbe5d4;border-radius:18px;background:#fff}iframe{width:100%;height:380px;border:1px solid #dbe5d4;border-radius:12px;background:#fff;margin:10px 0}' +
+      '.bar{display:flex;justify-content:space-between;align-items:center;margin:8px 0}button{background:#3d9a0e;color:#fff;border:0;padding:9px 18px;border-radius:999px;font-weight:700;cursor:pointer}' +
+      'pre{max-height:360px;overflow:auto;background:#f0f5ec;border:1px solid #dbe5d4;border-radius:12px;padding:14px;font-size:.78rem;white-space:pre-wrap}</style></head><body><div class="w">' +
+      '<h1>Thank you! 🎉</h1><p class="d">Order for '+esc(o.email)+' · '+esc(o.date)+'. Each code below has a live preview and a copy button. Paste the code into a file named <b>index.html</b> and open it.</p>' + items +
+      '<p class="d" style="margin-top:40px">Licence: you may use these codes in your own and your clients\' projects. You may not resell or share the code files themselves.</p></div>' +
+      '<script>function cp(i,b){var t=document.getElementById("c"+i).textContent;function d(){b.textContent="Copied!";setTimeout(function(){b.textContent="Copy code"},1500)}if(navigator.clipboard){navigator.clipboard.writeText(t).then(d,d)}else{d()}}<\/script></body></html>';
+  }
+
+  /* ---------- settings ---------- */
+  function ptsExample(){
+    var per = +$('ptPer').value || 0, val = +$('ptVal').value || 0;
+    $('ptEx').textContent = per && val ? 'Example: a $20 order earns ' + Math.floor(20 * per) + ' points (worth $' + (Math.floor(20 * per) * val).toFixed(2) + ' back = ' + (Math.floor(20 * per) * val / 20 * 100).toFixed(1) + '% cashback).' : '';
+  }
+  ['ptPer','ptVal'].forEach(function(i){ $(i).addEventListener('input', ptsExample); });
+  function loadPts(keep){
+    if (!(base() && token())){ $('ptMsg').textContent = 'Connect your payment server first (above).'; return; }
+    api('/api/admin/points').then(function(c){
+      $('ptOn').checked = !!c.on; $('ptPer').value = c.perUsd; $('ptVal').value = c.valueUsd; $('ptMin').value = c.minOrder; $('ptMax').value = c.maxOrder; $('ptPct').value = c.maxPct; $('ptRed').value = c.minRedeem; if (!keep) $('ptMsg').textContent = ''; ptsExample();
+    }).catch(function(e){ $('ptMsg').textContent = '❌ ' + e.message; });
+  }
+  $('ptSave').addEventListener('click', function(){
+    var b = {on: $('ptOn').checked, perUsd: +$('ptPer').value, valueUsd: +$('ptVal').value, minOrder: +$('ptMin').value, maxOrder: +$('ptMax').value, maxPct: +$('ptPct').value, minRedeem: +$('ptRed').value};
+    if (!(b.perUsd >= 0) || !(b.valueUsd >= 0) || b.maxPct > 100){ toast('Please check the numbers'); return; }
+    $('ptMsg').textContent = 'Saving…';
+    api('/api/admin/points', {method:'POST', body: JSON.stringify(b)}).then(function(){ $('ptMsg').textContent = '✅ Saved — live on your shop now'; loadPts(true); }).catch(function(e){ $('ptMsg').textContent = '❌ ' + e.message; });
+  });
+  function loadFeat(){
+    if (!(base() && token())) return;
+    api('/api/admin/features').then(function(c){ $('ftRev').checked = c.reviews; $('ftNot').checked = c.notify; $('ftCart').checked = c.cart; }).catch(function(){});
+  }
+  $('ftSave').addEventListener('click', function(){
+    $('ftMsg').textContent = 'Saving…';
+    api('/api/admin/features', {method:'POST', body: JSON.stringify({reviews:$('ftRev').checked, notify:$('ftNot').checked, cart:$('ftCart').checked})}).then(function(){ $('ftMsg').textContent = '✅ Saved'; }).catch(function(e){ $('ftMsg').textContent = '❌ ' + e.message; });
+  });
+  function renderSettings(){
+    if (base() && token()) { tgState(); loadPts(); loadFeat(); }
+    var s = state.settings, aa = s.allAccess, w = s.autoWallets || {};
+    $('sWalU').value = w.usdt_trc20||''; $('sWalE').value = w.usdt_bep20||''; var ba = s.binanceAddr || {}; $('sBinU').checked = !!ba.usdt_trc20; $('sBinE').checked = !!ba.usdt_bep20; $('sWa').value = s.whatsapp || ''; var so = s.social || {}; $$('[data-soc]').forEach(function(i){ i.value = so[i.dataset.soc] || ''; }); $('sFeat').value = s.featured || ''; $('sTgU').value = s.telegram || ''; $('sWalB').value = w.btc||''; $('sWalP').value = w.binancepay||'';
+    $('sSite').value = s.siteUrl||''; $('sApi').value = s.apiUrl||''; $('sTok').value = token(); $('sName').value = s.storeName||''; $('sEmail').value = s.email||''; $('sTag').value = s.tagline||'';
+    $('sWal').value = Object.keys(s.wallets||{}).map(function(k){ return k + ' | ' + s.wallets[k]; }).join('\n');
+    var an = s.arNames || {}; $('sArN').value = Object.keys(an).map(function(k){ return k + ' | ' + an[k]; }).join('\n');
+    $('sDig').checked = s.digitalSection !== false; $('aaOn').checked = !!aa.enabled; $('aaTitle').value = aa.title||''; $('aaPrice').value = aa.price==null?'':aa.price; $('aaDesc').value = aa.description||'';
+  }
+  $('sf').addEventListener('submit', function(e){
+    e.preventDefault();
+    var s = state.settings;
+    var wu = $('sWalU').value.trim(), we = $('sWalE').value.trim(), wb = $('sWalB').value.trim(), wp = $('sWalP').value.trim();
+    if (wu && !WAL.usdt_trc20.test(wu)){ toast('The USDT TRC20 address does not look right (starts with T, 34 characters)'); return; }
+    if (we && !WAL.usdt_bep20.test(we)){ toast('The USDT BEP20 address does not look right (starts with 0x, 42 characters)'); return; }
+    if (wb && !WAL.btc.test(wb)){ toast('The Bitcoin address does not look right'); return; }
+    if (wp && !WAL.binancepay.test(wp)){ toast('The Binance Pay ID should be digits only'); return; }
+    s.siteUrl = $('sSite').value.trim().replace(/\/+$/,''); if (s.siteUrl && !/^https:\/\/[A-Za-z0-9.-]+$/.test(s.siteUrl)){ toast('The shop address must look like https://geostorecodes.com'); return; }
+    s.apiUrl = $('sApi').value.trim().replace(/\/+$/,''); try { localStorage.setItem('geostore_admin_token', $('sTok').value.trim()); } catch(er) {}
+    s.storeName = $('sName').value.trim(); s.email = $('sEmail').value.trim(); s.tagline = $('sTag').value.trim();
+    var w = {}; $('sWal').value.split('\n').forEach(function(line){ var i = line.indexOf('|'); if (i>0){ var k = line.slice(0,i).trim(), v = line.slice(i+1).trim(); if (k && v) w[k]=v; } });
+    s.wallets = w; s.autoWallets = {usdt_trc20: wu, usdt_bep20: we, btc: wb, binancepay: wp};
+    var wa = $('sWa').value.replace(/[^0-9]/g, ''); if (wa && (wa.length < 7 || wa.length > 15)){ toast('The WhatsApp number should have 7–15 digits with the country code'); return; }
+    s.whatsapp = wa; s.telegram = $('sTgU').value.trim().replace(/^@/, '').replace(/[^A-Za-z0-9_]/g, ''); s.binanceAddr = {usdt_trc20: $('sBinU').checked && !!wu, usdt_bep20: $('sBinE').checked && !!we};
+    var soc = {}; var bad = '';
+    $$('[data-soc]').forEach(function(i){ var v = i.value.trim(); if (!v) return; if (!/^https:\/\/[^\s"'<>]+$/.test(v)) bad = i.dataset.soc; else soc[i.dataset.soc] = v; });
+    if (bad){ toast('The ' + bad + ' link must start with https://'); return; }
+    s.social = soc; s.featured = $('sFeat').value.trim().slice(0, 300);
+    var ar = {}; $('sArN').value.split('\n').forEach(function(line){ var i = line.indexOf('|'); if (i > 0){ var k = line.slice(0, i).trim(), v = line.slice(i + 1).trim(); if (k && v) ar[k.slice(0, 200)] = v.slice(0, 200); } }); s.arNames = ar;
+    s.digitalSection = $('sDig').checked;
+    s.allAccess = {enabled:$('aaOn').checked, title:$('aaTitle').value.trim()||'All-Access Pass', price:+$('aaPrice').value||0, description:$('aaDesc').value.trim()};
+    save(true); toast('Settings saved — now Sync on the Publish tab');
+  });
+
+  /* ---------- payment server (Cloudflare Worker) ---------- */
+  function token(){ try { return localStorage.getItem('geostore_admin_token') || ''; } catch(e) { return ''; } }
+  function base(){ return String(state.settings.apiUrl || '').replace(/\/+$/,''); }
+  function api(path, opt){
+    if (!base()) return Promise.reject(new Error('Enter your Payment server URL in Settings first.'));
+    if (!/^https:\/\/[^\s]+$/.test(base())) return Promise.reject(new Error('The Payment server URL must start with https:// — check it in Settings.'));
+    opt = opt || {};
+    opt.headers = Object.assign({'content-type':'application/json', authorization:'Bearer ' + token()}, opt.headers || {});
+    return fetch(base() + path, opt).then(function(r){ return r.json().then(function(j){ if (!r.ok) throw new Error(limitHint(j.error || ('Server error ' + r.status))); return j; }); }, function(){ throw new Error(NOREACH); });
+  }
+  // Cloudflare's free plan has daily limits that reset at 00:00 UTC; tell the owner exactly when, in their own time.
+  function limitHint(m){
+    if (!/limit exceeded|too many requests|busy/i.test(m)) return m;
+    var d = new Date(); var next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1));
+    return m + ' → This is Cloudflare\'s FREE daily limit. It resets by itself at ' + next.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' your local time (00:00 UTC). Nothing is broken — try again after that.';
+  }
+  var NOREACH = 'Could not reach the server. Open YOUR-URL/api/health in a new browser tab — if it does not show {"ok":true…}, the URL is wrong or the Worker is not deployed. If it does, re-paste the latest worker.js into Cloudflare and press Deploy.';
+  function srvStatus(t, bad){ ['srvStatus','srvStatus2'].forEach(function(id){ var e = $(id); e.textContent = t; e.style.color = bad ? 'var(--danger)' : 'var(--ok)'; }); }
+  $('srvTest').addEventListener('click', function(){
+    // use what is typed in the form (not yet saved)
+    var url = $('sApi').value.trim().replace(/\/+$/,''), tk = $('sTok').value.trim();
+    srvStatus('Testing…');
+    if (!url) return srvStatus('Enter your Payment server URL first.', true);
+    if (!/^https:\/\/[^\s]+$/.test(url)) return srvStatus('The Payment server URL must start with https://', true);
+    fetch(url + '/api/health').then(function(r){ return r.json(); }, function(){ throw new Error(NOREACH); }).then(function(h){
+      var miss = []; if (!h.kv) miss.push('storage (KV binding ORDERS)'); if (!h.admin) miss.push('ADMIN_TOKEN');
+      if (miss.length) return srvStatus('Server reachable, but missing: ' + miss.join(', '), true);
+      return fetch(url + '/api/admin/ping', {headers:{authorization:'Bearer ' + tk}}).then(function(r){ if (!r.ok) throw new Error('Wrong or missing admin token'); }, function(){ throw new Error(NOREACH); }).then(function(){ srvStatus('✅ Connected and your admin token works. Server version ' + (h.version || '?') + (h.supplier ? ' · FazerCards key found' : '') + (h.wallet ? '' : ' (no wallet yet — add one above, save, then Sync)')); });
+    }).catch(function(e){ srvStatus('❌ ' + e.message, true); });
+  });
+  // Sync = upload each CHANGED product on its own (small requests), then one small index.
+  function hash(str){ var h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (var i = 0, c; i < str.length; i++){ c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); } h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909); h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909); return (h2>>>0).toString(16) + (h1>>>0).toString(16); }
+  function srvProduct(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, guide:p.guide||'', type:p.type, published:p.published!==false,
+    variants:p.type==='code' ? p.variants.map(function(v){ return {name:v.name, full:v.full}; }) : [], files:p.files || [], stock:p.type==='digital' ? p.stock : []}; }
+  function supForServer(){ var s = state.settings.sup, cats = {}; Object.keys(s.cats).forEach(function(id){ cats[id] = {n: s.cats[id].n}; }); var tc = {}; Object.keys(s.tcats || {}).forEach(function(id){ tc[id] = {n: s.tcats[id].n}; }); return {rule: s.rule, cats: cats, tcats: tc, over: s.over || {}}; }
+  var syncing = false;
+  function runSync(force){
+    if (syncing) return; syncing = true;
+    if (force || state.syncUrl !== base()) state.sync = {};      // new server (or forced): upload everything
+    state.syncUrl = base(); state.sync = state.sync || {};
+    var todo = state.products.filter(function(p){ return state.sync[p.id] !== hash(JSON.stringify(srvProduct(p))); });
+    var done = 0, total = todo.length;
+    function finish(msg, bad){ syncing = false; srvStatus(msg, bad); }
+    function next(){
+      if (!todo.length) return sendIndex();
+      var p = todo.shift(); srvStatus('Uploading ' + (done + 1) + ' of ' + total + ': ' + p.title + '…');
+      var body = srvProduct(p), hh = hash(JSON.stringify(body));
+      api('/api/admin/product', {method:'POST', body: JSON.stringify(body)}).then(function(){ state.sync[p.id] = hh; save(); done++; next(); }).catch(function(e){ finish('❌ Stopped at "' + p.title + '": ' + e.message + (done ? ' (' + done + ' product(s) were uploaded; press Sync again to continue.)' : ''), true); });
+    }
+    function sendIndex(){
+      var aa = state.settings.allAccess || {}, removed = (state.removed || []).filter(function(id){ return state.sync['gone:' + id] !== 1; });
+      srvStatus('Finishing…');
+      api('/api/admin/index', {method:'POST', body: JSON.stringify({
+        storeName: state.settings.storeName, site: state.settings.siteUrl || '', wallets: state.settings.autoWallets || {}, binanceAddr: state.settings.binanceAddr || {}, remove: removed, sup: supForServer(),
+        allAccess: {enabled: !!aa.enabled, title: aa.title, price: aa.price},
+        products: state.products.map(function(p){ return {id:p.id, title:p.title, tagline:p.tagline, price:p.price, stylePrice:p.stylePrice||0, type:p.type, published:p.published!==false, wm:p.wm !== false, files:p.files || [], supplier:p.supplier ? {cat:p.supplier.cat, card:p.supplier.card} : undefined, variants:p.type==='code' ? p.variants.map(function(v){ return v.name; }) : [], stockN:p.type==='digital' ? p.stock.length : 0}; })
+      })}).then(function(r){ removed.forEach(function(id){ state.sync['gone:' + id] = 1; }); state.dirtySync = false; save(); finish('✅ Synced: ' + total + ' product(s) uploaded, ' + (r.products - total) + ' unchanged. The server is up to date.'); })
+        .catch(function(e){ finish('❌ ' + e.message, true); });
+    }
+    srvStatus('Starting…'); next();
+  }
+  $('srvSync').addEventListener('click', function(){ runSync(false); });
+  $('srvSyncAll').addEventListener('click', function(){ if (confirm('Re-upload every product? This uses more of Cloudflare\'s free daily writes (about 1 per product).')) runSync(true); });
+
+  /* ---------- orders from the server ---------- */
+  var of = 'all';
+  function dstr2(ms){ return new Date(ms).toISOString().slice(0,16).replace('T',' '); }
+  var expiredN = 0;
+  function loadServerOrders(){
+    $('srvMsg').textContent = 'Loading…';
+    api('/api/admin/orders').then(function(r){ setOrders(r); expiredN = r.expiredN || 0; $('srvPurge').textContent = '🗑 Delete expired orders' + (expiredN ? ' (' + expiredN + ')' : ''); homeOrders(); drawOrders(); }).catch(function(e){ $('srvMsg').textContent = '❌ ' + e.message; $('srvBody').innerHTML = ''; });
+  }
+  function drawOrders(){
+    var q = $('oSearch').value.trim().toLowerCase();
+    var list = (of === 'expired' ? expiredOrders : lastOrders).filter(function(o){
+      if (of === 'need' && !needsYou(o)) return false; if (of === 'paid' && o.status !== 'paid') return false; if (of === 'pending' && o.status !== 'pending') return false;
+      return !q || (o.email + ' ' + o.title + ' ' + o.id.slice(0, 8)).toLowerCase().indexOf(q) > -1;
+    });
+    $('srvMsg').textContent = (of === 'expired' ? expiredOrders : lastOrders).length ? list.length + ' of ' + (of === 'expired' ? expiredOrders : lastOrders).length + ' order(s)' + (of === 'expired' ? ' — expired without payment. If a customer says they paid, press “Why not paid?”.' : '') : (of === 'expired' ? 'No expired orders.' : 'No orders yet.');
+    $('srvBody').innerHTML = list.map(function(o){
+      var link = base() + '/api/delivery/' + o.id + '?k=' + o.key, need = needsYou(o);
+      return '<tr' + (need ? ' style="background:rgba(183,121,31,.08)"' : '') + '><td>' + esc(dstr2(o.createdAt)) + '</td><td>' + esc(o.email) + '</td><td>' + esc(o.title) + '</td><td>' + (o.usd ? '$' + esc(o.usd) : '') + '<div class="help">' + esc(o.amount) + ' ' + esc(o.coin || 'USDT') + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span>' + (need ? ' <span class="pill bad">needs you</span>' : '') +
+        (o.claimed ? '<div class="help">Customer says paid' + (o.claimed.ref ? ' · ref ' + esc(o.claimed.ref) : '') + '</div>' : '') +
+        (o.fulfil ? '<div class="help">' + (o.fulfil==='ok' ? '🎁 delivered · cost $' + esc(o.cost) + ' · profit $' + esc(Math.round((o.usd - o.cost)*100)/100) : o.fulfil==='wait' ? '⏳ buying from supplier… ' + esc(o.fulfilErr) : '⚠ ' + esc(o.fulfilErr || 'supplier problem')) + '</div>' : '') + '</td><td><div class="acts">' +
+        (o.fulfil && o.fulfil!=='ok' && o.status==='paid' ? '<button class="btn btn-p btn-s" data-retry="' + esc(o.id) + '">Retry delivery</button>' : '') +
+        (o.status==='paid' ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(link) + '">Open order</a>' : '') +
+        ((o.status==='pending' || o.status==='expired') ? '<button class="btn btn-g btn-s" data-why="' + esc(o.id) + '">Why not paid?</button>' : '') +
+        (o.status!=='paid' ? '<button class="btn btn-g btn-s" data-mp="' + esc(o.id) + '">Mark paid</button>' : '') + '</div></td></tr>';
+    }).join('');
+  }
+  function renderOrders(){ renderManual(); }
+  $('srvRefresh').addEventListener('click', loadServerOrders);
+  $('srvPurge').addEventListener('click', function(){
+    if (!confirm('Delete all orders that expired without payment? They are of no use and cannot be restored. Paid orders are never touched.')) return;
+    var b = this; b.disabled = true;
+    api('/api/admin/purge-expired', {method:'POST', body:'{}'}).then(function(r){ b.disabled = false; toast(r.deleted + ' expired order(s) deleted' + (r.more ? ' — press again to delete more' : '')); loadServerOrders(); }).catch(function(e){ b.disabled = false; toast(e.message); });
+  });
+  $('oSearch').addEventListener('input', drawOrders);
+  $('oFilter').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; of = b.dataset.f; $$('#oFilter button').forEach(function(x){ x.classList.toggle('on', x === b); }); drawOrders(); });
+  $('srvBody').addEventListener('click', function(e){
+    var rb = e.target.closest('[data-retry]');
+    if (rb){ rb.disabled = true; api('/api/admin/retry', {method:'POST', body: JSON.stringify({id: rb.dataset.retry})}).then(function(r){ toast(r.fulfil === 'ok' ? 'Delivered ✅' : 'Still not delivered: ' + (r.error || 'supplier problem')); loadServerOrders(); }).catch(function(er){ toast(er.message); rb.disabled = false; }); return; }
+    var wb = e.target.closest('[data-why]');
+    if (wb){
+      var oid = wb.dataset.why; wb.disabled = true;
+      api('/api/admin/diagnose', {method:'POST', body: JSON.stringify({id: oid})}).then(function(r){
+        var i = r.info; wb.disabled = false;
+        var lines = i.seen.map(function(t){ return (t.match ? '✅ ' : t.near ? '≈ ' : '• ') + t.amount + '   ' + t.when + (t.used ? '   (already used by another order)' : t.match ? '   (exact match)' : t.near ? '   (close to the expected amount)' : ''); });
+        alert('Expected: ' + i.expects + ' (' + i.coin + ')\nWallet: ' + i.wallet + '\n\n' + i.notes.join('\n') + (lines.length ? '\n\nPayments the server can see:\n' + lines.join('\n') : '') + (i.after ? '\n\nOrder is now: ' + i.after : ''));
+        var cand = i.seen.filter(function(t){ return t.near && !t.used; })[0] || i.seen.filter(function(t){ return t.match && !t.used; })[0];
+        if (cand && i.after !== 'paid' && confirm('Accept this payment for the order?\n\n' + cand.amount + '   ' + cand.when + '\n\nOnly do this if you are sure it belongs to this customer.')){
+          api('/api/admin/accept', {method:'POST', body: JSON.stringify({id: oid, ref: cand.ref})}).then(function(){ toast('Order marked paid — delivery is automatic'); loadServerOrders(); }).catch(function(er){ toast(er.message); });
+          return;
+        }
+        loadServerOrders();
+      }).catch(function(er){ wb.disabled = false; toast(er.message); });
+      return;
+    }
+    var b = e.target.closest('[data-mp]'); if (!b) return;
+    if (!confirm('Mark this order as paid? Only do this after you saw the money in your wallet / Binance.')) return;
+    api('/api/admin/markpaid', {method:'POST', body: JSON.stringify({id:b.dataset.mp})}).then(function(){ toast('Marked as paid — delivery is automatic'); loadServerOrders(); }).catch(function(er){ toast(er.message); });
+  });
+
+  /* ---------- customers (accounts stored on your server) ---------- */
+  var custs = [], custNext = null, custTotal = 0;
+  function dstr(ms){ return ms ? new Date(ms).toISOString().slice(0,10) : ''; }
+  function loadCustomers(more){
+    $('cMsg').textContent = 'Loading…';
+    api('/api/admin/customers' + (more && custNext ? '?offset=' + custNext : '')).then(function(r){
+      custs = more ? custs.concat(r.customers) : r.customers; custNext = r.next; custTotal = r.total; renderCustomers();
+    }).catch(function(e){ $('cMsg').textContent = '❌ ' + e.message; });
+  }
+  function renderCustomers(){
+    var q = $('cSearch').value.trim().toLowerCase();
+    var list = custs.filter(function(c){ return !q || (c.name + ' ' + c.email + ' ' + c.phone + ' ' + c.country).toLowerCase().indexOf(q) > -1; });
+    $('cTotal').textContent = custTotal; $('cOrd').textContent = custs.filter(function(c){ return c.orders > 0; }).length; $('cDis').textContent = custs.filter(function(c){ return c.disabled; }).length;
+    $('cBody').innerHTML = list.map(function(c){
+      return '<tr><td>'+esc(dstr(c.createdAt))+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+esc(c.phone)+'</td><td>'+esc(c.country)+'</td><td>'+c.orders+'</td><td>⭐ '+(c.points||0)+'</td><td><span class="pill '+(c.disabled?'pending':'paid')+'">'+(c.disabled?'Disabled':'Active')+'</span></td><td><button class="btn btn-g btn-s" data-cv="'+esc(c.email)+'">Open</button></td></tr>';
+    }).join('') || '<tr><td colspan="9" class="empty">No customers found.</td></tr>';
+    $('cMsg').textContent = custs.length + ' of ' + custTotal + ' customer(s) loaded' + (q ? ' · ' + list.length + ' match your search' : '');
+    $('cMore').hidden = custNext == null;
+  }
+  function loadReviews(){
+    $('rvMsg').textContent = 'Loading…';
+    api('/api/admin/reviews').then(function(r){
+      var L = r.reviews || [];
+      $('rvBody').innerHTML = L.map(function(v){
+        var st = v.st === 'ok' ? '<span class="pill paid">Shown</span>' : v.st === 'hidden' ? '<span class="pill off">Hidden</span>' : '<span class="pill pending">New</span>';
+        return '<tr><td>'+esc(dstr(v.t))+'</td><td>'+'★'.repeat(v.r)+'☆'.repeat(5-v.r)+'</td><td>'+esc(v.name)+'<div class="help">'+esc(v.item)+'</div></td><td>'+esc(v.text)+'</td><td>'+st+'</td><td style="white-space:nowrap">'+(v.st==='ok'?'':'<button class="btn btn-p btn-s" data-rv="approve" data-id="'+esc(v.id)+'">Approve</button> ')+(v.st==='hidden'?'':'<button class="btn btn-g btn-s" data-rv="hide" data-id="'+esc(v.id)+'">Hide</button> ')+'<button class="btn btn-d btn-s" data-rv="delete" data-id="'+esc(v.id)+'">Delete</button></td></tr>';
+      }).join('') || '<tr><td colspan="6" class="empty">No reviews yet.</td></tr>';
+      $('rvMsg').textContent = L.length + ' review(s)';
+    }).catch(function(e){ $('rvMsg').textContent = '❌ ' + e.message; });
+  }
+  $('rvRefresh').addEventListener('click', loadReviews);
+  $('rvBody').addEventListener('click', function(e){
+    var b = e.target.closest('[data-rv]'); if (!b) return;
+    if (b.dataset.rv === 'delete' && !confirm('Delete this review for good?')) return;
+    api('/api/admin/review', {method:'POST', body: JSON.stringify({id:b.dataset.id, action:b.dataset.rv})}).then(function(){ toast('Done'); loadReviews(); }).catch(function(er){ toast(er.message); });
+  });
+  $('cRefresh').addEventListener('click', function(){ $('cDetail').hidden = true; loadCustomers(false); loadReviews(); });
+  $('cMore').addEventListener('click', function(){ loadCustomers(true); });
+  $('cSearch').addEventListener('input', renderCustomers);
+  $('cCsv').addEventListener('click', function(){
+    if (!custs.length){ toast('Load your customers first (Refresh)'); return; }
+    function cell(v){ v = String(v == null ? '' : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }
+    var rows = [['Joined','Name','Email','Phone','Country','Orders','Points','Status']].concat(custs.map(function(c){ return [dstr(c.createdAt), c.name, c.email, c.phone, c.country, c.orders, c.points || 0, c.disabled ? 'Disabled' : 'Active']; }));
+    download('customers-' + new Date().toISOString().slice(0,10) + '.csv', '﻿' + rows.map(function(r){ return r.map(cell).join(','); }).join('\r\n'), 'text/csv');
+  });
+  function openCustomer(email){
+    var box = $('cDetail'); box.hidden = false; box.innerHTML = '<p class="help">Loading…</p>'; box.scrollIntoView({behavior:'smooth'});
+    api('/api/admin/customer?email=' + encodeURIComponent(email)).then(function(r){
+      var p = r.profile;
+      box.innerHTML = '<div class="bar"><h2 style="margin:0">' + esc(p.name || p.email) + ' <span class="pill ' + (p.disabled ? 'pending' : 'paid') + '">' + (p.disabled ? 'Disabled' : 'Active') + '</span></h2><button class="btn btn-g btn-s" id="cdClose">Close</button></div>' +
+        '<p class="help">' + esc(p.email) + ' · member since ' + esc(dstr(p.createdAt)) + ' · ' + r.orders.length + ' order(s) · total paid <b>$' + esc(r.spent) + '</b></p>' +
+        '<form class="form" id="cdForm" style="margin:14px 0"><div><label>Name</label><input id="cdName" value="' + esc(p.name) + '"></div><div><label>Phone</label><input id="cdPhone" value="' + esc(p.phone) + '"></div><div><label>Country</label><input id="cdCountry" value="' + esc(p.country) + '"></div><div><label>Private note (only you can see it)</label><input id="cdNote" value="' + esc(p.note) + '"></div><div class="full" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p btn-s" type="submit">Save details</button><button class="btn btn-g btn-s" type="button" id="cdToggle">' + (p.disabled ? 'Enable account' : 'Disable account') + '</button><button class="btn btn-g btn-s" type="button" id="cdPw">Set a new password…</button><button class="btn btn-d btn-s" type="button" id="cdDel">Delete account</button></div></form>' +
+        '<div class="panel" style="margin:14px 0"><h2 style="font-size:1rem">⭐ Points: <span id="cdPts">' + (p.points||0) + '</span></h2><div class="form"><div><label>Set the balance to exactly</label><input id="cdPSet" type="number" min="0" step="1" placeholder="e.g. 500"></div><div><label>…or add / remove (use − to remove)</label><input id="cdPDel" type="number" step="1" placeholder="e.g. 100 or -50"></div><div><label>Reason (the customer sees it)</label><input id="cdPWhy" maxlength="60" placeholder="e.g. Gift, correction"></div><div class="full"><button class="btn btn-p btn-s" id="cdPBtn" type="button">Update points</button></div></div>' +
+          '<div class="tw"><table><thead><tr><th>Date</th><th>Change</th><th>Balance</th><th>Why</th></tr></thead><tbody>' + ((r.ptsLog||[]).map(function(l){ return '<tr><td>'+esc(dstr(l.t))+'</td><td>'+(l.d>0?'+':'')+l.d+'</td><td>'+l.bal+'</td><td>'+esc(l.why)+'</td></tr>'; }).join('') || '<tr><td colspan="4" class="empty">No points activity yet.</td></tr>') + '</tbody></table></div></div>' +
+        '<h2 style="font-size:1rem">Orders</h2><div class="tw"><table><thead><tr><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>' +
+        (r.orders.map(function(o){ return '<tr><td>' + esc(dstr(o.createdAt)) + '</td><td>' + esc(o.title) + '</td><td>$' + esc(o.usd) + '<div class="help">' + esc(o.amount) + ' ' + esc(o.coinName.split(' ')[0]) + '</div></td><td><span class="pill ' + (o.status==='paid'?'paid':o.status==='pending'?'pending':'off') + '">' + esc(o.status) + '</span></td><td>' + (o.deliveryUrl ? '<a class="btn btn-g btn-s" target="_blank" rel="noopener" href="' + esc(o.deliveryUrl) + '">Open order</a>' : '') + '</td></tr>'; }).join('') || '<tr><td colspan="5" class="empty">No orders yet.</td></tr>') + '</tbody></table></div>';
+      function act(body, ok, reload){ body.email = email; return api('/api/admin/customer', {method:'POST', body: JSON.stringify(body)}).then(function(){ toast(ok); reload(); }).catch(function(e){ toast(e.message); }); }
+      $('cdClose').onclick = function(){ box.hidden = true; };
+      $('cdPBtn').onclick = function(){
+        var st = $('cdPSet').value.trim(), dl = $('cdPDel').value.trim(), body = {action:'points', reason:$('cdPWhy').value};
+        if (st !== '') body.set = +st; else if (dl !== '') body.delta = +dl; else { toast('Type a balance or a number to add/remove'); return; }
+        act(body, 'Points updated', function(){ loadCustomers(false); openCustomer(email); });
+      };
+      $('cdForm').onsubmit = function(e){ e.preventDefault(); act({action:'profile', name:$('cdName').value, phone:$('cdPhone').value, country:$('cdCountry').value, note:$('cdNote').value}, 'Saved', function(){ loadCustomers(false); openCustomer(email); }); };
+      $('cdToggle').onclick = function(){ act({action: p.disabled ? 'enable' : 'disable'}, p.disabled ? 'Account enabled' : 'Account disabled', function(){ loadCustomers(false); openCustomer(email); }); };
+      $('cdPw').onclick = function(){ var pw = prompt('New password for ' + email + ' (at least 8 characters).\nTell the customer; they can change it later in their profile:'); if (pw) act({action:'setpassword', password:pw}, 'Password changed — the old one no longer works', function(){}); };
+      $('cdDel').onclick = function(){ if (confirm('Delete the account of ' + email + '? Their order records stay, but they can no longer sign in. This cannot be undone.')) act({action:'delete'}, 'Account deleted', function(){ box.hidden = true; loadCustomers(false); }); };
+    }).catch(function(e){ box.innerHTML = '<p class="help">❌ ' + esc(e.message) + '</p>'; });
+  }
+  $('cBody').addEventListener('click', function(e){ var b = e.target.closest('[data-cv]'); if (b) openCustomer(b.dataset.cv); });
+
+  /* ---------- gift cards (FazerCards): choose categories, set profit ---------- */
+  var REG = [['US',['USA','US','United States','America']],['GB',['UK','United Kingdom','Britain','England']],['CA',['Canada']],['AU',['Australia']],['NZ',['New Zealand']],['DE',['Germany','Deutschland']],['FR',['France']],['ES',['Spain']],['IT',['Italy']],['NL',['Netherlands','Holland']],['BE',['Belgium']],['AT',['Austria']],['CH',['Switzerland']],['SE',['Sweden']],['NO',['Norway']],['DK',['Denmark']],['FI',['Finland']],['IE',['Ireland']],['PT',['Portugal']],['PL',['Poland']],['CZ',['Czech','Czech Republic']],['RO',['Romania']],['GR',['Greece']],['HU',['Hungary']],['TR',['Turkey','Türkiye','Turkiye']],['SA',['Saudi Arabia','Saudi','KSA']],['AE',['UAE','United Arab Emirates','Emirates']],['KW',['Kuwait']],['QA',['Qatar']],['BH',['Bahrain']],['OM',['Oman']],['EG',['Egypt']],['JO',['Jordan']],['LB',['Lebanon']],['IQ',['Iraq']],['MA',['Morocco']],['DZ',['Algeria']],['TN',['Tunisia']],['ZA',['South Africa']],['NG',['Nigeria']],['KE',['Kenya']],['IN',['India']],['PK',['Pakistan']],['BD',['Bangladesh']],['ID',['Indonesia']],['MY',['Malaysia']],['SG',['Singapore']],['TH',['Thailand']],['VN',['Vietnam']],['PH',['Philippines']],['JP',['Japan']],['KR',['South Korea','Korea']],['CN',['China']],['HK',['Hong Kong']],['TW',['Taiwan']],['BR',['Brazil','Brasil']],['MX',['Mexico']],['AR',['Argentina']],['CL',['Chile']],['CO',['Colombia']],['PE',['Peru']],['RU',['Russia']],['UA',['Ukraine']],['IL',['Israel']],['EU',['Europe','European','EU']]];
+  var GROUPS = ['Gaming','Entertainment','Apps & stores','Shopping','Mobile & telecom','Prepaid & finance','Other'];
+  var GRP_KW = {Gaming:['steam','playstation','psn','xbox','nintendo','roblox','fortnite','v-bucks','pubg','free fire','garena','razer','riot','valorant','league of legends','minecraft','blizzard','battle.net','epic games','ea play','origin','ubisoft','mobile legends','genshin','apex','call of duty','warzone','supercell','clash','robux','uc ','diamonds','honor of kings','tarkov','wow','world of warcraft','nexon','gameloft','zepeto'],
+    Entertainment:['netflix','spotify','disney','hbo','hulu','youtube','deezer','crunchyroll','prime video','paramount','twitch','discord','tidal','audible','shahid','anghami'],
+    'Apps & stores':['itunes','apple','google play','playstore','microsoft','windows','office','app store','huawei','samsung'],
+    Shopping:['amazon','ebay','walmart','target','ikea','zalando','nike','adidas','sephora','noon','jumia','aliexpress','best buy','starbucks','uber','airbnb','booking','carrefour','h&m','zara','mcdonald'],
+    'Mobile & telecom':['vodafone','orange','stc','zain','mobily','top-up','topup','recharge','etisalat','turkcell','telcel','airtel','mtn','giffgaff'],
+    'Prepaid & finance':['binance','paysafecard','neosurf','visa','mastercard','paypal','jeton','astropay','perfect money','skrill','neteller','bitcoin','crypto']};
+  function detect(name){
+    var n = String(name || ''), region = '', brand = n;
+    for (var i = 0; i < REG.length && !region; i++){
+      for (var j = 0; j < REG[i][1].length; j++){
+        var tok = REG[i][1][j], short = tok.length <= 3, re = new RegExp('(^|[^A-Za-z0-9])' + tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Za-z0-9])', short ? '' : 'i');
+        if (re.test(n)){ region = REG[i][0]; brand = n.replace(re, function(m, p1){ return p1; }); break; }
+      }
+    }
+    if (!region && /\b(global|international|worldwide)\b/i.test(n)){ region = 'GLOBAL'; brand = n.replace(/\b(global|international|worldwide)\b/ig, ''); }
+    brand = brand.replace(/[()\[\]]/g, ' ').replace(/\s*[-–—|·:,]\s*$/g, '').replace(/^\s*[-–—|·:,]\s*/g, '').replace(/\s{2,}/g, ' ').trim() || n;
+    var low = n.toLowerCase(), group = 'Other';
+    for (var g in GRP_KW){ if (GRP_KW[g].some(function(k){ return low.indexOf(k) > -1; })){ group = g; break; } }
+    return {brand: brand, region: region || 'GLOBAL', group: group};
+  }
+  var supCats = [], supSel = {}, supEdit = {}, supShown = 100, supF = 'all', supInit = false;
+  function supRule(){ return state.settings.sup.rule; }
+  function sellPrice(cost){ var r = supRule(), v = +r.value || 0, x = r.mode === 'fixed' ? cost + v : cost * (1 + v / 100); return Math.max(Math.ceil(x * 100 - 1e-7) / 100, Math.round((cost + .01) * 100) / 100); }
+  function renderRule(){
+    var r = supRule(); $$('#ruleMode button').forEach(function(b){ b.classList.toggle('on', b.dataset.m === r.mode); });
+    $('ruleVal').value = r.value; $('ruleLbl').textContent = r.mode === 'fixed' ? 'Add this many dollars on top of the supplier price' : 'Add this % on top of the supplier price';
+    var p = sellPrice(10); $('ruleEx').innerHTML = 'Example: a card that costs you <b>$10</b> will sell for <b>' + money(p) + '</b> — you earn <b>' + money(p - 10) + '</b> on each.';
+  }
+  $('ruleMode').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; supRule().mode = b.dataset.m; save(true); renderRule(); drawPrices(); });
+  $('ruleVal').addEventListener('input', function(){ supRule().value = Math.max(0, +this.value || 0); save(true); renderRule(); drawPrices(); });
+  function entry(c){ var d = detect(c.name), e = supEdit[c.category_id] || {}; return {brand: e.brand != null ? e.brand : d.brand, region: e.region != null ? e.region : d.region, group: e.group != null ? e.group : d.group}; }
+  /* ---------- "Live on your shop": always shows what you already added ---------- */
+  var liveG = 'All';
+  function renderLive(){
+    var cats = state.settings.sup.cats || {}, tc = state.settings.sup.tcats || {}, q = ($('liveQ').value || '').trim().toLowerCase(), by = {};
+    Object.keys(cats).forEach(function(id){ var c = cats[id], name = c.brand || c.n || id, key = name.toLowerCase(); var b = by[key] || (by[key] = {name: name, group: c.group || 'Gift cards', logo: c.logo || '', items: []}); b.items.push({id: id, region: (c.region || 'GLOBAL').toUpperCase(), n: c.n}); });
+    var brands = Object.keys(by).map(function(k){ return by[k]; }).sort(function(a, b){ return a.name.localeCompare(b.name); });
+    var games = Object.keys(tc).map(function(id){ return {id: id, name: tc[id].n || id, logo: tc[id].logo || ''}; }).sort(function(a, b){ return a.name.localeCompare(b.name); });
+    var groups = ['All']; brands.forEach(function(b){ if (groups.indexOf(b.group) < 0) groups.push(b.group); }); if (games.length) groups.push('Game top-ups');
+    if (groups.indexOf(liveG) < 0) liveG = 'All';
+    $('liveG').innerHTML = groups.length > 2 ? groups.map(function(g){ return '<button type="button" data-lg="' + esc(g) + '"' + (g === liveG ? ' class="on"' : '') + '>' + esc(g) + '</button>'; }).join('') : ''; $('liveG').hidden = groups.length <= 2;
+    var okB = function(b){ return (liveG === 'All' || liveG === b.group) && (!q || b.name.toLowerCase().indexOf(q) > -1); };
+    var bl = liveG === 'Game top-ups' ? [] : brands.filter(okB), gl = (liveG === 'All' || liveG === 'Game top-ups') ? games.filter(function(g){ return !q || g.name.toLowerCase().indexOf(q) > -1; }) : [];
+    $('liveCount').textContent = brands.length + ' brands · ' + Object.keys(cats).length + ' countries · ' + games.length + ' games';
+    var card = function(logo, name, tag, regs){ var lg = safeUrl(logo); return '<div class="lv">' + (lg ? '<img class="logo-s" loading="lazy" referrerpolicy="no-referrer" src="' + esc(lg) + '" alt="">' : '<span class="logo-s" style="display:grid;place-items:center;font-weight:800;color:#3d9a0e">' + esc(name.charAt(0).toUpperCase()) + '</span>') + '<div style="min-width:0"><b>' + esc(name) + '</b><small>' + esc(tag) + '</small><div class="regs">' + regs + '</div></div></div>'; };
+    var html = bl.map(function(b){ return card(b.logo, b.name, b.group, b.items.sort(function(x, y){ return x.region.localeCompare(y.region); }).map(function(it){ return '<span class="rc"><button type="button" data-lvp="' + esc(it.id) + '" title="' + esc(it.n || '') + ' — see prices">' + esc(it.region) + '</button><button type="button" class="x" data-lvx="' + esc(it.id) + '" title="Remove" aria-label="Remove">✕</button></span>'; }).join('')); }).join('') +
+      gl.map(function(g){ return card(g.logo, g.name, 'Game top-up', '<span class="rc"><button type="button" data-lvtp="' + esc(g.id) + '">Prices</button><button type="button" class="x" data-lvtx="' + esc(g.id) + '" title="Remove" aria-label="Remove">✕</button></span>'); }).join('');
+    $('liveGrid').innerHTML = html || '<p class="empty" style="grid-column:1/-1">' + (Object.keys(cats).length + games.length ? 'Nothing matches.' : 'Nothing added yet. Use steps 3 and 4 below, then press Save.') + '</p>';
+  }
+  $('liveQ').addEventListener('input', renderLive);
+  $('liveG').addEventListener('click', function(e){ var b = e.target.closest('[data-lg]'); if (!b) return; liveG = b.dataset.lg; renderLive(); });
+  $('liveGrid').addEventListener('click', function(e){
+    var p = e.target.closest('[data-lvp]'), x = e.target.closest('[data-lvx]'), tp = e.target.closest('[data-lvtp]'), tx = e.target.closest('[data-lvtx]');
+    if (p){ var c = state.settings.sup.cats[p.dataset.lvp]; openPrices('gift', p.dataset.lvp, c && (c.brand || c.n), '/api/admin/supplier/offers?category_id='); }
+    if (tp){ var g = state.settings.sup.tcats[tp.dataset.lvtp]; openPrices('topup', tp.dataset.lvtp, g && g.n, '/api/admin/supplier/topup-offers?category_id='); }
+    if (x){ delete state.settings.sup.cats[x.dataset.lvx]; delete supSel[x.dataset.lvx]; save(true); renderLive(); drawSup(); sumSup(); toast('Removed — press Sync to server'); }
+    if (tx){ delete state.settings.sup.tcats[tx.dataset.lvtx]; delete tpSel[tx.dataset.lvtx]; save(true); renderLive(); if (tpList.length) tpDraw(); toast('Removed — press Sync to server'); }
+  });
+  function renderSupplier(){
+    renderRule(); renderLive();
+    // restore the previous selection into the working set
+    if (!supInit){ supInit = true; Object.keys(state.settings.sup.cats).forEach(function(id){ supSel[id] = true; var c = state.settings.sup.cats[id]; supEdit[id] = supEdit[id] || {brand:c.brand, region:c.region, group:c.group}; }); }
+    var m = state.products.filter(function(p){ return p.supplier; });
+    $('supMineBox').hidden = !m.length;
+    $('supMine').innerHTML = m.map(function(p){ return '<tr><td><b>' + esc(p.title) + '</b></td><td>$' + esc(Math.round(p.supplier.cost*100)/100) + '</td><td>' + money(p.price) + '</td><td><button class="btn btn-g btn-s" data-se="' + esc(p.id) + '">Edit</button></td></tr>'; }).join('');
+    drawSup(); sumSup();
+  }
+  function sumSup(){ var n = Object.keys(supSel).filter(function(k){ return supSel[k]; }).length; $('supSum').textContent = n + ' categor' + (n === 1 ? 'y' : 'ies') + ' selected · saved: ' + supCount() + ' (' + brandCount() + ' brands)'; }
+  function drawSup(){
+    $('supTools').hidden = !supCats.length; if (!supCats.length) return;
+    var q = $('supSearch').value.trim().toLowerCase();
+    var list = supCats.filter(function(c){
+      if (supF === 'sel' && !supSel[c.category_id]) return false; if (supF === 'unsel' && supSel[c.category_id]) return false;
+      return !q || (c.name || '').toLowerCase().indexOf(q) > -1;
+    });
+    $('supCatMsg').textContent = list.length + ' of ' + supCats.length + ' categories shown.';
+    $('supShowMore').hidden = list.length <= supShown; $('supShowMore').textContent = 'Show more rows (' + (list.length - supShown) + ' more)';
+    var gopts = function(sel){ return GROUPS.map(function(g){ return '<option' + (g === sel ? ' selected' : '') + '>' + esc(g) + '</option>'; }).join(''); };
+    $('supCats').innerHTML = list.slice(0, supShown).map(function(c){
+      var e = entry(c), id = esc(c.category_id), logo = safeUrl(c.imageurl);
+      return '<tr><td><input type="checkbox" data-s="' + id + '"' + (supSel[c.category_id] ? ' checked' : '') + ' aria-label="Select"></td><td><div style="display:flex;gap:10px;align-items:center">' + (logo ? '<img class="logo-s" loading="lazy" referrerpolicy="no-referrer" src="' + esc(logo) + '" alt="">' : '<span class="logo-s" style="display:grid;place-items:center;font-weight:800;color:#3d9a0e">' + esc((c.name || '?').charAt(0)) + '</span>') + '<span><b>' + esc(c.name) + '</b>' + (c.note ? '<div class="help">' + esc(c.note) + '</div>' : '') + '</span></div></td>' +
+        '<td><input data-b="' + id + '" value="' + esc(e.brand) + '" style="padding:7px 10px"></td><td><input data-r="' + id + '" value="' + esc(e.region) + '" maxlength="6" style="padding:7px 10px;text-transform:uppercase"></td><td><select data-g="' + id + '" style="padding:7px 10px">' + gopts(e.group) + '</select></td><td><button type="button" class="btn btn-g btn-s" data-pr="' + id + '">Prices</button></td></tr>';
+    }).join('') || '<tr><td colspan="6" class="empty">Nothing matches.</td></tr>';
+  }
+  $('supCheck').addEventListener('click', function(){
+    $('supStatus').textContent = 'Checking…';
+    api('/api/admin/supplier/status').then(function(r){ $('supStatus').innerHTML = '✅ Connected' + (r.email ? ' as <b>' + esc(r.email) + '</b>' : '') + (r.plan ? ' · plan <b>' + esc(r.plan) + '</b>' : '') + ' · balance <b>$' + esc(r.balance) + '</b>'; })
+      .catch(function(e){ $('supStatus').textContent = '❌ ' + e.message; });
+  });
+  $('supLoad').addEventListener('click', function(){
+    supCats = []; $('supCatMsg').textContent = 'Loading…'; var b = this; b.disabled = true;
+    (function page(cur, n){
+      api('/api/admin/supplier/categories' + (cur ? '?cursor=' + encodeURIComponent(cur) : '')).then(function(r){
+        supCats = supCats.concat(r.items || []);
+        if (r.meta && r.meta.has_more && r.meta.next_cursor && n < 20){ $('supCatMsg').textContent = 'Loading… ' + supCats.length; return page(r.meta.next_cursor, n + 1); }
+        supCats.sort(function(x, y){ return String(x.name).localeCompare(String(y.name)); }); b.disabled = false; supShown = 100; drawSup(); sumSup();
+      }).catch(function(e){ b.disabled = false; $('supCatMsg').textContent = '❌ ' + e.message; });
+    })(null, 0);
+  });
+  $('supSearch').addEventListener('input', function(){ supShown = 100; drawSup(); });
+  $('supFilter').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; supF = b.dataset.f; supShown = 100; $$('#supFilter button').forEach(function(x){ x.classList.toggle('on', x === b); }); drawSup(); });
+  $('supShowMore').addEventListener('click', function(){ supShown += 100; drawSup(); });
+  function shownIds(){ var q = $('supSearch').value.trim().toLowerCase(); return supCats.filter(function(c){ if (supF === 'sel' && !supSel[c.category_id]) return false; if (supF === 'unsel' && supSel[c.category_id]) return false; return !q || (c.name || '').toLowerCase().indexOf(q) > -1; }).map(function(c){ return c.category_id; }); }
+  $('supAll').addEventListener('click', function(){ shownIds().forEach(function(id){ supSel[id] = true; }); drawSup(); sumSup(); });
+  $('supNone').addEventListener('click', function(){ shownIds().forEach(function(id){ delete supSel[id]; }); drawSup(); sumSup(); });
+  /* ---------- game top-ups ---------- */
+  var tpList = [], tpSel = {}, tpInit = false;
+  var tpF = 'all';
+  function tpShownList(){
+    var q = $('tpSearch').value.trim().toLowerCase();
+    return tpList.filter(function(c){ if (tpF === 'sel' && !tpSel[c.category_id]) return false; if (tpF === 'unsel' && tpSel[c.category_id]) return false; return !q || c.name.toLowerCase().indexOf(q) > -1; });
+  }
+  function tpDraw(){
+    $('tpTools').hidden = !tpList.length; if (!tpList.length) return;
+    var all = tpShownList(), list = all.slice(0, 300);
+    $('tpRows').innerHTML = list.map(function(c){ var id = esc(c.category_id), lg = safeUrl(c.imageurl); return '<tr><td><input type="checkbox" data-tp="' + id + '"' + (tpSel[c.category_id] ? ' checked' : '') + ' aria-label="Select"></td><td><div style="display:flex;gap:10px;align-items:center">' + (lg ? '<img class="logo-s" loading="lazy" referrerpolicy="no-referrer" src="' + esc(lg) + '" alt="">' : '') + '<b>' + esc(c.name) + '</b></div></td><td><button class="btn btn-g btn-s" data-tpr="' + id + '">Prices</button></td></tr>'; }).join('') || '<tr><td colspan="3" class="empty">Nothing matches.</td></tr>';
+    var n = Object.keys(tpSel).filter(function(k){ return tpSel[k]; }).length; $('tpSum').textContent = n + ' game' + (n === 1 ? '' : 's') + ' selected · saved: ' + Object.keys(state.settings.sup.tcats).length + ' · showing ' + list.length + ' of ' + all.length;
+  }
+  $('tpAll').addEventListener('click', function(){ tpShownList().forEach(function(c){ tpSel[c.category_id] = true; }); tpDraw(); });
+  $('tpNone').addEventListener('click', function(){ tpShownList().forEach(function(c){ delete tpSel[c.category_id]; }); tpDraw(); });
+  $('tpFilter').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; tpF = b.dataset.f; $$('#tpFilter button').forEach(function(x){ x.classList.toggle('on', x === b); }); tpDraw(); });
+  $('tpLoad').addEventListener('click', function(){
+    var b = this; b.disabled = true; $('tpMsg').textContent = 'Loading…';
+    api('/api/admin/supplier/topups').then(function(r){
+      tpList = r.items || []; if (!tpInit){ tpInit = true; Object.keys(state.settings.sup.tcats).forEach(function(id){ tpSel[id] = true; }); }
+      $('tpMsg').textContent = tpList.length + ' games available. Tick the ones you want to sell.'; b.disabled = false; tpDraw();
+    }).catch(function(e){ b.disabled = false; $('tpMsg').textContent = '❌ ' + e.message; });
+  });
+  $('tpSearch').addEventListener('input', tpDraw);
+  $('tpRows').addEventListener('change', function(e){ var t = e.target; if (!t.dataset.tp) return; if (t.checked) tpSel[t.dataset.tp] = true; else delete tpSel[t.dataset.tp]; tpDraw(); });
+  $('tpSave').addEventListener('click', function(){
+    var tc = {}; tpList.forEach(function(c){ if (tpSel[c.category_id]) tc[c.category_id] = {n: c.name, logo: safeUrl(c.imageurl)}; });
+    Object.keys(state.settings.sup.tcats).forEach(function(id){ if (tpSel[id] && !tc[id]) tc[id] = state.settings.sup.tcats[id]; });
+    state.settings.sup.tcats = tc; save(true); tpDraw(); renderLive(); toast('Saved — now Sync to server and update data.js');
+  });
+  $('tpRows').addEventListener('click', function(e){
+    var b = e.target.closest('[data-tpr]'); if (!b) return;
+    var c = tpList.filter(function(x){ return x.category_id === b.dataset.tpr; })[0];
+    openPrices('topup', b.dataset.tpr, c && c.name, '/api/admin/supplier/topup-offers?category_id=');
+  });
+  /* ---------- per-amount prices (gift cards + top-ups) with live profit % ---------- */
+  var priceCtx = null;
+  function pcost(o){ return +o.price_usd; }
+  function pkey(c, o){ return c.kind === 'topup' ? 'T-' + c.id + ':' + o.offer_id : c.id + ':' + o.card_id; }
+  function rowSell(c, o){ var ovr = state.settings.sup.over, k = pkey(c, o), cost = pcost(o), mine = +ovr[k] > 0; return {mine: mine, price: mine ? Math.max(+ovr[k], Math.round((cost + .01) * 100) / 100) : sellPrice(cost)}; }
+  function profitTxt(price, cost){ var pr = price - cost; return '+' + money(pr) + ' <span class="help">(' + (cost > 0 ? Math.round(pr / cost * 1000) / 10 : 0) + '%)</span>'; }
+  function drawPrices(){
+    var c = priceCtx, box = $('supPrices'); if (!c) return;
+    var rows = c.offers.map(function(o){
+      var cost = pcost(o), rs = rowSell(c, o), k = pkey(c, o);
+      return '<tr><td><b>' + esc(o.name) + '</b></td><td>' + money(cost) + '</td><td><input type="number" min="0" step="0.01" value="' + rs.price.toFixed(2) + '" data-ov="' + esc(k) + '" data-cost="' + cost + '" style="width:92px;padding:6px 8px" aria-label="Your price"> ' + (rs.mine ? '<button class="btn btn-g btn-s" data-ovreset="' + esc(k) + '">Reset</button>' : '') + '</td><td style="color:var(--ok)" data-pf>' + profitTxt(rs.price, cost) + '</td>' + (c.kind === 'topup' ? '' : '<td>' + (o.stock == null ? '–' : esc(o.stock)) + '</td><td>' + (+o.max_order_quantity > 0 ? esc(o.max_order_quantity) : '–') + '</td>') + '</tr>';
+    }).join('');
+    var r = supRule();
+    box.hidden = false;
+    box.innerHTML = '<div class="bar"><h2 style="margin:0">' + esc(c.name) + ' — what it costs you</h2><button class="btn btn-g btn-s" id="prClose">Close</button></div><p class="help" style="margin-bottom:10px">Automatic price = your cost + your profit setting (' + (r.mode === 'fixed' ? '+$' + r.value : '+' + r.value + '%') + '). Type a new price on any row to change that amount only; the profit updates as you type. “Reset” goes back to automatic. Then press Sync to server.</p><div class="tw"><table class="pricetable"><thead><tr><th>Amount</th><th>Your cost</th><th>You sell for</th><th>Your profit</th>' + (c.kind === 'topup' ? '' : '<th>In stock</th><th>Max per order</th>') + '</tr></thead><tbody>' + (rows || '<tr><td colspan="6" class="empty">No amounts available.</td></tr>') + '</tbody></table></div>';
+    $('prClose').onclick = function(){ box.hidden = true; priceCtx = null; };
+  }
+  $('supPrices').addEventListener('input', function(e){            // live: the profit % changes while you type
+    var t = e.target; if (!t.dataset.ov) return; var v = +t.value || 0, cost = +t.dataset.cost, cell = t.closest('tr').querySelector('[data-pf]');
+    cell.innerHTML = v > cost ? profitTxt(v, cost) : '<span style="color:var(--danger)">must be above cost</span>';
+  });
+  $('supPrices').addEventListener('change', function(e){
+    var t = e.target; if (!t.dataset.ov) return; var v = Math.round((+t.value || 0) * 100) / 100, cost = +t.dataset.cost;
+    if (v <= cost){ toast('Your price must be higher than your cost ($' + cost.toFixed(2) + ')'); drawPrices(); return; }
+    state.settings.sup.over[t.dataset.ov] = v; save(true); toast('Price saved — press Sync to server'); drawPrices();
+  });
+  $('supPrices').addEventListener('click', function(e){
+    var b2 = e.target.closest('[data-ovreset]'); if (!b2) return;
+    delete state.settings.sup.over[b2.dataset.ovreset]; save(true); toast('Back to automatic price — press Sync to server'); drawPrices();
+  });
+  function openPrices(kind, id, name, url){
+    var box = $('supPrices'); box.hidden = false; box.innerHTML = '<p class="help">Loading what FazerCards charges you…</p>'; box.scrollIntoView({behavior:'smooth', block:'center'});
+    api(url + encodeURIComponent(id)).then(function(r){ priceCtx = {kind: kind, id: id, name: name || r.name || id, offers: r.offers || []}; drawPrices(); })
+      .catch(function(er){ box.innerHTML = '<p class="help">❌ ' + esc(er.message) + '</p>'; });
+  }
+  $('supCats').addEventListener('click', function(e){
+    var b = e.target.closest('[data-pr]'); if (!b) return;
+    var c = supCats.filter(function(x){ return x.category_id === b.dataset.pr; })[0];
+    openPrices('gift', b.dataset.pr, c && c.name, '/api/admin/supplier/offers?category_id=');
+  });
+  $('supCats').addEventListener('change', function(e){
+    var t = e.target, id;
+    if (t.dataset.s){ if (t.checked) supSel[t.dataset.s] = true; else delete supSel[t.dataset.s]; sumSup(); return; }
+    if (t.dataset.b){ id = t.dataset.b; (supEdit[id] = supEdit[id] || {}).brand = t.value.trim(); }
+    if (t.dataset.r){ id = t.dataset.r; (supEdit[id] = supEdit[id] || {}).region = t.value.trim().toUpperCase(); }
+    if (t.dataset.g){ id = t.dataset.g; (supEdit[id] = supEdit[id] || {}).group = t.value; }
+  });
+  $('supSave').addEventListener('click', function(){
+    var cats = {}, byId = {}; supCats.forEach(function(c){ byId[c.category_id] = c; });
+    Object.keys(supSel).forEach(function(id){
+      if (!supSel[id]) return; var c = byId[id], old = state.settings.sup.cats[id];
+      if (c){ var e = entry(c); cats[id] = {n: c.name, brand: e.brand || c.name, region: e.region || 'GLOBAL', group: e.group || 'Other', logo: safeUrl(c.imageurl) || (old && old.logo) || ''}; }
+      else if (old) cats[id] = old;                         // selected earlier, catalog not loaded now: keep as is
+    });
+    state.settings.sup.cats = cats; save(true); sumSup(); renderLive(); toast('Saved ' + Object.keys(cats).length + ' categories — now Sync, then Download data.js');
+  });
+  $('supMine').addEventListener('click', function(e){ var b = e.target.closest('[data-se]'); if (!b) return; show('products'); openEditor(state.products.filter(function(p){ return p.id === b.dataset.se; })[0]); });
+
+  /* ---------- telegram (alerts + live chat) ---------- */
+  var tgTimer = null;
+  function tgState(keep){
+    var box = $('tgStatus'); if (!keep) box.textContent = 'Checking Telegram…';
+    return api('/api/admin/telegram/status').then(function(r){
+      var wh = r.webhook, bad = wh && wh.error ? '<br>⚠ Telegram could not reach your server: <b>' + esc(wh.error) + '</b>' : '';
+      if (!r.token) box.innerHTML = '⚪ Not set up. Add the <code>TELEGRAM_BOT_TOKEN</code> secret in Cloudflare (steps above), Deploy, then press <b>Refresh status</b>.';
+      else if (r.error) box.innerHTML = '❌ Telegram says: ' + esc(r.error) + ' — check the token.';
+      else if (r.connected){ box.innerHTML = '✅ <b>Connected</b> to @' + esc(r.bot) + '. Every order and chat message reaches you in Telegram. To answer a customer, long-press their message in Telegram and choose <b>Reply</b>.' + bad; clearInterval(tgTimer); tgTimer = null; }
+      else if (!keep) box.innerHTML = '🟡 Bot found (@' + esc(r.bot) + ') but not connected yet. Press <b>Connect Telegram</b>.' + bad;
+      return r;
+    }).catch(function(e){ box.textContent = '❌ ' + e.message; });
+  }
+  $('tgRefresh').addEventListener('click', function(){ tgState(false); });
+  $('tgConnect').addEventListener('click', function(){
+    api('/api/admin/telegram/connect', {method:'POST', body:'{}'}).then(function(r){
+      var box = $('tgStatus'), left = 24;
+      box.innerHTML = '1️⃣ <a class="btn btn-p btn-s" target="_blank" rel="noopener" href="' + esc(r.link) + '">Open Telegram and press START</a><br>2️⃣ If Telegram shows no START button (you already used this bot before), send the bot this exact message: <code>/start ' + esc(r.code) + '</code><br>3️⃣ Wait — this page checks by itself. It can take up to a minute to show “Connected”. <span class="help" id="tgWait"></span>';
+      clearInterval(tgTimer); tgTimer = setInterval(function(){
+        if (--left < 0){ clearInterval(tgTimer); tgTimer = null; var w = $('tgWait'); if (w) w.textContent = 'Still waiting — if Telegram replied “✅ Connected!”, just press Refresh status in a minute.'; return; }
+        tgState(true).then(function(st){ var w = $('tgWait'); if (w && st && st.webhook && st.webhook.error) w.textContent = 'Telegram error: ' + st.webhook.error; });
+      }, 5000);
+    }).catch(function(e){ toast(e.message); });
+  });
+  $('bnTest').addEventListener('click', function(){
+    $('bnMsg').textContent = 'Checking…';
+    api('/api/admin/binance/test', {method:'POST', body:'{}'}).then(function(r){ $('bnMsg').innerHTML = (r.ok ? '✅ Connected. ' : '⚠ ') + r.lines.map(esc).join(' · '); }).catch(function(e){ $('bnMsg').textContent = '❌ ' + e.message; });
+  });
+  $('mailTest').addEventListener('click', function(){
+    var to = $('mailTo').value.trim() || state.settings.email || ''; $('mailTo').value = to; $('mailMsg').textContent = 'Sending…';
+    api('/api/admin/testmail', {method:'POST', body: JSON.stringify({to: to})}).then(function(){ $('mailMsg').textContent = '✅ Sent to ' + to + ' — check the inbox (and spam).'; }).catch(function(e){ $('mailMsg').textContent = '❌ ' + e.message; });
+  });
+  $('tgTest').addEventListener('click', function(){ api('/api/admin/telegram/test', {method:'POST', body:'{}'}).then(function(){ toast('Test alert sent — check Telegram'); }).catch(function(e){ toast(e.message); }); });
+  $('tgOff').addEventListener('click', function(){ if (!confirm('Disconnect Telegram? You will stop getting alerts and live chat will go offline.')) return; api('/api/admin/telegram/disconnect', {method:'POST', body:'{}'}).then(function(){ toast('Disconnected'); tgState(); }).catch(function(e){ toast(e.message); }); });
+
+  /* ---------- publish / backup ---------- */
+  function giftData(){
+    var cats = state.settings.sup.cats, by = {};
+    Object.keys(cats).forEach(function(id){
+      var c = cats[id], name = c.brand || c.n, key = name.toLowerCase();
+      var b = by[key] || (by[key] = {id: slug(name), name: name, cat: c.group || 'Gift cards', logo: '', regions: []});
+      if (!b.logo && c.logo) b.logo = c.logo;
+      b.regions.push({cat: id, region: c.region || 'GLOBAL'});
+    });
+    var tc = state.settings.sup.tcats || {};
+    return {brands: Object.keys(by).map(function(k){ return by[k]; }), topups: Object.keys(tc).map(function(id){ return {id: id, name: tc[id].n, logo: tc[id].logo || ''}; })};
+  }
+  function dataJsText(){
+    var s = state.settings, pubSettings = {storeName:s.storeName, tagline:s.tagline, email:s.email, whatsapp:s.whatsapp || '', telegram:s.telegram || '', apiUrl:s.apiUrl || '', allAccess:s.allAccess, digitalSection:s.digitalSection, social:s.social || {}, featured:s.featured || '', wallets:s.wallets, arNames:s.arNames || {}, proxy: !!(s.siteUrl && s.apiUrl)};
+    var pub = {settings: pubSettings, gift: giftData(), products: state.products.map(function(p){
+      var q = {id:p.id, title:p.title, category:p.category, price:p.price, stylePrice:p.stylePrice||0, group:p.group||'', guide:p.guide||'', tagline:p.tagline, type:p.type, published:p.published!==false, files:(p.files || []).map(function(f){ return {name:f.name, size:f.size || 0, link:!!f.url}; })};
+      if (p.type === 'digital') q.icon = p.icon || '';
+      else q.variants = p.variants.map(function(v){ return {name:v.name, sample:v.sample}; });
+      return q;
+    })};
+    return '/* Geostore public data — generated by the admin dashboard. Upload this file with your site. */\nwindow.GEOSTORE_DATA = ' + JSON.stringify(pub, null, 1) + ';\n';
+  }
+  // forwards /api on the shop's own address to your server (Netlify reads this file)
+  function redirectsText(){ var u = (state.settings.apiUrl || '').replace(/\/+$/, ''); return state.settings.siteUrl && /^https:\/\//.test(u) ? '/api/*  ' + u + '/api/:splat  200!\n' : ''; }
+  function downloadData(){
+    if (redirectsText()) download('_redirects', redirectsText(), 'text/plain');
+    download('data.js', dataJsText(), 'text/javascript');
+    state.dirtySite = false; save(); toast('data.js downloaded — put it in your site folder and upload the folder');
+  }
+  /* ---------- phone-friendly: cloud copy + GitHub publish ---------- */
+  var CLOUDKEY = 'geostore_cloud_auto', GHKEY = 'geostore_gh', cloudT = null;
+  function lget(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }
+  function lset(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
+  function cloudOn(){ var v = lget(CLOUDKEY); return v === null ? true : !!v; }
+  function cloudPush(manual){
+    clearTimeout(cloudT); cloudT = null;
+    if (!base() || !token()){ if (manual) toast('Connect your server in Settings first'); return Promise.resolve(); }
+    $('cloudMsg').textContent = 'Saving a copy to your server…';
+    return fetch(base() + '/api/admin/state', {method:'PUT', headers:{authorization:'Bearer ' + token(), 'content-type':'application/json'}, body: JSON.stringify(state)})
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if (!r.ok) throw new Error(j.error || 'Could not save'); return j; }); })
+      .then(function(j){ $('cloudMsg').textContent = '✅ Copy saved ' + new Date(j.savedAt).toLocaleString() + ' (' + Math.round(j.bytes / 1024) + ' KB).'; if (manual) toast('Copy saved on your server'); })
+      .catch(function(e){ $('cloudMsg').textContent = '⚠ ' + e.message; if (manual) toast(e.message); });
+  }
+  function cloudSoon(){ if (!cloudOn() || cloudT) return; cloudT = setTimeout(function(){ cloudPush(false); }, 60000); }
+  $('cloudAuto').checked = cloudOn();
+  $('cloudAuto').addEventListener('change', function(){ lset(CLOUDKEY, this.checked); });
+  $('cloudSave').addEventListener('click', function(){ cloudPush(true); });
+  $('cloudLoad').addEventListener('click', function(){
+    if (!base() || !token()){ toast('Enter your server address and token in Settings first (then come back)'); return; }
+    api('/api/admin/state').then(function(r){
+      if (r.empty || !r.state){ toast('No copy saved on your server yet'); return; }
+      var n = (r.state.products || []).length;
+      if (!confirm('Load the dashboard copy saved on ' + new Date(r.savedAt).toLocaleString() + ' (' + n + ' products)?\n\nThis REPLACES what is on this device. Your server address and token stay as they are.')) return;
+      var keep = state.settings.apiUrl;
+      state = migrate(r.state); if (!state.settings.apiUrl) state.settings.apiUrl = keep;
+      save(); toast('Loaded — reloading…'); setTimeout(function(){ location.reload(); }, 600);
+    }).catch(function(e){ toast(e.message); });
+  });
+  var gh0 = lget(GHKEY) || {}; $('ghRepo').value = gh0.repo || 'georgebojakjian/Geostore'; $('ghBranch').value = gh0.branch || 'main'; $('ghToken').value = gh0.token || '';
+  $('ghSave').addEventListener('click', function(){ lset(GHKEY, {repo: $('ghRepo').value.trim(), branch: $('ghBranch').value.trim() || 'main', token: $('ghToken').value.trim()}); toast('Saved on this device only'); });
+  function b64utf8(str){ var bytes = new TextEncoder().encode(str), bin = ''; for (var i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192)); return btoa(bin); }
+  $('ghPublish').addEventListener('click', function(){
+    var repo = $('ghRepo').value.trim(), br = $('ghBranch').value.trim() || 'main', tk = $('ghToken').value.trim(), msg = $('ghMsg'), btn = this;
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !tk){ msg.textContent = 'Fill in the repository and the GitHub token first.'; return; }
+    lset(GHKEY, {repo: repo, branch: br, token: tk});
+    var api2 = 'https://api.github.com/repos/' + repo + '/contents/site/data.js', hdr = {accept:'application/vnd.github+json', authorization:'Bearer ' + tk};
+    btn.disabled = true; msg.textContent = 'Preparing…';
+    fetch(api2 + '?ref=' + encodeURIComponent(br), {headers: hdr}).then(function(r){ return r.status === 404 ? {} : r.json().then(function(j){ if (!r.ok) throw new Error(j.message || ('GitHub said ' + r.status)); return j; }); })
+      .then(function(cur){
+        msg.textContent = 'Sending the new data.js…';
+        return fetch(api2, {method:'PUT', headers: Object.assign({'content-type':'application/json'}, hdr), body: JSON.stringify({message:'Update shop data from the dashboard', content: b64utf8(dataJsText()), branch: br, sha: cur.sha})});
+      })
+      .then(function(r){ return r.json().then(function(j){ if (!r.ok) throw new Error(j.message || ('GitHub said ' + r.status)); return j; }); })
+      .then(function(){
+        var rt = redirectsText(); if (!rt) return;
+        var api3 = 'https://api.github.com/repos/' + repo + '/contents/site/_redirects';
+        msg.textContent = 'Sending the fast-connection file…';
+        return fetch(api3 + '?ref=' + encodeURIComponent(br), {headers: hdr}).then(function(r){ return r.status === 404 ? {} : r.json(); }).then(function(cur2){
+          return fetch(api3, {method:'PUT', headers: Object.assign({'content-type':'application/json'}, hdr), body: JSON.stringify({message:'Update fast-connection file', content: b64utf8(rt), branch: br, sha: cur2.sha})});
+        }).then(function(r){ return r.json().then(function(j){ if (!r.ok) throw new Error(j.message || ('GitHub said ' + r.status)); }); });
+      })
+      .then(function(){ state.dirtySite = false; save(); btn.disabled = false; msg.textContent = '✅ Sent. Netlify updates your website automatically in about a minute.'; toast('Website update sent'); })
+      .catch(function(e){ btn.disabled = false; msg.textContent = '❌ ' + e.message + ' — check the repository name, branch and token (the token needs “Contents: read and write”).'; });
+  });
+  $('dlData').addEventListener('click', downloadData);
+  $('dlBackup').addEventListener('click', function(){ download('geostore-backup-' + new Date().toISOString().slice(0,10) + '.json', JSON.stringify(state), 'application/json'); });
+  $('restore').addEventListener('change', function(){
+    var f = this.files[0]; if (!f) return; var r = new FileReader();
+    r.onload = function(){ try { var d = JSON.parse(r.result); if (!d.products || !d.settings) throw 0; state = migrate(d); state.sync = {}; state.dirtySync = true; state.dirtySite = true; save(); toast('Backup restored'); show('dash'); } catch(e){ toast('That file is not a valid backup'); } };
+    r.readAsText(f); this.value = '';
+  });
+  $('resetAll').addEventListener('click', function(){
+    if (!confirm('Reset everything (products, settings, orders) back to the original files? Make a backup first.')) return;
+    state = seed(); save(true); toast('Reset done'); show('dash');
+  });
+
+
+  /* ---------- settings: sections ---------- */
+  var SGKEY = 'geostore_settings_section';
+  function showSG(g){
+    $$('.subtab').forEach(function(b){ b.classList.toggle('on', b.dataset.sg === g); });
+    $$('#sf .sgp').forEach(function(p){ p.hidden = p.dataset.sg !== g; });
+    try { localStorage.setItem(SGKEY, g); } catch(e) {}
+  }
+  $('subtabs').addEventListener('click', function(e){ var b = e.target.closest('.subtab'); if (b) showSG(b.dataset.sg); });
+  var sg0 = 'store'; try { sg0 = localStorage.getItem(SGKEY) || 'store'; } catch(e) {}
+  showSG($$('.subtab[data-sg="' + sg0 + '"]').length ? sg0 : 'store');
+
+  /* ---------- publish everything (one button) ---------- */
+  var pubBusy = false;
+  function paintPub(){
+    var need = state.dirtySync || state.dirtySite, st = $('paState');
+    if (!st) return;
+    st.textContent = !state.settings.apiUrl ? 'Connect your server first (Settings → Connection).' : need ? '⚠ You have changes that are not live yet.' : '✅ Everything is live.';
+  }
+  function waitFor(read, ok, ms){
+    return new Promise(function(res){ var t0 = Date.now(), iv = setInterval(function(){ var v = read(); if (ok(v) || Date.now() - t0 > (ms || 180000)){ clearInterval(iv); res(v); } }, 350); });
+  }
+  function publishAll(forceSite){
+    if (pubBusy) return; var m = $('paMsg'), btn = $('paAll');
+    if (!base() || !token()){ m.textContent = '❌ Open Settings → Connection and fill in your server address and admin token first.'; return; }
+    pubBusy = true; btn.disabled = true; var lines = [];
+    function say(t, bad){ if (t) lines.push(t); m.innerHTML = lines.map(function(x){ return esc(x); }).join('<br>'); m.style.color = bad ? 'var(--danger)' : ''; }
+    say('1/2 Sending to your server…');
+    $('srvStatus2').textContent = ''; runSync(false);
+    waitFor(function(){ return $('srvStatus2').textContent; }, function(v){ return /^(✅|❌)/.test(v); }).then(function(v){
+      if (!/^✅/.test(v)){ say(v || '❌ The server did not answer.', true); throw 0; }
+      lines[lines.length - 1] = '✅ Server updated'; say('2/2 Updating the website…');
+      var gh = lget(GHKEY) || {};
+      if (!state.dirtySite && !forceSite){ lines[lines.length - 1] = '✅ Website unchanged — nothing to deploy (prices and stock only need the server step)'; say(''); return; }
+      if (gh.repo && gh.token){ $('ghMsg').textContent = ''; $('ghPublish').click(); return waitFor(function(){ return $('ghMsg').textContent; }, function(v2){ return /^(✅|❌)/.test(v2); }).then(function(v2){ if (!/^✅/.test(v2)){ say(v2, true); throw 0; } lines[lines.length - 1] = '✅ Website sent — Netlify updates it in about a minute'; say(''); }); }
+      downloadData();
+      lines[lines.length - 1] = '⬇ Files downloaded (data.js' + (redirectsText() ? ' and _redirects' : '') + '). Put them in your site folder and upload the folder to Netlify.'; say('');
+    }).then(function(){ state.dirtySite = false; save(); say('🎉 Done.'); }).catch(function(e){ if (e) say('❌ ' + (e.message || e), true); }).then(function(){ pubBusy = false; btn.disabled = false; paintPub(); });
+  }
+  $('paAll').addEventListener('click', function(e){ publishAll(e.shiftKey); });
+
+  /* ---------- messages (live chat inbox) ---------- */
+  var chFilter = 'open', chAll = [], chCur = '', chTimer = null;
+  var QKEY = 'geostore_quick_replies', QDEF = ['Hello! Thanks for contacting us. How can I help?', 'Please send me your order number and I will check it right away.', 'Your payment is confirmed and your order is being prepared — it only takes a moment.', 'Please double-check the Player ID and server, then send them to me again.', 'Sorry for the wait — I am checking this now.', 'Is there anything else I can help you with?'];
+  function quickList(){ var q = lget(QKEY); return Array.isArray(q) && q.length ? q : QDEF; }
+  function ago(ms){ var s = Math.max(0, (Date.now() - ms) / 1000); return s < 60 ? 'now' : s < 3600 ? Math.floor(s / 60) + ' min' : s < 86400 ? Math.floor(s / 3600) + ' h' : Math.floor(s / 86400) + ' d'; }
+  function drawChats(){
+    var list = chAll.filter(function(c){ return chFilter === 'all' || c.status === chFilter; });
+    $('chList').innerHTML = list.map(function(c){
+      return '<button type="button" class="citem' + (c.sid === chCur ? ' on' : '') + '" data-sid="' + esc(c.sid) + '"><div class="t"><span>' + esc(c.name) + ' <span style="color:var(--muted);font-weight:600">' + esc(c.ticket) + '</span></span>' + (c.unread ? '<span class="u">' + c.unread + '</span>' : '<span style="color:var(--muted);font-size:.74rem;font-weight:600">' + ago(c.last) + '</span>') + '</div><small><span class="tag2">' + esc(c.topic) + '</span>' + (c.lastFrom === 'o' ? '↩ ' : '') + esc(c.preview) + '</small></button>';
+    }).join('') || '<p class="empty">No ' + (chFilter === 'all' ? '' : chFilter === 'open' ? 'open ' : 'solved ') + 'conversations.</p>';
+  }
+  function setMsgBadge(n){ var b = $('msgBadge'); b.hidden = !n; b.textContent = n; }
+  function loadChats(quiet){
+    if (!base() || !token()){ $('chMsg').textContent = 'Connect your server first (Settings → Connection).'; return Promise.resolve(); }
+    if (!quiet) $('chMsg').textContent = 'Loading…';
+    return api('/api/admin/chats').then(function(r){ chAll = r.chats || []; setMsgBadge(r.unread || 0); drawChats(); $('chMsg').textContent = r.open + ' open · ' + chAll.length + ' total'; if (chCur && $('v-messages').classList.contains('on') && chAll.some(function(c){ return c.sid === chCur && c.unread; })) openChat(chCur, true); })
+      .catch(function(e){ if (!quiet) $('chMsg').textContent = '❌ ' + e.message; });
+  }
+  function bub(m){ return '<div class="bub ' + m.f + '">' + esc(m.x) + '<small>' + (m.f === 'o' ? 'You' : 'Customer') + ' · ' + new Date(m.t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + '</small></div>'; }
+  function openChat(sid, keepScroll){
+    chCur = sid; drawChats();
+    api('/api/admin/chat?sid=' + encodeURIComponent(sid)).then(function(r){
+      var c = r.chat, box = $('chThreadBox');
+      box.innerHTML = '<div class="bar"><div><h2 style="margin:0">' + esc(c.name) + ' <span style="color:var(--muted);font-weight:600">' + esc(c.ticket) + '</span></h2><p class="help"><span class="tag2">' + esc(c.topic) + '</span>' + (c.email ? esc(c.email) + ' · ' : '') + (c.order ? 'order #' + esc(c.order) + ' · ' : '') + (c.status === 'done' ? '✅ solved' : 'open') + '</p></div><span style="display:flex;gap:6px"><button class="btn btn-g btn-s" id="chToggle">' + (c.status === 'done' ? 'Reopen' : '✅ Mark solved') + '</button><button class="btn btn-d btn-s" id="chDel">Delete</button></span></div>' +
+        ((c.orders || []).length ? '<p class="help">Latest orders: ' + c.orders.map(function(o){ return '#' + esc(o.id) + ' ' + esc(o.title) + ' ($' + esc(o.usd) + ', ' + esc(o.status) + ')'; }).join(' · ') + '</p>' : '') +
+        '<div class="thread" id="chThread">' + c.msgs.map(bub).join('') + '</div>' +
+        '<div class="quick" id="chQuick">' + quickList().map(function(q, i){ return '<button type="button" data-q="' + i + '">' + esc(q.length > 38 ? q.slice(0, 36) + '…' : q) + '</button>'; }).join('') + '<button type="button" id="chQEdit" title="Edit the quick replies">✏️</button></div>' +
+        '<form id="chForm" style="display:flex;gap:8px"><textarea id="chText" rows="2" placeholder="Write your answer…" style="flex:1"></textarea><button class="btn btn-p" type="submit">Send</button></form><p class="help" id="chSent"></p>';
+      var th = $('chThread'); th.scrollTop = th.scrollHeight;
+      if (!keepScroll) $('chText').focus();
+      loadChats(true);
+    }).catch(function(e){ $('chThreadBox').innerHTML = '<p class="empty">❌ ' + esc(e.message) + '</p>'; });
+  }
+  $('chList').addEventListener('click', function(e){ var b = e.target.closest('[data-sid]'); if (b) openChat(b.dataset.sid); });
+  $('chRefresh').addEventListener('click', function(){ loadChats(); });
+  $('chFilter').addEventListener('click', function(e){ var b = e.target.closest('[data-f]'); if (!b) return; chFilter = b.dataset.f; $$('#chFilter button').forEach(function(x){ x.classList.toggle('on', x === b); }); drawChats(); });
+  $('chThreadBox').addEventListener('click', function(e){
+    var q = e.target.closest('[data-q]'); if (q){ var t = $('chText'); t.value = (t.value ? t.value + ' ' : '') + quickList()[+q.dataset.q]; t.focus(); }
+    if (e.target.id === 'chQEdit'){ var cur = quickList().join('\n'), v = prompt('Quick replies — one per line:', cur); if (v !== null){ var arr = v.split('\n').map(function(x){ return x.trim(); }).filter(Boolean).slice(0, 12); lset(QKEY, arr.length ? arr : QDEF); openChat(chCur, true); } }
+    if (e.target.id === 'chToggle'){ var c0 = chAll.filter(function(c){ return c.sid === chCur; })[0]; api('/api/admin/chat', {method:'POST', body: JSON.stringify({sid: chCur, action: c0 && c0.status === 'done' ? 'open' : 'done'})}).then(function(){ return loadChats(true); }).then(function(){ openChat(chCur, true); }).catch(function(er){ toast(er.message); }); }
+    if (e.target.id === 'chDel' && confirm('Delete this conversation?')) api('/api/admin/chat', {method:'POST', body: JSON.stringify({sid: chCur, action: 'delete'})}).then(function(){ chCur = ''; $('chThreadBox').innerHTML = '<p class="empty">Deleted.</p>'; loadChats(); }).catch(function(er){ toast(er.message); });
+  });
+  $('chThreadBox').addEventListener('submit', function(e){
+    e.preventDefault(); var t = $('chText'), text = t.value.trim(); if (!text) return;
+    api('/api/admin/chat', {method:'POST', body: JSON.stringify({sid: chCur, action: 'reply', text: text})}).then(function(){ openChat(chCur); }).catch(function(er){ $('chSent').textContent = '❌ ' + er.message; });
+  });
+  // while the dashboard is open: look for new messages every 20 seconds (and show the number on the Messages button)
+  setInterval(function(){ if (!document.hidden && base() && token() && lget('geostore_admin_token') !== undefined) loadChats(true); }, 20000);
+
+  save(); show('dash');
+})();
+</script>
+</body>
+</html>
