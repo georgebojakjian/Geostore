@@ -1491,7 +1491,7 @@
   function waitFor(read, ok, ms){
     return new Promise(function(res){ var t0 = Date.now(), iv = setInterval(function(){ var v = read(); if (ok(v) || Date.now() - t0 > (ms || 180000)){ clearInterval(iv); res(v); } }, 350); });
   }
-  function publishAll(){
+  function publishAll(forceSite){
     if (pubBusy) return; var m = $('paMsg'), btn = $('paAll');
     if (!base() || !token()){ m.textContent = '❌ Open Settings → Connection and fill in your server address and admin token first.'; return; }
     pubBusy = true; btn.disabled = true; var lines = [];
@@ -1502,12 +1502,13 @@
       if (!/^✅/.test(v)){ say(v || '❌ The server did not answer.', true); throw 0; }
       lines[lines.length - 1] = '✅ Server updated'; say('2/2 Updating the website…');
       var gh = lget(GHKEY) || {};
+      if (!state.dirtySite && !forceSite){ lines[lines.length - 1] = '✅ Website unchanged — nothing to deploy (prices and stock only need the server step)'; say(''); return; }
       if (gh.repo && gh.token){ $('ghMsg').textContent = ''; $('ghPublish').click(); return waitFor(function(){ return $('ghMsg').textContent; }, function(v2){ return /^(✅|❌)/.test(v2); }).then(function(v2){ if (!/^✅/.test(v2)){ say(v2, true); throw 0; } lines[lines.length - 1] = '✅ Website sent — Netlify updates it in about a minute'; say(''); }); }
       downloadData();
       lines[lines.length - 1] = '⬇ Files downloaded (data.js' + (redirectsText() ? ' and _redirects' : '') + '). Put them in your site folder and upload the folder to Netlify.'; say('');
     }).then(function(){ state.dirtySite = false; save(); say('🎉 Done.'); }).catch(function(e){ if (e) say('❌ ' + (e.message || e), true); }).then(function(){ pubBusy = false; btn.disabled = false; paintPub(); });
   }
-  $('paAll').addEventListener('click', publishAll);
+  $('paAll').addEventListener('click', function(e){ publishAll(e.shiftKey); });
 
   /* ---------- messages (live chat inbox) ---------- */
   var chFilter = 'open', chAll = [], chCur = '', chTimer = null;

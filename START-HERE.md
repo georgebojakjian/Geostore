@@ -258,6 +258,13 @@ The **☁ Cloud copy** saves your whole dashboard on your server automatically, 
 4. Be patient: a new site usually takes days to appear and weeks to rank. What helps most: real pages for what people search (“buy iTunes gift card with USDT”), your social links, being mentioned on other sites, and happy customers.
 The shop already has: a title and description, a canonical address, social-share tags, structured data (company, website, FAQ), `robots.txt`, `sitemap.xml`, and Terms / Privacy / Refund / Contact pages.
 
+## Automatic website updates from the dashboard (no manual upload)
+
+This already works once the GitHub link is set up (it is the same “Part B” in **Publish from your phone**). After that, **Publish → 🚀 Publish everything** does it all: it updates the server, sends the new website files to GitHub, and Netlify deploys them by itself in about a minute. No folder uploads.
+- **Prices and stock** only need the server step, so they go live instantly and cost **no deploy**. The button skips the website step when nothing about the website changed.
+- A deploy happens only when the website itself changed (products, names, images, brands, language, connection). Hold **Shift** while pressing the button to force one.
+- Netlify’s paid plans count deploys. 2–10 per day is usually fine, but check *Netlify → Team → Usage* the first week.
+
 ## Ready for thousands of visitors (do this once)
 
 The free Cloudflare plan has small limits (100,000 requests a day, tiny CPU time, 50 operations per request, 1,000 database writes a day). A busy day with many visitors can hit them and show errors like “Something went wrong”. The fix is the paid plan, **$5 per month**, which raises every limit by 100× or more:
