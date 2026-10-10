@@ -90,6 +90,8 @@ async function pushIndex(env, key, val, max) {
 }
 // the visitor's address: when the shop forwards requests through its own web address (Netlify), the real address arrives in this header
 const ipOf = req => req.headers.get('x-nf-client-connection-ip') || req.headers.get('cf-connecting-ip') || 'x';
+let cfgMem = { t: 0, v: null };
+const PUB_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=15', 'netlify-cdn-cache-control': 'public, max-age=30, stale-while-revalidate=120', 'access-control-allow-origin': '*' };
 let catMem = { t: 0, v: null };                       // the catalogue can be large: keep it in memory for a few seconds instead of re-reading it for every request
 const getCatalog = async env => { if (catMem.v && Date.now() - catMem.t < 8000) return catMem.v; const v = await env.ORDERS.get('idx', 'json'); catMem = { t: Date.now(), v }; return v; };
 const saveOrder = (env, o, ttl) => env.ORDERS.put('order:' + o.id, JSON.stringify(o), ttl ? { expirationTtl: ttl } : undefined);
@@ -257,7 +259,7 @@ async function accountRoutes(req, env, path, apiBase) {
   const acct = await authCustomer(req, env);
   if (!acct) return fail(env, 'Please sign in again', 401);
   if (path === '/api/account/me' && req.method === 'GET') {
-    const ids = (acct.orders || []).slice(-50).reverse();
+    const ids = (acct.orders || []).slice(-25).reverse();
     let found = (await Promise.all(ids.map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean);
     found = await Promise.all(found.map((o, i) => o.status === 'pending' && i < 5 ? checkOrder(env, o) : (i < 5 ? ensureFulfilled(env, o) : o)));   // detect payments when the customer comes back
     const orders = found.filter(o => o.status !== 'expired').map(o => publicOrder(env, o, apiBase));   // expired orders are useless to the customer: not shown
@@ -568,23 +570,72 @@ const pairOk = async (env, c) => safeEqual(String(c), await pairCode(env, 0)) ||
 const tgSecret = async env => (await sign(env, 'tg-webhook')).replace(/[^A-Za-z0-9]/g, '').slice(0, 32);
 const chatHits = new Map(), pollHits = new Map();
 const SID = /^[a-f0-9]{16,32}$/;
+/* ---- live chat inbox: every visitor is one conversation ("ticket") with its own thread, unread counter and status ---- */
+const TOPICS = { payment: 'Payment', order: 'My order', topup: 'Game top-up', other: 'Other' };
+const ticketOf = sid => '#' + String(sid).slice(0, 4).toUpperCase();
+const chatOn = env => !!(env.ADMIN_TOKEN || env.TELEGRAM_BOT_TOKEN);
+async function convAdd(env, conv, from, text) {
+  conv.msgs = (conv.msgs || []).concat({ t: Date.now(), f: from, x: text }).slice(-60); conv.last = Date.now();
+  if (from === 'c') { conv.unread = (conv.unread || 0) + 1; conv.status = 'open'; } else conv.unread = 0;
+  await env.ORDERS.put('conv:' + conv.sid, J(conv), { expirationTtl: 30 * 86400 });
+}
+async function convIndex(env, sid) {
+  for (let i = 0; i < 3; i++) {                                        // several customers may write at once: make sure the id really is in the list
+    await pushIndex(env, 'cvidx', sid, 300);
+    if (((await env.ORDERS.get('cvidx', 'json')) || []).indexOf(sid) >= 0) return;
+  }
+}
 async function chatSend(req, env) {
-  if (!env.TELEGRAM_BOT_TOKEN || !(await tgOwner(env))) return fail(env, 'Live chat is offline right now. Please use WhatsApp or email.', 503);
+  if (!chatOn(env)) return fail(env, 'Live chat is offline right now. Please use WhatsApp or email.', 503);
   const ip = ipOf(req), b = await req.json().catch(() => ({}));
   const sid = String(b.sid || ''), text = String(b.text || '').trim().slice(0, 600);
   if (!SID.test(sid) || !text) return fail(env, 'Bad message');
   if (tooMany(chatHits, ip, 20, 10 * 60000) || tooMany(chatHits, 's|' + sid, 20, 10 * 60000)) return fail(env, 'You are sending messages too fast. Please wait a moment.', 429);
   const name = String(b.name || '').trim().slice(0, 40) || 'Visitor', order = /^[A-Za-z0-9-]{4,20}$/.test(String(b.order || '')) ? String(b.order) : '';
-  await tg(env, 'sendMessage', { chat_id: await tgOwner(env), parse_mode: 'HTML', disable_web_page_preview: true,
-    text: '💬 <b>' + esc(name) + '</b>' + (order ? ' · order #' + esc(order) : '') + '\n' + esc(text) + '\n\n<i>↩ Reply to this message to answer</i>\n#sid:' + sid });
-  return json(env, { ok: true });
+  const email = validEmail(String(b.email || '').trim().toLowerCase()) ? String(b.email).trim().toLowerCase() : '';
+  let conv = await env.ORDERS.get('conv:' + sid, 'json'), fresh = !conv;
+  if (!conv) conv = { sid, name, email, order, topic: TOPICS[b.topic] ? b.topic : 'other', status: 'open', createdAt: Date.now(), unread: 0, msgs: [] };
+  else { if (name !== 'Visitor') conv.name = name; if (email) conv.email = email; if (order) conv.order = order; if (TOPICS[b.topic] && conv.msgs.length === 0) conv.topic = b.topic; }
+  const reopened = !fresh && conv.status === 'done';
+  await convAdd(env, conv, 'c', text);
+  if (fresh) await convIndex(env, sid);
+  const tag = ticketOf(sid);
+  if (env.TELEGRAM_BOT_TOKEN) bg(env, (async () => { const chat = await tgOwner(env); if (chat) await tg(env, 'sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true,
+    text: (fresh ? '🆕 <b>New chat ' + tag + '</b> · ' + esc(TOPICS[conv.topic]) : reopened ? '🔁 <b>Chat ' + tag + ' reopened</b>' : '💬 <b>Chat ' + tag + '</b>') + '\n👤 ' + esc(conv.name) + (conv.email ? ' · ' + esc(conv.email) : '') + (conv.order ? ' · order #' + esc(conv.order) : '') + '\n' + esc(text) + '\n\n<i>↩ Reply to this message to answer · or use Dashboard → Messages</i>\n#sid:' + sid }); })());
+  return json(env, { ok: true, ticket: tag });
 }
 async function chatPoll(req, env, url) {
   const sid = String(url.searchParams.get('sid') || ''), after = Number(url.searchParams.get('after')) || 0;
   if (!SID.test(sid)) return fail(env, 'Bad session');
   if (tooMany(pollHits, ipOf(req), 200, 10 * 60000)) return fail(env, 'Too many requests', 429);
-  const list = (await env.ORDERS.get('chat:' + sid, 'json')) || [];
-  return json(env, { ok: true, msgs: list.filter(m => m.t > after), online: !!env.TELEGRAM_BOT_TOKEN });
+  const conv = await env.ORDERS.get('conv:' + sid, 'json');
+  return json(env, { ok: true, msgs: ((conv && conv.msgs) || []).filter(m => m.f === 'o' && m.t > after).map(m => ({ t: m.t, text: m.x })), status: conv ? conv.status : 'none', ticket: ticketOf(sid), online: chatOn(env) });
+}
+const convSummary = c => ({ sid: c.sid, ticket: ticketOf(c.sid), name: c.name, email: c.email || '', order: c.order || '', topic: TOPICS[c.topic] || 'Other', status: c.status, unread: c.unread || 0, last: c.last, createdAt: c.createdAt, count: (c.msgs || []).length,
+  preview: String(((c.msgs || [])[(c.msgs || []).length - 1] || {}).x || '').slice(0, 90), lastFrom: ((c.msgs || [])[(c.msgs || []).length - 1] || {}).f || 'c' });
+async function adminChats(env) {
+  const ids = ((await env.ORDERS.get('cvidx', 'json')) || []).slice(-40).reverse();
+  const list = (await Promise.all(ids.map(id => env.ORDERS.get('conv:' + id, 'json')))).filter(Boolean).map(convSummary).sort((a, b) => b.last - a.last);
+  return json(env, { chats: list, unread: list.reduce((a, c) => a + c.unread, 0), open: list.filter(c => c.status === 'open').length });
+}
+async function adminChat(req, env, url) {
+  const sid = String(url.searchParams.get('sid') || ''); if (!SID.test(sid)) return fail(env, 'Bad session');
+  const conv = await env.ORDERS.get('conv:' + sid, 'json'); if (!conv) return fail(env, 'Conversation not found', 404);
+  if (conv.unread) { conv.unread = 0; await env.ORDERS.put('conv:' + sid, J(conv), { expirationTtl: 30 * 86400 }); }
+  let orders = [];
+  if (conv.email) { const a = await env.ORDERS.get('acct:' + conv.email, 'json'); if (a) orders = (await Promise.all((a.orders || []).slice(-3).map(id => env.ORDERS.get('order:' + id, 'json')))).filter(Boolean).map(o => ({ id: o.id.slice(0, 8).toUpperCase(), title: orderTitle(o), usd: o.usd, status: o.status })); }
+  return json(env, { chat: Object.assign(convSummary(conv), { msgs: conv.msgs, orders, points: undefined }) });
+}
+async function adminChatAct(req, env) {
+  const b = await req.json().catch(() => ({})), sid = String(b.sid || ''); if (!SID.test(sid)) return fail(env, 'Bad session');
+  const conv = await env.ORDERS.get('conv:' + sid, 'json'); if (!conv) return fail(env, 'Conversation not found', 404);
+  if (b.action === 'reply') {
+    const text = String(b.text || '').trim().slice(0, 1000); if (!text) return fail(env, 'Type a message first');
+    await convAdd(env, conv, 'o', text);
+  } else if (b.action === 'done' || b.action === 'open') { conv.status = b.action; await env.ORDERS.put('conv:' + sid, J(conv), { expirationTtl: 30 * 86400 }); }
+  else if (b.action === 'delete') { await env.ORDERS.delete('conv:' + sid); await env.ORDERS.put('cvidx', J(((await env.ORDERS.get('cvidx', 'json')) || []).filter(x => x !== sid))); return json(env, { ok: true }); }
+  else return fail(env, 'Unknown action');
+  return json(env, { ok: true, chat: Object.assign(convSummary(conv), { msgs: conv.msgs }) });
 }
 async function telegramHook(req, env, secretInPath) {
   if (!env.TELEGRAM_BOT_TOKEN || !safeEqual(secretInPath, await tgSecret(env))) return fail(env, 'Not found', 404);
@@ -595,7 +646,7 @@ async function telegramHook(req, env, secretInPath) {
     const cur = await tgOwner(env);
     if (await pairOk(env, start[1]) && cur && cur !== chat) await tg(env, 'sendMessage', { chat_id: chat, text: 'This shop is already connected to another Telegram account. Press “Disconnect” in the dashboard first, then connect again.' });
     else if (await pairOk(env, start[1])) {
-      await env.ORDERS.put('tg:owner', chat); tgMem.owner = chat; tgMem.t = Date.now();
+      await env.ORDERS.put('tg:owner', chat); cfgMem = { t: 0, v: null }; tgMem.owner = chat; tgMem.t = Date.now();
       await tg(env, 'sendMessage', { chat_id: chat, text: '✅ Connected! You will now get an alert for every order and every chat message. To answer a customer, use Telegram’s “Reply” on their message.\n\n(The dashboard can take up to a minute to show “Connected”.)' });
     } else await tg(env, 'sendMessage', { chat_id: chat, text: 'That connect code is wrong or expired. Press “Connect Telegram” in your dashboard again, then use the new link.' });
     return json(env, { ok: true });
@@ -605,9 +656,9 @@ async function telegramHook(req, env, secretInPath) {
   if (!owner || chat !== owner) { await tg(env, 'sendMessage', { chat_id: chat, text: 'This is a private shop assistant bot.' }).catch(() => {}); return json(env, { ok: true }); }
   const rt = m.reply_to_message && String(m.reply_to_message.text || ''), sid = rt && (rt.match(/#sid:([a-f0-9]{16,32})/) || [])[1];
   if (sid && text) {
-    const list = (await env.ORDERS.get('chat:' + sid, 'json')) || [];
-    list.push({ t: Date.now(), text: text.slice(0, 1000) });
-    await env.ORDERS.put('chat:' + sid, JSON.stringify(list.slice(-30)), { expirationTtl: 3 * 86400 });
+    let conv = await env.ORDERS.get('conv:' + sid, 'json');
+    if (!conv) { conv = { sid, name: 'Visitor', topic: 'other', status: 'open', createdAt: Date.now(), unread: 0, msgs: [] }; await convIndex(env, sid); }
+    await convAdd(env, conv, 'o', text.slice(0, 1000));
     await tg(env, 'sendMessage', { chat_id: chat, text: '✓ sent', reply_to_message_id: m.message_id }).catch(() => {});
   } else if (text && !text.startsWith('/')) await tg(env, 'sendMessage', { chat_id: chat, text: 'To answer a customer, long-press their message and choose “Reply”.' }).catch(() => {});
   return json(env, { ok: true });
@@ -667,8 +718,8 @@ async function createOrder(req, env, apiBase) {
     base = Math.round(priced.usd / rate * 1e8);
   } else base = Math.ceil(Math.round(priced.usd * 1e6) / 10000) * 10000;   // whole cents
   let amount = null, amtKey = null;
-  for (let round = 0; round < 6 && amount === null; round++) {            // look at several candidate amounts at the same time (faster than one by one)
-    const cands = [...new Set(Array.from({ length: 8 }, () => coin === 'btc' ? base + 1 + randInt(99) : base + (1 + randInt(round < 3 ? 20 : 60)) * 10000))];
+  for (let round = 0; round < 12 && amount === null; round++) {            // look at several candidate amounts at the same time (faster than one by one)
+    const cands = [...new Set(Array.from({ length: 3 }, () => coin === 'btc' ? base + 1 + randInt(99) : base + (1 + randInt(round < 6 ? 20 : 60)) * 10000))];
     const free = await Promise.all(cands.map(async cand => {
       if (await env.ORDERS.get('amt:' + coin + ':' + cand)) return false;
       if (coin !== 'btc') for (const oc of ['usdt_trc20', 'usdt_bep20', 'binancepay']) if (oc !== coin && await env.ORDERS.get('amt:' + oc + ':' + cand)) return false;   // one amount = one order across all USDT methods
@@ -1228,7 +1279,7 @@ async function adminProduct(req, env) {
   await env.ORDERS.put('prod:' + id, J({ guide: String(p.guide || '').slice(0, 30000), variants, fileIds: cleanFiles(p.files).map(f => ({ id: f.id })) }));
   if (p.type === 'digital') {
     const stock = (Array.isArray(p.stock) ? p.stock : []).map(String).filter(Boolean);
-    await env.ORDERS.put('stock:' + id, J(stock)); extraMem.v = null;
+    await env.ORDERS.put('stock:' + id, J(stock)); extraMem.v = null; cfgMem = { t: 0, v: null };
     if (stock.length > (Number(await env.ORDERS.get('used:' + id)) || 0)) bg(env, restock(env, id));   // tell the people who were waiting
   }
   return json(env, { ok: true, id });
@@ -1258,7 +1309,7 @@ async function adminIndex(req, env) {
   });
   for (const id of (Array.isArray(b.remove) ? b.remove : []).slice(0, 100)) { const pd = await env.ORDERS.get('prod:' + id, 'json').catch(() => null); for (const f of (pd && pd.fileIds) || []) if (FILE_ID.test(String(f.id))) await env.ORDERS.delete('file:' + id + ':' + f.id); await env.ORDERS.delete('prod:' + id); await env.ORDERS.delete('stock:' + id); }
   const aa = b.allAccess || {}, w = b.wallets || {};
-  catMem = { t: 0, v: null };
+  catMem = { t: 0, v: null }; cfgMem = { t: 0, v: null };
   await env.ORDERS.put('idx', J({
     storeName: String(b.storeName || ''), site: siteOk(b.site), products,
     wallets: { usdt_trc20: String(w.usdt_trc20 || '').trim().slice(0, 120), usdt_bep20: String(w.usdt_bep20 || '').trim().slice(0, 120), btc: String(w.btc || '').trim().slice(0, 120), binancepay: String(w.binancepay || '').trim().slice(0, 160) },
@@ -1442,7 +1493,7 @@ async function rebuildReviews(env) {
   const all = (await Promise.all(ids.map(id => env.ORDERS.get('rev:' + id, 'json')))).filter(r => r && r.st === 'ok');
   const count = all.length, avg = count ? Math.round(all.reduce((a, r) => a + r.r, 0) / count * 10) / 10 : 0;
   await env.ORDERS.put('rev:pub', J({ avg, count, list: all.slice(0, 30).map(r => ({ n: r.name, r: r.r, x: r.text, t: r.t, i: r.item })) }));
-  extraMem.v = null;
+  extraMem.v = null; cfgMem = { t: 0, v: null };
 }
 async function submitReview(req, env) {
   if (tooMany(ipHits, 'rv|' + (ipOf(req)), 6, 10 * 60000)) return fail(env, 'Too many attempts. Please wait a few minutes.', 429);
@@ -1556,11 +1607,16 @@ async function route(req, env) {
     if (!env.ORDERS) return fail(env, 'Storage (KV binding named ORDERS) is not connected', 503);
     if (req.method === 'POST' && !path.startsWith('/api/admin/') && Number(req.headers.get('content-length') || 0) > 65536) return fail(env, 'Request too large', 413);
     if (path === '/api/config' && req.method === 'GET') {
+      // the same answer for every visitor: keep it for 20 seconds (memory) and let the shop's own address cache it too, so 1000 visitors cost only a few reads
+      if (cfgMem.v && Date.now() - cfgMem.t < 20000) return new Response(cfgMem.v, { headers: PUB_HEADERS });
       const cat = await getCatalog(env);
       const prices = {}; if (cat && cat.products) Object.keys(cat.products).forEach(id => { const q = cat.products[id]; prices[id] = { price: q.price, stylePrice: q.stylePrice || 0 }; });
       const pc = await ptsCfg(env), ex = await shopExtras(env, cat);
-      return json(env, { ex, pts: pc.on ? pc : { on: false }, storeName: cat ? cat.storeName : '', prices, allAccess: cat && cat.allAccess ? { price: cat.allAccess.price } : null, accounts: !!(env.ADMIN_TOKEN || env.SESSION_SECRET),
-        coins: Object.keys(COINS).filter(c => walletFor(env, cat, c)).map(c => ({ id: c, name: COINS[c].name, network: COINS[c].network, kind: COINS[c].kind || (c === 'btc' ? 'btc' : 'tron'), minutes: COINS[c].minutes, binance: !!(cat && cat.binanceAddr && cat.binanceAddr[c]) })), binanceAuto: binanceOn(env), chat: !!(env.TELEGRAM_BOT_TOKEN && (await tgOwner(env))) });
+      const body = JSON.stringify({ ex, pts: pc.on ? pc : { on: false }, storeName: cat ? cat.storeName : '', prices, allAccess: cat && cat.allAccess ? { price: cat.allAccess.price } : null, accounts: !!(env.ADMIN_TOKEN || env.SESSION_SECRET),
+        coins: Object.keys(COINS).filter(c => walletFor(env, cat, c)).map(c => ({ id: c, name: COINS[c].name, network: COINS[c].network, kind: COINS[c].kind || (c === 'btc' ? 'btc' : 'tron'), minutes: COINS[c].minutes, binance: !!(cat && cat.binanceAddr && cat.binanceAddr[c]) })), binanceAuto: binanceOn(env), chat: chatOn(env) });
+
+      cfgMem = { t: Date.now(), v: body };
+      return new Response(body, { headers: PUB_HEADERS });
     }
     let pm = path.match(/^\/api\/preview\/([A-Za-z0-9_-]{1,64})\/(\d{1,2})$/);
     if (pm && req.method === 'GET') return await fullPreview(req, env, pm[1], +pm[2]);
@@ -1571,7 +1627,7 @@ async function route(req, env) {
     if (path === '/api/chat/poll' && req.method === 'GET') return await chatPoll(req, env, url);
     let tm = path.match(/^\/api\/telegram\/([A-Za-z0-9]{16,64})$/);
     if (tm && req.method === 'POST') return await telegramHook(req, env, tm[1]);
-    if (path === '/api/reviews' && req.method === 'GET') { const p = await env.ORDERS.get('rev:pub', 'text'); return new Response(p || '{"avg":0,"count":0,"list":[]}', { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=60', 'access-control-allow-origin': '*' } }); }
+    if (path === '/api/reviews' && req.method === 'GET') { const p = await env.ORDERS.get('rev:pub', 'text'); return new Response(p || '{"avg":0,"count":0,"list":[]}', { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=60', 'netlify-cdn-cache-control': 'public, max-age=60, stale-while-revalidate=300', 'access-control-allow-origin': '*' } }); }
     if (path === '/api/review' && req.method === 'POST') return await submitReview(req, env);
     if (path === '/api/notify-me' && req.method === 'POST') return await notifyMe(req, env);
     if (path === '/api/cart' && req.method === 'POST') return await saveCart(req, env, apiBase);
@@ -1606,13 +1662,16 @@ async function route(req, env) {
       if (path === '/api/admin/index' && req.method === 'POST') return await adminIndex(req, env);
       if (path === '/api/admin/ping') return json(env, { ok: true });
       if (path === '/api/admin/orders' && req.method === 'GET') return await adminOrders(env);
+      if (path === '/api/admin/chats' && req.method === 'GET') return await adminChats(env);
+      if (path === '/api/admin/chat' && req.method === 'GET') return await adminChat(req, env, url);
+      if (path === '/api/admin/chat' && req.method === 'POST') return await adminChatAct(req, env);
       if (path === '/api/admin/reviews' && req.method === 'GET') return await adminReviews(env);
       if (path === '/api/admin/review' && req.method === 'POST') return await adminReviewAct(req, env);
       if (path === '/api/admin/features' && req.method === 'GET') return json(env, await featCfg(env));
-      if (path === '/api/admin/features' && req.method === 'POST') { const b = await req.json().catch(() => ({})); await env.ORDERS.put('feat:cfg', J({ cart: b.cart !== false, reviews: b.reviews !== false, notify: b.notify !== false })); extraMem.v = null; return json(env, await featCfg(env)); }
+      if (path === '/api/admin/features' && req.method === 'POST') { const b = await req.json().catch(() => ({})); await env.ORDERS.put('feat:cfg', J({ cart: b.cart !== false, reviews: b.reviews !== false, notify: b.notify !== false })); extraMem.v = null; cfgMem = { t: 0, v: null }; cfgMem = { t: 0, v: null }; return json(env, await featCfg(env)); }
       if (path === '/api/admin/points' && req.method === 'GET') return json(env, await ptsCfg(env));
       if (path === '/api/admin/points' && req.method === 'POST') {
-        const b = await req.json().catch(() => ({})); await env.ORDERS.put('pts:cfg', J(Object.assign(await ptsCfg(env), b, { on: !!b.on })));
+        const b = await req.json().catch(() => ({})); await env.ORDERS.put('pts:cfg', J(Object.assign(await ptsCfg(env), b, { on: !!b.on }))); cfgMem = { t: 0, v: null };
         return json(env, await ptsCfg(env));
       }
       if (path === '/api/admin/customers' && req.method === 'GET') return await adminCustomers(env, url);
@@ -1676,7 +1735,7 @@ async function route(req, env) {
         return json(env, { ok: true });
       }
       if (path === '/api/admin/telegram/disconnect' && req.method === 'POST') {
-        await env.ORDERS.delete('tg:owner'); tgMem.owner = ''; tgMem.t = Date.now();
+        await env.ORDERS.delete('tg:owner'); cfgMem = { t: 0, v: null }; tgMem.owner = ''; tgMem.t = Date.now();
         if (env.TELEGRAM_BOT_TOKEN) await tg(env, 'deleteWebhook', {}).catch(() => {});
         return json(env, { ok: true });
       }

@@ -109,6 +109,27 @@
     .lv .logo-s{width:44px;height:44px;border-radius:12px}.lv b{display:block;line-height:1.25}.lv small{color:var(--muted);font-weight:650;font-size:.72rem}
     .regs{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.rc{display:inline-flex;align-items:center;border:1px solid var(--border2);border-radius:999px;background:var(--surface2);font-size:.72rem;font-weight:750;overflow:hidden}
     .rc button{padding:3px 8px;font-size:.72rem;font-weight:750}.rc button:hover{background:var(--accent-soft);color:var(--accent2)}.rc .x{color:var(--muted);border-left:1px solid var(--border2)}.rc .x:hover{color:var(--danger)}
+    .subtabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:6px 0 18px}
+    .subtab{text-align:left;padding:12px 14px;border-radius:16px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:border-color .2s,background .2s}
+    .subtab b{display:block;font-size:.95rem}.subtab small{display:block;color:var(--muted);font-size:.76rem;margin-top:3px;line-height:1.35}
+    .subtab.on{border-color:var(--accent);background:var(--accent-soft)}
+    .sgp[hidden]{display:none!important}
+    .inbox{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:14px;align-items:start}
+    .clist{display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow:auto}
+    .citem{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface);cursor:pointer}
+    .citem.on{border-color:var(--accent);background:var(--accent-soft)}.citem .t{display:flex;justify-content:space-between;gap:8px;font-weight:750;font-size:.9rem}
+    .citem small{display:block;color:var(--muted);font-size:.76rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .citem .u{min-width:20px;height:20px;border-radius:999px;background:var(--accent);color:var(--on-accent,#fff);font-size:.7rem;display:inline-grid;place-items:center;padding:0 6px}
+    .tag2{display:inline-block;font-size:.68rem;font-weight:750;padding:2px 8px;border-radius:999px;background:var(--surface2,var(--field));border:1px solid var(--border);margin-right:4px}
+    .thread{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto;padding:6px 2px}
+    .bub{max-width:82%;padding:9px 12px;border-radius:16px;font-size:.92rem;white-space:pre-wrap;word-break:break-word}
+    .bub.c{align-self:flex-start;background:var(--field);border:1px solid var(--border)}.bub.o{align-self:flex-end;background:var(--accent);color:var(--on-accent,#fff)}
+    .bub small{display:block;opacity:.7;font-size:.68rem;margin-top:3px}
+    .quick{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.quick button{padding:5px 11px;border-radius:999px;border:1px solid var(--border2);background:var(--surface);font-size:.78rem;font-weight:650;cursor:pointer;color:var(--text)}
+    #chText{min-height:0;height:70px;resize:vertical}
+    .pubbig{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.pubbig .btn{font-size:1.05rem;padding:14px 26px}
+    .plist{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}.plist li{display:flex;gap:8px;align-items:center;font-size:.9rem}.plist li i{font-style:normal;width:22px;text-align:center}
+    @media(max-width:900px){.inbox{grid-template-columns:1fr}}
     @media(max-width:1100px){.kpis,.stats{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
     @media(max-width:900px){.app{grid-template-columns:1fr;padding:10px;gap:10px}aside{position:static;height:auto;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:8px;gap:6px;align-items:center;border-radius:18px}.brand{padding:0 6px 0 2px}.brand div,.grp,.lock{display:none}.navb{width:auto;white-space:nowrap;padding:9px 12px}.side-foot{margin:0 0 0 auto;padding:0}.themebtn span{display:none}.form{grid-template-columns:1fr}.topbar{position:static}}
     @media(max-width:560px){.kpis,.stats{grid-template-columns:1fr}h1{font-size:1.4rem}.periods{width:100%;justify-content:space-between}}
@@ -123,12 +144,13 @@
     <div class="grp">Sell</div>
     <button class="navb" data-v="products"><span class="ico">🛍️</span>Products</button>
     <button class="navb" data-v="supplier"><span class="ico">🎁</span>Gift cards</button>
-    <div class="grp">Manage</div>
+    <div class="grp">Customers &amp; support</div>
     <button class="navb" data-v="orders"><span class="ico">🧾</span>Orders<span class="bdg" id="ordBadge" hidden>0</span></button>
+    <button class="navb" data-v="messages"><span class="ico">💬</span>Messages<span class="bdg" id="msgBadge" hidden>0</span></button>
     <button class="navb" data-v="customers"><span class="ico">👥</span>Customers</button>
     <div class="grp">Setup</div>
     <button class="navb" data-v="settings"><span class="ico">⚙️</span>Settings</button>
-    <button class="navb" data-v="publish"><span class="ico">🚀</span>Publish</button>
+    <button class="navb" data-v="publish"><span class="ico">🚀</span>Publish<span class="bdg" id="pubBadge" hidden>!</span></button>
     <div class="side-foot">
       <button class="themebtn" id="themeBtn" type="button"><span>Dark mode</span><b id="themeIco">🌙</b></button>
       <div class="lock">🔒 Private. Keep this <b>admin</b> folder on your computer — never upload it.</div>
@@ -167,8 +189,8 @@
         <div class="panel"><h2>Quick actions</h2><div class="qa" style="grid-template-columns:1fr 1fr">
           <button type="button" data-go="products" data-new="1"><span class="ico">➕</span><span>New product<small>Code or website</small></span></button>
           <button type="button" data-go="supplier"><span class="ico">🎁</span><span>Gift cards<small>Import &amp; prices</small></span></button>
-          <button type="button" id="qaSync"><span class="ico">⬆️</span><span>Sync<small>Server</small></span></button>
-          <button type="button" id="qaData"><span class="ico">🌐</span><span>Website<small>data.js</small></span></button>
+          <button type="button" id="qaPub"><span class="ico">🚀</span><span>Publish<small>Everything, one tap</small></span></button>
+          <button type="button" data-go="messages"><span class="ico">💬</span><span>Messages<small>Customer chats</small></span></button>
         </div></div>
       </div>
     </section>
@@ -297,16 +319,34 @@
         <div class="tw"><table><thead><tr><th>Date</th><th>Stars</th><th>Customer</th><th>Review</th><th>Status</th><th></th></tr></thead><tbody id="rvBody"></tbody></table></div><p class="help" id="rvMsg">Press Refresh to load reviews.</p></div>
     </section>
 
+    <!-- MESSAGES -->
+    <section class="view" id="v-messages">
+      <h1>Messages</h1><p class="lead">Live chat with your customers. Every visitor is one <b>ticket</b> (like <b>#A3F2</b>) with its own thread, topic and unread counter — so even 10 people writing at once stay separate. You can answer here or from Telegram.</p>
+      <div class="inbox">
+        <div class="panel"><div class="bar"><h2 style="margin:0">Conversations</h2><button class="btn btn-g btn-s" id="chRefresh">↻</button></div>
+          <div class="seg" id="chFilter" style="margin:8px 0"><button type="button" data-f="open" class="on">Open</button><button type="button" data-f="done">Solved</button><button type="button" data-f="all">All</button></div>
+          <div class="clist" id="chList"><p class="empty">Press ↻ to load.</p></div><p class="help" id="chMsg"></p></div>
+        <div class="panel" id="chThreadBox"><p class="empty">Pick a conversation on the left.</p></div>
+      </div>
+    </section>
+
     <!-- SETTINGS -->
     <section class="view" id="v-settings">
-      <h1>Settings</h1><p class="lead">Your store details, where customers pay you, and the connection to your server.</p>
+      <h1>Settings</h1><p class="lead">Pick a section. Each one has its own topic, so you always know where to look. Press <b>Save settings</b> (bottom) after changing fields in the Store, Payments, Contact or Connection sections.</p>
+      <div class="subtabs" id="subtabs">
+        <button type="button" class="subtab on" data-sg="store"><b>🏪 Store</b><small>Name, email, tagline and the All-Access pass</small></button>
+        <button type="button" class="subtab" data-sg="pay"><b>💳 Payments</b><small>Your wallets (USDT, Bitcoin) and Binance auto-detect</small></button>
+        <button type="button" class="subtab" data-sg="contact"><b>📣 Contact &amp; alerts</b><small>WhatsApp, Telegram alerts, email receipts, social links, best sellers</small></button>
+        <button type="button" class="subtab" data-sg="growth"><b>⭐ Growth</b><small>Points wallet, reviews, notify-me, cart reminders, Arabic names</small></button>
+        <button type="button" class="subtab" data-sg="conn"><b>🔌 Connection</b><small>Server address, shop address, admin token, advanced</small></button>
+      </div>
       <form id="sf">
-        <div class="panel"><h2>Store</h2><div class="form">
+        <div class="panel sgp" data-sg="store"><h2>Store</h2><div class="form">
           <div><label for="sName">Store name</label><input id="sName"></div>
           <div><label for="sEmail">Your email (shown to customers for support)</label><input id="sEmail" type="email"></div>
           <div class="full"><label for="sTag">Tagline</label><input id="sTag"></div></div></div>
 
-        <div class="panel"><h2>Where customers pay you</h2>
+        <div class="panel sgp" data-sg="pay"><h2>Where customers pay you</h2>
           <p class="help" style="margin-bottom:14px">Fill the ones you want to accept — each one appears as a payment box at checkout. Leave the others empty.</p>
           <div class="pcard"><span class="ic usdt">₮</span><div><label for="sWalU">USDT on TRON (TRC20) — address starts with <b>T</b></label><input id="sWalU" placeholder="T…" autocomplete="off"><label class="chk" style="margin-top:8px"><input type="checkbox" id="sBinU"> This is a <b>Binance</b> deposit address</label></div></div>
           <div class="pcard"><span class="ic bnb">₮</span><div><label for="sWalE">USDT on BNB Smart Chain (BEP20) — address starts with <b>0x</b></label><input id="sWalE" placeholder="0x…" autocomplete="off"><label class="chk" style="margin-top:8px"><input type="checkbox" id="sBinE"> This is a <b>Binance</b> deposit address</label></div></div>
@@ -315,7 +355,7 @@
           <div class="tip"><b>Important about Binance deposit addresses:</b> when a customer pays from Binance to <i>another Binance address</i>, Binance often moves the money <b>inside its own system</b> — it never appears on the blockchain, so the shop cannot see it and you would have to press “Mark paid” yourself. For fully automatic payments use a wallet address you control (TronLink, Trust Wallet…) for TRC20/BEP20. The Binance Pay box above is the right choice for customers who pay inside Binance.</div>
         </div>
 
-        <div class="panel"><h2>Contact &amp; alerts</h2>
+        <div class="panel sgp" data-sg="contact"><h2>Contact &amp; alerts</h2>
           <p class="help" style="margin-bottom:14px">Customers can reach you by chat, WhatsApp or Telegram, and you get an alert on your phone for every order.</p>
           <div class="pcard"><span class="ic wa">W</span><div><label for="sWa">WhatsApp number (with country code, digits only — e.g. 963912345678)</label><input id="sWa" inputmode="tel" placeholder="963912345678" autocomplete="off"></div></div>
           <div class="pcard"><span class="ic tg">✈</span><div><label for="sTgU">Telegram username customers can message (optional, without @)</label><input id="sTgU" placeholder="your_username" autocomplete="off"></div></div>
@@ -325,29 +365,29 @@
           <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-p btn-s" id="tgConnect">Connect Telegram</button><button type="button" class="btn btn-g btn-s" id="tgTest">Send test alert</button><button type="button" class="btn btn-g btn-s" id="tgRefresh">↻ Refresh status</button><button type="button" class="btn btn-d btn-s" id="tgOff">Disconnect</button></div>
         </div>
 
-        <div class="panel"><h2>Binance auto-detect (Binance Pay and Binance-to-Binance transfers)</h2>
+        <div class="panel sgp" data-sg="pay"><h2>Binance auto-detect (Binance Pay and Binance-to-Binance transfers)</h2>
           <p class="help" style="margin-bottom:10px">Connect a <b>read-only</b> Binance key and the shop confirms Binance Pay payments and Binance-to-Binance transfers (TRC20 / BEP20 deposit address) <b>by itself</b>. Steps are in START-HERE.md → “Binance auto-detect”. After adding the two secrets in Cloudflare and pressing Deploy, press the button.</p>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button type="button" class="btn btn-p btn-s" id="bnTest">Check Binance connection</button></div>
           <p class="help" id="bnMsg" style="margin-top:8px"></p></div>
 
-        <div class="panel"><h2>Email receipts</h2>
+        <div class="panel sgp" data-sg="contact"><h2>Email receipts</h2>
           <p class="help" style="margin-bottom:10px">After every paid order your customer gets an email with the invoice and a button to their private order page. Free setup with resend.com (steps in START-HERE.md → “Email receipts”). Press the button to send yourself a test.</p>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input id="mailTo" type="email" placeholder="your email" style="max-width:280px"><button type="button" class="btn btn-p btn-s" id="mailTest">Send a test email</button></div>
           <p class="help" id="mailMsg" style="margin-top:8px"></p></div>
 
-        <div class="panel"><h2>Social media &amp; best sellers</h2>
+        <div class="panel sgp" data-sg="contact"><h2>Social media &amp; best sellers</h2>
           <p class="help" style="margin-bottom:14px">Paste the full link (starting with https://). Only the ones you fill in appear as icons at the bottom of your shop. Leave empty to hide.</p>
           <div class="form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px"><div><label for="soc_facebook">Facebook</label><input id="soc_facebook" data-soc="facebook" placeholder="https://…" autocomplete="off"></div><div><label for="soc_instagram">Instagram</label><input id="soc_instagram" data-soc="instagram" placeholder="https://…" autocomplete="off"></div><div><label for="soc_x">X (Twitter)</label><input id="soc_x" data-soc="x" placeholder="https://…" autocomplete="off"></div><div><label for="soc_youtube">YouTube</label><input id="soc_youtube" data-soc="youtube" placeholder="https://…" autocomplete="off"></div><div><label for="soc_tiktok">TikTok</label><input id="soc_tiktok" data-soc="tiktok" placeholder="https://…" autocomplete="off"></div><div><label for="soc_telegram">Telegram channel</label><input id="soc_telegram" data-soc="telegram" placeholder="https://…" autocomplete="off"></div><div><label for="soc_whatsapp">WhatsApp channel</label><input id="soc_whatsapp" data-soc="whatsapp" placeholder="https://…" autocomplete="off"></div><div><label for="soc_snapchat">Snapchat</label><input id="soc_snapchat" data-soc="snapchat" placeholder="https://…" autocomplete="off"></div><div><label for="soc_linkedin">LinkedIn</label><input id="soc_linkedin" data-soc="linkedin" placeholder="https://…" autocomplete="off"></div><div><label for="soc_discord">Discord</label><input id="soc_discord" data-soc="discord" placeholder="https://…" autocomplete="off"></div></div>
           <div class="form" style="margin-top:14px"><label for="sFeat">Best sellers — brand names shown first, separated by commas (example: itunes, pubg, roblox, google play)</label><input id="sFeat" placeholder="itunes, pubg, roblox, steam" autocomplete="off"><p class="help">Leave empty to use the built-in list (iTunes, Apple, PUBG, Roblox, Google Play, Steam, PlayStation, Xbox, Free Fire, Netflix…).</p></div>
         </div>
 
-        <div class="panel"><h2>Server connection</h2><div class="form">
+        <div class="panel sgp" data-sg="conn"><h2>Server connection</h2><div class="form">
           <div class="full"><label for="sApi">Payment server URL (from Cloudflare, e.g. https://geostore-api.yourname.workers.dev). Leave empty for manual mode.</label><input id="sApi" placeholder="https://geostore-api.yourname.workers.dev"></div>
           <div class="full"><label for="sTok">Admin token (private — saved only in this browser, never published)</label><input id="sTok" type="password" autocomplete="off" placeholder="the ADMIN_TOKEN you chose in Cloudflare"></div>
           <div class="full"><label for="sSite">Your shop address (the website customers visit, e.g. https://geostorecodes.com). <b>Fixes slow or failing checkout on phones</b>: the shop then talks to your server through its own address.</label><input id="sSite" placeholder="https://geostorecodes.com" autocomplete="off"></div>
           <div class="full"><button type="button" class="btn btn-g btn-s" id="srvTest">Test connection</button> <span class="help" id="srvStatus" style="margin-left:8px"></span></div></div></div>
 
-        <div class="panel" id="ptsPanel"><h2>⭐ Points wallet</h2><p class="help">Customers earn points on every paid order and spend them as a discount at checkout. Saved straight to your server (no Sync needed). You can see and edit each customer\'s points in the Customers tab.</p><div class="form">
+        <div class="panel sgp" data-sg="growth" id="ptsPanel"><h2>⭐ Points wallet</h2><p class="help">Customers earn points on every paid order and spend them as a discount at checkout. Saved straight to your server (no Sync needed). You can see and edit each customer\'s points in the Customers tab.</p><div class="form">
           <div class="full"><label class="chk"><input type="checkbox" id="ptOn"> Turn the points wallet on</label></div>
           <div><label for="ptPer">Points earned for each $1 paid</label><input id="ptPer" type="number" min="0" step="any"></div>
           <div><label for="ptVal">Value of 1 point (USD) — e.g. 0.01 means 100 points = $1</label><input id="ptVal" type="number" min="0" step="any"></div>
@@ -357,22 +397,22 @@
           <div><label for="ptRed">Smallest number of points a customer can spend</label><input id="ptRed" type="number" min="0" step="1"></div>
           <div class="full"><button type="button" class="btn btn-p btn-s" id="ptSave">Save points settings</button> <span class="help" id="ptMsg" style="margin-left:8px"></span><p class="help" id="ptEx"></p></div></div></div>
 
-        <div class="panel"><h2>🌐 Arabic names (optional)</h2><p class="help">The whole shop already switches to Arabic when a visitor taps “العربية”. Product names that you typed in English stay in English unless you add an Arabic name here. One per line: <b>English name | الاسم بالعربية</b>. Press “Save settings” at the bottom, then publish your website.</p>
+        <div class="panel sgp" data-sg="growth"><h2>🌐 Arabic names (optional)</h2><p class="help">The whole shop already switches to Arabic when a visitor taps “العربية”. Product names that you typed in English stay in English unless you add an Arabic name here. One per line: <b>English name | الاسم بالعربية</b>. Press “Save settings” at the bottom, then publish your website.</p>
           <textarea id="sArN" rows="5" placeholder="Steam Key | مفتاح ستيم&#10;Restaurant Website with Reservations | موقع مطعم مع الحجوزات" style="width:100%"></textarea></div>
 
-        <div class="panel" id="featPanel"><h2>🛍️ Shop extras</h2><p class="help">Switch each helper on or off. They only work when your server is connected (and, for emails, when email receipts are set up).</p><div class="form">
+        <div class="panel sgp" data-sg="growth" id="featPanel"><h2>🛍️ Shop extras</h2><p class="help">Switch each helper on or off. They only work when your server is connected (and, for emails, when email receipts are set up).</p><div class="form">
           <div class="full"><label class="chk"><input type="checkbox" id="ftRev"> Customer reviews (shown after you approve them)</label></div>
           <div class="full"><label class="chk"><input type="checkbox" id="ftNot"> “Notify me” emails when a sold-out item is back in stock</label></div>
           <div class="full"><label class="chk"><input type="checkbox" id="ftCart"> One reminder email to customers who leave their cart without paying</label></div>
           <div class="full"><button type="button" class="btn btn-p btn-s" id="ftSave">Save</button> <span class="help" id="ftMsg" style="margin-left:8px"></span></div></div></div>
 
-        <div class="panel"><h2>All-Access pass</h2><div class="form">
+        <div class="panel sgp" data-sg="store"><h2>All-Access pass</h2><div class="form">
           <div class="full"><label class="chk"><input type="checkbox" id="aaOn"> Sell an All-Access pass (one payment → every code and website)</label></div>
           <div><label for="aaTitle">Pass name</label><input id="aaTitle"></div>
           <div><label for="aaPrice">Pass price (USD)</label><input id="aaPrice" type="number" min="0" step="1"></div>
           <div class="full"><label for="aaDesc">Pass description</label><input id="aaDesc"></div></div></div>
 
-        <div class="panel"><details><summary style="cursor:pointer;font-weight:700">Advanced</summary><div class="form" style="margin-top:14px">
+        <div class="panel sgp" data-sg="conn"><details><summary style="cursor:pointer;font-weight:700">Advanced</summary><div class="form" style="margin-top:14px">
           <div class="full"><label class="chk"><input type="checkbox" id="sDig"> Show the “Digital items” tiles in the Gift cards tab</label></div>
           <div class="full"><label for="sWal">Other coins (manual mode only — used when no server is connected) — one per line: <code>Coin name | address</code></label><textarea id="sWal" style="min-height:90px;white-space:pre-wrap" placeholder="USDT (TRC20 network) | TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></textarea></div></div></details></div>
         <div class="sticky-save"><button class="btn btn-p" type="submit">Save settings</button></div>
@@ -381,14 +421,19 @@
 
     <!-- PUBLISH -->
     <section class="view" id="v-publish">
-      <h1>Publish</h1><p class="lead">Two things keep your shop up to date: <b>Sync</b> (server: prices, codes, wallets) and <b>Update website</b> (names, images, new products, gift-card brands).</p>
+      <h1>Publish</h1><p class="lead">One button puts every change live. Use it after you change products, prices, gift cards, settings or Arabic names.</p>
+      <div class="panel"><div class="pubbig"><button class="btn btn-p" id="paAll">🚀 Publish everything</button><span class="help" id="paState">Checking…</span></div>
+        <ul class="plist" id="paList"><li><i>1</i>Sends prices, codes, wallets and gift-card choices to your <b>server</b></li><li><i>2</i>Updates your <b>website</b> (names, images, products, language, connection file) — sent automatically if GitHub is set up in “Phone-friendly publishing” below, otherwise the two files are downloaded for you to upload to Netlify</li></ul>
+        <p class="help" id="paMsg" style="margin-top:10px"></p></div>
+      <details class="panel"><summary style="cursor:pointer;font-weight:700">Individual steps (advanced — you normally do not need these)</summary><div style="margin-top:14px">
       <div class="warn">⚠️ Never upload this <b>admin</b> folder or any <code>private*.js</code> file to the internet — they contain your paid code.</div>
       <div class="panel"><div class="step"><div class="num">1</div><div><h3>Sync to server</h3><p>Sends prices, private codes, wallets and your gift-card choices to your server. <b>Price changes only need this step.</b></p>
         <p style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" id="srvSync">⬆ Sync to server</button><button class="btn btn-g" id="srvSyncAll" title="Only if something looks out of date on the server">Re-upload everything</button></p>
         <p class="help" id="srvStatus2" style="margin-top:10px"></p></div></div></div>
       <div class="panel"><div class="step"><div class="num">2</div><div><h3>Update the website</h3><p>Needed when you add or remove products, change names, descriptions, images or gift-card brands.</p>
         <p style="margin-top:12px"><button class="btn btn-p" id="dlData">⬇ Download data.js</button></p>
-      </div>
+      </div></div></div>
+      </div></details>
       <div class="panel"><h2>📱 Phone-friendly publishing</h2>
         <p class="help" style="margin-bottom:12px">Two buttons so you never need a computer: your dashboard is kept safe on <b>your server</b>, and the shop's <code>data.js</code> can be sent straight to GitHub, which updates your website by itself in about a minute.</p>
         <h3 style="margin:6px 0">☁ Cloud copy of this dashboard</h3>
@@ -399,7 +444,7 @@
         <div class="form"><div><label for="ghRepo">GitHub repository (owner/name)</label><input id="ghRepo" placeholder="georgebojakjian/Geostore" autocomplete="off"></div><div><label for="ghBranch">Branch Netlify publishes</label><input id="ghBranch" placeholder="main" autocomplete="off"></div><div class="full"><label for="ghToken">GitHub token (stays only on this device)</label><input id="ghToken" type="password" placeholder="github_pat_…" autocomplete="off"></div></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px"><button type="button" class="btn btn-g btn-s" id="ghSave">Save these</button><button type="button" class="btn btn-p btn-s" id="ghPublish">🚀 Publish website now</button></div>
         <p class="help" id="ghMsg" style="margin-top:8px"></p>
-        <p style="margin-top:12px">Put the file in your <code>site</code> folder (replace the old one), then upload the <b>whole site folder</b> to Netlify (Deploys → drag the folder).</p></div></div></div>
+        <p style="margin-top:12px">Put the file in your <code>site</code> folder (replace the old one), then upload the <b>whole site folder</b> to Netlify (Deploys → drag the folder).</p></div>
       <div class="panel"><div class="step"><div class="num">3</div><div><h3>Back up (important)</h3><p>Your products live in this browser. Download a backup now and then and keep it safe.</p>
         <p style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-g" id="dlBackup">⬇ Backup everything (.json)</button><label class="btn btn-g" style="margin:0;cursor:pointer">⬆ Restore backup<input type="file" id="restore" accept=".json" hidden></label><button class="btn btn-d" id="resetAll">Reset to original files</button></p></div></div></div>
     </section>
@@ -495,14 +540,14 @@
     var s = $('chipSrv'), w = $('chipSite');
     var hasSrv = !!(state.settings.apiUrl);
     s.className = 'chip' + (!hasSrv ? ' bad' : state.dirtySync ? ' warn' : '');
-    s.innerHTML = '<i></i><span>' + (!hasSrv ? 'Server not connected' : state.dirtySync ? 'Server needs a Sync' : 'Server up to date') + '</span>' + (hasSrv && state.dirtySync ? '<button type="button" data-act="sync">Sync now</button>' : (!hasSrv ? '<button type="button" data-go="settings">Connect</button>' : ''));
+    s.innerHTML = '<i></i><span>' + (!hasSrv ? 'Server not connected' : state.dirtySync ? 'Server needs a Sync' : 'Server up to date') + '</span>' + (hasSrv && state.dirtySync ? '<button type="button" data-act="pub">Publish</button>' : (!hasSrv ? '<button type="button" data-go="settings">Connect</button>' : ''));
     w.className = 'chip' + (state.dirtySite ? ' warn' : '');
-    w.innerHTML = '<i></i><span>' + (state.dirtySite ? 'Website needs updating' : 'Website up to date') + '</span>' + (state.dirtySite ? '<button type="button" data-act="data">Download data.js</button>' : '');
+    w.innerHTML = '<i></i><span>' + (state.dirtySite ? 'Website needs updating' : 'Website up to date') + '</span>' + (state.dirtySite ? '<button type="button" data-act="pub">Publish</button>' : '');
+    var pb = $('pubBadge'); if (pb) pb.hidden = !(hasSrv && (state.dirtySync || state.dirtySite));
   }
   $('statusBar').addEventListener('click', function(e){
     var b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.act === 'sync'){ show('publish'); runSync(false); }
-    if (b.dataset.act === 'data'){ downloadData(); }
+    if (b.dataset.act === 'pub'){ show('publish'); publishAll(); }
     if (b.dataset.go) show(b.dataset.go);
   });
 
@@ -510,7 +555,7 @@
   function show(v){
     $$('.view').forEach(function(s){ s.classList.toggle('on', s.id==='v-'+v); });
     $$('.navb').forEach(function(b){ b.classList.toggle('on', b.dataset.v===v); });
-    if (v==='dash') renderHome(); if (v==='products') { backToList(); } if (v==='orders') { renderOrders(); if (base()) loadServerOrders(); } if (v==='settings') renderSettings(); if (v==='supplier') renderSupplier(); if (v==='customers' && base() && !custs.length) loadCustomers(false);
+    if (v==='dash') renderHome(); if (v==='products') { backToList(); } if (v==='orders') { renderOrders(); if (base()) loadServerOrders(); } if (v==='settings') renderSettings(); if (v==='supplier') renderSupplier(); if (v==='customers' && base() && !custs.length) loadCustomers(false); if (v==='messages') { loadChats(); } if (v==='publish') paintPub();
     window.scrollTo(0,0);
   }
   $$('.navb').forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.v); }); });
@@ -605,8 +650,7 @@
     else { show('products'); $('pSearch').value = q; renderProducts(); }
     this.value = '';
   });
-  $('qaSync').addEventListener('click', function(){ show('publish'); runSync(false); });
-  $('qaData').addEventListener('click', function(){ downloadData(); });
+  $('qaPub').addEventListener('click', function(){ show('publish'); publishAll(); });
 
   /* ---------- products ---------- */
   var editing = null, pf = 'all', pshown = 40;
@@ -1424,6 +1468,95 @@
     if (!confirm('Reset everything (products, settings, orders) back to the original files? Make a backup first.')) return;
     state = seed(); save(true); toast('Reset done'); show('dash');
   });
+
+
+  /* ---------- settings: sections ---------- */
+  var SGKEY = 'geostore_settings_section';
+  function showSG(g){
+    $$('.subtab').forEach(function(b){ b.classList.toggle('on', b.dataset.sg === g); });
+    $$('#sf .sgp').forEach(function(p){ p.hidden = p.dataset.sg !== g; });
+    try { localStorage.setItem(SGKEY, g); } catch(e) {}
+  }
+  $('subtabs').addEventListener('click', function(e){ var b = e.target.closest('.subtab'); if (b) showSG(b.dataset.sg); });
+  var sg0 = 'store'; try { sg0 = localStorage.getItem(SGKEY) || 'store'; } catch(e) {}
+  showSG($$('.subtab[data-sg="' + sg0 + '"]').length ? sg0 : 'store');
+
+  /* ---------- publish everything (one button) ---------- */
+  var pubBusy = false;
+  function paintPub(){
+    var need = state.dirtySync || state.dirtySite, st = $('paState');
+    if (!st) return;
+    st.textContent = !state.settings.apiUrl ? 'Connect your server first (Settings → Connection).' : need ? '⚠ You have changes that are not live yet.' : '✅ Everything is live.';
+  }
+  function waitFor(read, ok, ms){
+    return new Promise(function(res){ var t0 = Date.now(), iv = setInterval(function(){ var v = read(); if (ok(v) || Date.now() - t0 > (ms || 180000)){ clearInterval(iv); res(v); } }, 350); });
+  }
+  function publishAll(){
+    if (pubBusy) return; var m = $('paMsg'), btn = $('paAll');
+    if (!base() || !token()){ m.textContent = '❌ Open Settings → Connection and fill in your server address and admin token first.'; return; }
+    pubBusy = true; btn.disabled = true; var lines = [];
+    function say(t, bad){ if (t) lines.push(t); m.innerHTML = lines.map(function(x){ return esc(x); }).join('<br>'); m.style.color = bad ? 'var(--danger)' : ''; }
+    say('1/2 Sending to your server…');
+    $('srvStatus2').textContent = ''; runSync(false);
+    waitFor(function(){ return $('srvStatus2').textContent; }, function(v){ return /^(✅|❌)/.test(v); }).then(function(v){
+      if (!/^✅/.test(v)){ say(v || '❌ The server did not answer.', true); throw 0; }
+      lines[lines.length - 1] = '✅ Server updated'; say('2/2 Updating the website…');
+      var gh = lget(GHKEY) || {};
+      if (gh.repo && gh.token){ $('ghMsg').textContent = ''; $('ghPublish').click(); return waitFor(function(){ return $('ghMsg').textContent; }, function(v2){ return /^(✅|❌)/.test(v2); }).then(function(v2){ if (!/^✅/.test(v2)){ say(v2, true); throw 0; } lines[lines.length - 1] = '✅ Website sent — Netlify updates it in about a minute'; say(''); }); }
+      downloadData();
+      lines[lines.length - 1] = '⬇ Files downloaded (data.js' + (redirectsText() ? ' and _redirects' : '') + '). Put them in your site folder and upload the folder to Netlify.'; say('');
+    }).then(function(){ state.dirtySite = false; save(); say('🎉 Done.'); }).catch(function(e){ if (e) say('❌ ' + (e.message || e), true); }).then(function(){ pubBusy = false; btn.disabled = false; paintPub(); });
+  }
+  $('paAll').addEventListener('click', publishAll);
+
+  /* ---------- messages (live chat inbox) ---------- */
+  var chFilter = 'open', chAll = [], chCur = '', chTimer = null;
+  var QKEY = 'geostore_quick_replies', QDEF = ['Hello! Thanks for contacting us. How can I help?', 'Please send me your order number and I will check it right away.', 'Your payment is confirmed and your order is being prepared — it only takes a moment.', 'Please double-check the Player ID and server, then send them to me again.', 'Sorry for the wait — I am checking this now.', 'Is there anything else I can help you with?'];
+  function quickList(){ var q = lget(QKEY); return Array.isArray(q) && q.length ? q : QDEF; }
+  function ago(ms){ var s = Math.max(0, (Date.now() - ms) / 1000); return s < 60 ? 'now' : s < 3600 ? Math.floor(s / 60) + ' min' : s < 86400 ? Math.floor(s / 3600) + ' h' : Math.floor(s / 86400) + ' d'; }
+  function drawChats(){
+    var list = chAll.filter(function(c){ return chFilter === 'all' || c.status === chFilter; });
+    $('chList').innerHTML = list.map(function(c){
+      return '<button type="button" class="citem' + (c.sid === chCur ? ' on' : '') + '" data-sid="' + esc(c.sid) + '"><div class="t"><span>' + esc(c.name) + ' <span style="color:var(--muted);font-weight:600">' + esc(c.ticket) + '</span></span>' + (c.unread ? '<span class="u">' + c.unread + '</span>' : '<span style="color:var(--muted);font-size:.74rem;font-weight:600">' + ago(c.last) + '</span>') + '</div><small><span class="tag2">' + esc(c.topic) + '</span>' + (c.lastFrom === 'o' ? '↩ ' : '') + esc(c.preview) + '</small></button>';
+    }).join('') || '<p class="empty">No ' + (chFilter === 'all' ? '' : chFilter === 'open' ? 'open ' : 'solved ') + 'conversations.</p>';
+  }
+  function setMsgBadge(n){ var b = $('msgBadge'); b.hidden = !n; b.textContent = n; }
+  function loadChats(quiet){
+    if (!base() || !token()){ $('chMsg').textContent = 'Connect your server first (Settings → Connection).'; return Promise.resolve(); }
+    if (!quiet) $('chMsg').textContent = 'Loading…';
+    return api('/api/admin/chats').then(function(r){ chAll = r.chats || []; setMsgBadge(r.unread || 0); drawChats(); $('chMsg').textContent = r.open + ' open · ' + chAll.length + ' total'; if (chCur && $('v-messages').classList.contains('on') && chAll.some(function(c){ return c.sid === chCur && c.unread; })) openChat(chCur, true); })
+      .catch(function(e){ if (!quiet) $('chMsg').textContent = '❌ ' + e.message; });
+  }
+  function bub(m){ return '<div class="bub ' + m.f + '">' + esc(m.x) + '<small>' + (m.f === 'o' ? 'You' : 'Customer') + ' · ' + new Date(m.t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + '</small></div>'; }
+  function openChat(sid, keepScroll){
+    chCur = sid; drawChats();
+    api('/api/admin/chat?sid=' + encodeURIComponent(sid)).then(function(r){
+      var c = r.chat, box = $('chThreadBox');
+      box.innerHTML = '<div class="bar"><div><h2 style="margin:0">' + esc(c.name) + ' <span style="color:var(--muted);font-weight:600">' + esc(c.ticket) + '</span></h2><p class="help"><span class="tag2">' + esc(c.topic) + '</span>' + (c.email ? esc(c.email) + ' · ' : '') + (c.order ? 'order #' + esc(c.order) + ' · ' : '') + (c.status === 'done' ? '✅ solved' : 'open') + '</p></div><span style="display:flex;gap:6px"><button class="btn btn-g btn-s" id="chToggle">' + (c.status === 'done' ? 'Reopen' : '✅ Mark solved') + '</button><button class="btn btn-d btn-s" id="chDel">Delete</button></span></div>' +
+        ((c.orders || []).length ? '<p class="help">Latest orders: ' + c.orders.map(function(o){ return '#' + esc(o.id) + ' ' + esc(o.title) + ' ($' + esc(o.usd) + ', ' + esc(o.status) + ')'; }).join(' · ') + '</p>' : '') +
+        '<div class="thread" id="chThread">' + c.msgs.map(bub).join('') + '</div>' +
+        '<div class="quick" id="chQuick">' + quickList().map(function(q, i){ return '<button type="button" data-q="' + i + '">' + esc(q.length > 38 ? q.slice(0, 36) + '…' : q) + '</button>'; }).join('') + '<button type="button" id="chQEdit" title="Edit the quick replies">✏️</button></div>' +
+        '<form id="chForm" style="display:flex;gap:8px"><textarea id="chText" rows="2" placeholder="Write your answer…" style="flex:1"></textarea><button class="btn btn-p" type="submit">Send</button></form><p class="help" id="chSent"></p>';
+      var th = $('chThread'); th.scrollTop = th.scrollHeight;
+      if (!keepScroll) $('chText').focus();
+      loadChats(true);
+    }).catch(function(e){ $('chThreadBox').innerHTML = '<p class="empty">❌ ' + esc(e.message) + '</p>'; });
+  }
+  $('chList').addEventListener('click', function(e){ var b = e.target.closest('[data-sid]'); if (b) openChat(b.dataset.sid); });
+  $('chRefresh').addEventListener('click', function(){ loadChats(); });
+  $('chFilter').addEventListener('click', function(e){ var b = e.target.closest('[data-f]'); if (!b) return; chFilter = b.dataset.f; $$('#chFilter button').forEach(function(x){ x.classList.toggle('on', x === b); }); drawChats(); });
+  $('chThreadBox').addEventListener('click', function(e){
+    var q = e.target.closest('[data-q]'); if (q){ var t = $('chText'); t.value = (t.value ? t.value + ' ' : '') + quickList()[+q.dataset.q]; t.focus(); }
+    if (e.target.id === 'chQEdit'){ var cur = quickList().join('\n'), v = prompt('Quick replies — one per line:', cur); if (v !== null){ var arr = v.split('\n').map(function(x){ return x.trim(); }).filter(Boolean).slice(0, 12); lset(QKEY, arr.length ? arr : QDEF); openChat(chCur, true); } }
+    if (e.target.id === 'chToggle'){ var c0 = chAll.filter(function(c){ return c.sid === chCur; })[0]; api('/api/admin/chat', {method:'POST', body: JSON.stringify({sid: chCur, action: c0 && c0.status === 'done' ? 'open' : 'done'})}).then(function(){ return loadChats(true); }).then(function(){ openChat(chCur, true); }).catch(function(er){ toast(er.message); }); }
+    if (e.target.id === 'chDel' && confirm('Delete this conversation?')) api('/api/admin/chat', {method:'POST', body: JSON.stringify({sid: chCur, action: 'delete'})}).then(function(){ chCur = ''; $('chThreadBox').innerHTML = '<p class="empty">Deleted.</p>'; loadChats(); }).catch(function(er){ toast(er.message); });
+  });
+  $('chThreadBox').addEventListener('submit', function(e){
+    e.preventDefault(); var t = $('chText'), text = t.value.trim(); if (!text) return;
+    api('/api/admin/chat', {method:'POST', body: JSON.stringify({sid: chCur, action: 'reply', text: text})}).then(function(){ openChat(chCur); }).catch(function(er){ $('chSent').textContent = '❌ ' + er.message; });
+  });
+  // while the dashboard is open: look for new messages every 20 seconds (and show the number on the Messages button)
+  setInterval(function(){ if (!document.hidden && base() && token() && lget('geostore_admin_token') !== undefined) loadChats(true); }, 20000);
 
   save(); show('dash');
 })();

@@ -216,6 +216,12 @@ var D={
 "← Back to cart": "← العودة إلى السلة",
 "Creating your order…": "جارٍ إنشاء طلبك…",
 "Slide to confirm": "اسحب للتأكيد",
+"What is it about?": "ما موضوع رسالتك؟",
+"Your name (optional)": "اسمك (اختياري)",
+"Payment": "الدفع",
+"My order": "طلبي",
+"✅ This conversation was marked solved. Write again any time to reopen it.": "✅ تم وضع علامة «تم الحل» على هذه المحادثة. اكتب لنا في أي وقت لإعادة فتحها.",
+"The shop is very busy right now. Please try again in a few seconds.": "المتجر مزدحم جداً الآن. حاول مجدداً بعد ثوانٍ.",
 "Slide to pay": "اسحب للدفع",
 "Still working… please keep this window open.": "ما زلنا نعمل… أبقِ هذه النافذة مفتوحة.",
 "Where are you paying from?": "من أين ستدفع؟",
@@ -495,7 +501,8 @@ P=[
 [/^Only (\d+) left of "(.+)"\.$/,'المتبقي $1 فقط من «$2».'],
 [/^Sorry, "(.+)" is out of stock right now\.$/,'عذراً، «$1» غير متوفر حالياً.'],
 [/^The smallest amount of points you can use is (\d+)$/,'أقل عدد نقاط يمكنك استخدامه هو $1'],
-[/^Only “(.+)” (.*)$/,'«$1» فقط $2']
+[/^Only “(.+)” (.*)$/,'«$1» فقط $2'],
+[/^Ticket (#\S+) · we usually reply within minutes$/,'التذكرة $1 · نردّ عادةً خلال دقائق']
 ];
 function has(o,k){return Object.prototype.hasOwnProperty.call(o,k)}
 function tr(s,warn){

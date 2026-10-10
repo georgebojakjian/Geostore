@@ -527,3 +527,7 @@ html.shell .chat{bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--
 .slide:focus-visible{outline:3px solid var(--ring);outline-offset:3px}
 [dir=rtl] .slide{direction:rtl}[dir=rtl] .slide .sl-knob{left:auto;right:4px;transform:translateX(calc(var(--x)*-1))}[dir=rtl] .slide .sl-txt{padding-left:0;padding-right:56px}[dir=rtl] .slide .ar{transform:scaleX(-1)}
 @media(prefers-reduced-motion:reduce){.slide::after{display:none}}
+
+.chat-topics{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 12px 0;font-size:.78rem;color:var(--muted)}
+.chat-topics button{border:1px solid var(--border2);background:var(--surface);color:var(--text);border-radius:999px;padding:5px 11px;font:inherit;font-size:.78rem;font-weight:650;cursor:pointer}
+.chat-topics button.on{background:var(--accent);color:var(--on-accent);border-color:transparent}

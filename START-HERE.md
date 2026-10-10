@@ -258,6 +258,27 @@ The **☁ Cloud copy** saves your whole dashboard on your server automatically, 
 4. Be patient: a new site usually takes days to appear and weeks to rank. What helps most: real pages for what people search (“buy iTunes gift card with USDT”), your social links, being mentioned on other sites, and happy customers.
 The shop already has: a title and description, a canonical address, social-share tags, structured data (company, website, FAQ), `robots.txt`, `sitemap.xml`, and Terms / Privacy / Refund / Contact pages.
 
+## Ready for thousands of visitors (do this once)
+
+The free Cloudflare plan has small limits (100,000 requests a day, tiny CPU time, 50 operations per request, 1,000 database writes a day). A busy day with many visitors can hit them and show errors like “Something went wrong”. The fix is the paid plan, **$5 per month**, which raises every limit by 100× or more:
+1. Cloudflare dashboard → **Workers & Pages** → **Plans** (or *Compute → Workers → Plans*) → choose **Workers Paid** → pay $5.
+2. Nothing else to change — your Worker and storage use the higher limits at once.
+3. Optional: after upgrading, in `worker/worker.js` change `PBKDF2_ITER = 10000` to `100000` (stronger password hashing) and Deploy.
+
+What the shop does to protect itself (already built in): visitors share one cached answer for the shop settings (so 1,000 visitors cost a handful of reads), every request is retried automatically up to 3 times, and busy moments show a friendly message with a “Try again” button instead of an error.
+
+## The new dashboard layout
+
+- **Home** — overview, and one **Publish** button.
+- **Products** / **Gift cards** — what you sell.
+- **Orders** — payments and delivery. **Messages** — live chat inbox. **Customers** — accounts, points, reviews.
+- **Settings** — five sections, each with a one-line description: **Store**, **Payments**, **Contact & alerts**, **Growth** (points, reviews, reminders, Arabic names), **Connection** (server and shop address).
+- **Publish** — ONE button, “Publish everything”: it updates the server and then the website (sent to GitHub automatically if you set it up, otherwise `data.js` and `_redirects` are downloaded for you to upload). The old separate steps are still there under “Individual steps (advanced)”. A red ! appears next to Publish when something is not live yet.
+
+## Live chat inbox (Dashboard → Messages)
+
+Every visitor who writes becomes one **ticket** with a short number (like **#A3F2**), their name, the topic they chose (Payment / My order / Game top-up / Other), their email and order number when they gave one, and their own thread — so ten customers writing at once never mix. You see a count of unread messages on the Messages button, answer from the dashboard (with **quick replies** you can edit with ✏️), press **Mark solved** when done (the customer is told; if they write again the ticket reopens). You still get a Telegram alert for each message and can still answer by replying in Telegram. The customer sees their ticket number in the chat window.
+
 ## Fix: checkout slow or "Could not reach the server" on phones
 
 Some phone networks make the Cloudflare address (`…workers.dev`) very slow or unreachable, even though a computer works fine. The fix is to let the shop talk to your server **through your own website address**, which phones reach easily. One-time setup:

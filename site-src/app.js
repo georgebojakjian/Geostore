@@ -16,7 +16,7 @@
       var o = Object.assign({}, opt); if (ac) o.signal = ac.signal;
       return fetch(bases[i] + path, o).then(function(r){
         clearTimeout(t);
-        var bad = r.status >= 502 || (r.status === 404 && !/json/.test(r.headers.get('content-type') || ''));
+        var isJson = /json/.test(r.headers.get('content-type') || ''), bad = r.status >= 500 || (r.status >= 400 && !isJson);
         if (bad && i + 1 < bases.length) return go(i + 1);
         try { sessionStorage.setItem('geo_route', String(PROXY && bases[i] === API ? 1 : 0)); } catch(e) {}
         return r;
@@ -658,11 +658,24 @@
   }
   function ptsOffFor(n){ var c = ptsCfg(); return c ? Math.round(n * c.valueUsd * 100) / 100 : 0; }
   function authH(){ var h = {'content-type':'application/json'}; if (token) h.authorization = 'Bearer ' + token; return h; }
+  // Every call is tried up to 3 times (short pauses) if the server is busy, answers with a non-JSON error page, or the network blips.
+  // Real answers (wrong password, out of stock …) are shown at once. Orders carry a request id, so a repeat can never create a second order.
+  var BUSY = 'The shop is very busy right now. Please try again in a few seconds.';
   function apiCall(path, body, method){
     if (!API) return Promise.reject(new Error('The shop is not connected to its payment server yet.'));
-    return net(path, {method: method || (body ? 'POST' : 'GET'), headers: authH(), body: body ? JSON.stringify(body) : undefined})
-      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if (!r.ok){ var er = new Error(j.error || 'Something went wrong'); er.status = r.status; throw er; } return j; }); },
-        function(){ throw new Error('Could not reach the server. Check your connection and try again.'); });
+    var tries = 0, opt = {method: method || (body ? 'POST' : 'GET'), headers: authH(), body: body ? JSON.stringify(body) : undefined};
+    function once(){
+      return net(path, opt).then(function(r){
+        return r.json().then(function(j){ return {r:r, j:j}; }, function(){ return {r:r, j:null}; });
+      }, function(){ return {r:null, j:null}; }).then(function(x){
+        if (x.r && x.r.ok && x.j) return x.j;
+        var st = x.r ? x.r.status : 0, real = x.j && x.j.error && st < 500 && st !== 429;
+        if (real){ var er = new Error(x.j.error); er.status = st; throw er; }
+        if (tries++ < 2) return new Promise(function(res){ setTimeout(res, 600 + tries * 900); }).then(once);
+        var e2 = new Error(x.r ? (x.j && x.j.error && st !== 500 ? x.j.error : BUSY) : 'Could not reach the server. Check your connection and try again.'); e2.status = st; throw e2;
+      });
+    }
+    return once();
   }
   var METHOD_UI = {
     usdt_trc20:{cls:'usdt', glyph:'₮', badge:'Popular', note:'Tether on the TRON network. Low fee on most exchanges.', eta:'Usually confirmed in 1–3 minutes'},
@@ -942,12 +955,13 @@
         '<h4 class="sh">Change password</h4><form id="pwForm"><div class="two"><div class="field"><label>Current password</label><input id="pwOld" type="password" autocomplete="current-password"></div><div class="field"><label>New password (8+ characters)</label><input id="pwNew" type="password" autocomplete="new-password"></div></div><button class="btn btn-ghost" type="submit">Change password</button> <span class="msg" id="pwMsg"></span></form>' +
         '<p style="margin-top:22px"><button type="button" class="btn btn-ghost" id="signOut">Sign out</button></p>';
       $('acctBody').innerHTML = '<p class="note" style="margin:0 0 12px">Signed in as <b>' + esc(r.profile.email) + '</b></p><div class="tabs">' + tl.map(function(t){ return '<button type="button" class="tab ' + (acctTab === t[0] ? 'on' : '') + '" data-at="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' + body;
-    }).catch(function(er){ if (er.status === 401){ setAuth('', null); renderOut('in'); } else $('acctBody').innerHTML = '<p class="empty">' + esc(er.message) + '</p>'; });
+    }).catch(function(er){ if (er.status === 401){ setAuth('', null); renderOut('in'); } else $('acctBody').innerHTML = '<p class="empty">' + esc(er.message) + '</p><p style="text-align:center"><button type="button" class="btn btn-primary btn-sm" data-retry-acct>Try again</button></p>'; });
   }
   $('acctBody').addEventListener('click', function(e){
     var t = e.target.closest('[data-at]'), pay = e.target.closest('[data-pay]');
     if (t){ if (me){ acctTab = t.dataset.at; renderIn(); } else renderOut(t.dataset.at); }
     if (pay) resumeOrder(pay.dataset.pay).catch(function(er){ toast(er.message); });
+    if (e.target.closest('[data-retry-acct]')) { me ? renderIn() : renderOut('in'); }
     if (e.target.id === 'signOut'){ setAuth('', null); $('acctTitle').textContent = 'Account'; renderOut('in'); toast('Signed out'); }
   });
   $('acctBody').addEventListener('submit', function(e){
@@ -1001,7 +1015,9 @@
     return h;
   }
   function contactRow(){ var b = contactBtns(); return b ? '<div class="contact-row">' + b + '</div>' : ''; }
-  var CH = {sid: store('geostore_chat_sid'), log: store('geostore_chat_log') || [], after: 0, open: false, timer: null, lastSent: 0, unread: 0};
+  var CH = {sid: store('geostore_chat_sid'), log: store('geostore_chat_log') || [], after: 0, open: false, timer: null, lastSent: 0, unread: 0, topic: store('geostore_chat_topic') || '', status: ''};
+  var TOPICS = [['payment','Payment'],['order','My order'],['topup','Game top-up'],['other','Other']];
+  function ticketNo(){ return '#' + CH.sid.slice(0, 4).toUpperCase(); }
   if (!CH.sid || !/^[a-f0-9]{16,32}$/.test(CH.sid)){ var ra = new Uint8Array(12); (window.crypto || window.msCrypto).getRandomValues(ra); CH.sid = Array.prototype.map.call(ra, function(b){ return ('0' + b.toString(16)).slice(-2); }).join(''); store('geostore_chat_sid', CH.sid); }
   if (!Array.isArray(CH.log)) CH.log = [];
   CH.log.forEach(function(m){ if (m.t > CH.after && m.k === 'them') CH.after = m.t; });
@@ -1015,7 +1031,10 @@
     }
     box.innerHTML = html; box.scrollTop = box.scrollHeight;
     $('chatForm').hidden = !CFG.chat;
-    $('chatSub').textContent = CFG.chat ? 'We usually reply within minutes' : 'Offline right now';
+    var tp = $('chatTopics'), first = !CH.log.some(function(m){ return m.k === 'me'; });
+    tp.hidden = !(CFG.chat && first);
+    if (!tp.hidden) tp.innerHTML = (me ? '' : '<input id="chatName" maxlength="40" placeholder="Your name (optional)" aria-label="Your name" value="' + esc(store('geostore_chat_name') || '') + '" style="flex:1 1 100%;margin-bottom:2px">') + '<span>What is it about?</span>' + TOPICS.map(function(t){ return '<button type="button" data-topic="' + t[0] + '" class="' + (CH.topic === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('');
+    $('chatSub').textContent = CFG.chat ? (CH.log.some(function(m){ return m.k === 'me'; }) ? 'Ticket ' + ticketNo() + ' · we usually reply within minutes' : 'We usually reply within minutes') : 'Offline right now';
   }
   function chatLinks(){}
   function chatFab(){ $('chatFab').hidden = !CFG.chat; }
@@ -1027,6 +1046,8 @@
     CH.timer = setTimeout(function(){
       if (document.hidden){ chatPoll(); return; }
       net('/api/chat/poll?sid=' + CH.sid + '&after=' + CH.after).then(function(r){ return r.json(); }).then(function(j){
+        if (j.status === 'done' && CH.status !== 'done' && CH.log.some(function(m){ return m.k === 'me'; })){ CH.log.push({k:'sys', t:Date.now(), text:'✅ This conversation was marked solved. Write again any time to reopen it.'}); chatSave(); if (CH.open) chatDraw(); }
+        CH.status = j.status || '';
         var n = 0; (j.msgs || []).forEach(function(m){ if (m.t > CH.after){ CH.after = m.t; CH.log.push({k:'them', t:m.t, text:String(m.text || '')}); n++; } });
         if (n){ chatSave(); if (CH.open) chatDraw(); else { CH.unread += n; chatBadge(); } }
       }).catch(function(){}).then(chatPoll);
@@ -1037,13 +1058,15 @@
   }
   function chatClose(){ CH.open = false; $('chatBox').hidden = true; $('chatFab').setAttribute('aria-expanded', 'false'); chatPoll(); }
   function chatInit(){ chatFab(); if ($('chatBox').hidden === false){ chatLinks(); chatDraw(); } chatPoll(); }
+  $('chatTopics').addEventListener('click', function(e){ var b = e.target.closest('[data-topic]'); if (!b) return; CH.topic = b.dataset.topic; store('geostore_chat_topic', CH.topic); chatDraw(); $('chatTxt').focus(); });
   $('chatFab').addEventListener('click', function(){ CH.open ? chatClose() : chatOpen(); });
   $('chatClose').addEventListener('click', chatClose);
   document.addEventListener('click', function(e){ if (e.target.closest('[data-chat]')) chatOpen(); });
   $('chatForm').addEventListener('submit', function(e){
     e.preventDefault(); var inp = $('chatTxt'), text = inp.value.trim(); if (!text) return;
+    if ($('chatName') && $('chatName').value.trim()) store('geostore_chat_name', $('chatName').value.trim().slice(0, 40));
     inp.value = ''; CH.log.push({k:'me', t:Date.now(), text:text}); CH.lastSent = Date.now(); chatSave(); chatDraw();
-    apiCall('/api/chat/send', {sid: CH.sid, text: text, name: me && me.name ? me.name : '', order: orderRef()}).catch(function(er){ CH.log.push({k:'sys', t:Date.now(), text:'⚠ ' + (er.message || 'Could not send') + ' — please try WhatsApp or email.'}); chatSave(); chatDraw(); });
+    CH.status = 'open'; apiCall('/api/chat/send', {sid: CH.sid, text: text, name: me && me.name ? me.name : (($('chatName') || {}).value || store('geostore_chat_name') || ''), email: me ? me.email : '', topic: CH.topic || 'other', order: orderRef()}).catch(function(er){ CH.log.push({k:'sys', t:Date.now(), text:'⚠ ' + (er.message || 'Could not send') + ' — please try WhatsApp or email.'}); chatSave(); chatDraw(); });
     chatPoll();
   });
 
